@@ -1,0 +1,189 @@
+{
+  "projectType": "saas",
+  "projectName": "SubWallet Extension",
+  "projectDescription": "Comprehensive non-custodial Web3 wallet for Polkadot, Substrate, and Ethereum ecosystems",
+  "theme": "palm",
+  "primaryColor": "#004BFF",
+  "lightColor": "#7B3FE4",
+  "darkColor": "#2A1A4D",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Core Features",
+            "pages": [
+              "features/account-management",
+              "features/multi-chain-support",
+              "features/token-management",
+              "features/nft-support",
+              "features/staking",
+              "features/swaps",
+              "features/cross-chain-transfers"
+            ]
+          },
+          {
+            "group": "User Guides",
+            "pages": [
+              "guides/creating-account",
+              "guides/importing-account",
+              "guides/sending-tokens",
+              "guides/receiving-tokens",
+              "guides/managing-nfts",
+              "guides/staking-tokens",
+              "guides/swapping-tokens"
+            ]
+          },
+          {
+            "group": "Advanced Features",
+            "pages": [
+              "advanced/multisig-accounts",
+              "advanced/proxy-accounts",
+              "advanced/walletconnect",
+              "advanced/metamask-compatibility",
+              "advanced/ledger-integration"
+            ]
+          },
+          {
+            "group": "Security",
+            "pages": [
+              "security/backup-restore",
+              "security/phishing-detection",
+              "security/permissions"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Developer Guide",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "developers/overview",
+              "developers/architecture",
+              "developers/setup"
+            ]
+          },
+          {
+            "group": "Architecture",
+            "pages": [
+              "developers/architecture/background-services",
+              "developers/architecture/extension-ui",
+              "developers/architecture/content-scripts",
+              "developers/architecture/message-passing",
+              "developers/architecture/state-management"
+            ]
+          },
+          {
+            "group": "Package Structure",
+            "pages": [
+              "developers/packages/extension-base",
+              "developers/packages/extension-koni-ui",
+              "developers/packages/extension-chains",
+              "developers/packages/extension-inject",
+              "developers/packages/extension-dapp"
+            ]
+          },
+          {
+            "group": "Development",
+            "pages": [
+              "developers/development/building",
+              "developers/development/testing",
+              "developers/development/debugging",
+              "developers/development/adding-features"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "developers/concepts/stores",
+              "developers/concepts/services",
+              "developers/concepts/apis",
+              "developers/concepts/cron-jobs"
+            ]
+          },
+          {
+            "group": "Contributing",
+            "pages": [
+              "developers/contributing/guidelines",
+              "developers/contributing/code-style",
+              "developers/contributing/pull-requests"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "DApp Integration",
+            "pages": [
+              "api/dapp/overview",
+              "api/dapp/web3-enable",
+              "api/dapp/accounts",
+              "api/dapp/signing",
+              "api/dapp/events"
+            ]
+          },
+          {
+            "group": "Extension API",
+            "pages": [
+              "api/extension/messaging",
+              "api/extension/state",
+              "api/extension/storage"
+            ]
+          },
+          {
+            "group": "Services",
+            "pages": [
+              "api/services/balance-service",
+              "api/services/nft-service",
+              "api/services/earning-service",
+              "api/services/transaction-service",
+              "api/services/chain-service"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Multi-chain support for Polkadot, Substrate, and Ethereum ecosystems",
+    "Comprehensive account management with import/export capabilities",
+    "NFT viewing and management across multiple chains",
+    "Staking with APY tracking and multiple validators",
+    "Cross-chain token swaps and transfers",
+    "WalletConnect integration for dApp connectivity",
+    "MetaMask compatibility layer",
+    "Ledger hardware wallet support",
+    "Advanced phishing detection",
+    "Multisig and proxy account support"
+  ],
+  "publicApiSurface": [
+    "web3Enable() - Enable dApp to access wallet",
+    "web3Accounts() - Get user accounts",
+    "web3FromAddress() - Get signer for address",
+    "web3FromSource() - Get signer from source",
+    "web3ListRpcProviders() - List RPC providers",
+    "web3UseRpcProvider() - Use specific RPC provider",
+    "@subwallet/extension-base - Core extension functionality",
+    "@subwallet/extension-dapp - DApp integration wrapper",
+    "@subwallet/extension-inject - Injection convenience wrapper",
+    "@subwallet/extension-chains - Chain definitions",
+    "Message passing API for background-UI communication",
+    "Storage API for persisting extension state",
+    "Service APIs (Balance, NFT, Earning, Transaction, Chain)",
+    "Keyring service for account management",
+    "WalletConnect integration API"
+  ]
+}

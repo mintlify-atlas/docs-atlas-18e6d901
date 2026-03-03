@@ -1,0 +1,302 @@
+---
+title: 'Extension Permissions'
+description: 'Understanding what permissions SubWallet needs and why'
+icon: 'lock'
+---
+
+## Overview
+
+Browser extensions require certain permissions to function properly. This page explains what permissions SubWallet requests and how they are used to provide you with a secure wallet experience.
+
+<Info>
+  SubWallet follows the principle of least privilege - we only request permissions that are absolutely necessary for the wallet to function.
+</Info>
+
+## Required Permissions
+
+SubWallet requests the following permissions from your browser:
+
+### Storage
+
+**Permission**: `storage`
+
+**Why it's needed**:
+- Store encrypted account data locally
+- Save wallet preferences and settings
+- Cache network information and token metadata
+- Persist transaction history
+
+**Privacy impact**:
+- All sensitive data is encrypted before storage
+- Private keys never leave your device unencrypted
+- No data is shared with third parties
+
+<Info>
+  Your encrypted wallet data is stored locally in your browser using Chrome's secure storage API. Even if someone gains access to the storage, they cannot decrypt your data without your master password.
+</Info>
+
+### Tabs
+
+**Permission**: `tabs`
+
+**Why it's needed**:
+- Detect when you visit dApps that want to connect to your wallet
+- Check URLs against phishing detection database
+- Manage connections between your wallet and websites
+- Display appropriate prompts for transaction signing
+
+**Privacy impact**:
+- SubWallet can see URLs of tabs you visit
+- URL data is only used for phishing detection
+- No browsing data is collected or transmitted
+
+<Warning>
+  The tabs permission is necessary for phishing protection. SubWallet checks visited URLs against known phishing sites to keep you safe.
+</Warning>
+
+### Notifications
+
+**Permission**: `notifications`
+
+**Why it's needed**:
+- Alert you to incoming transaction requests
+- Notify you of completed transactions
+- Inform you of important security warnings
+- Display connection requests from dApps
+
+**Privacy impact**:
+- Notifications only display on your local device
+- No notification data is sent to external servers
+
+<Tip>
+  You can customize notification settings in **Settings** > **Notifications** to control what alerts you receive.
+</Tip>
+
+### Side Panel
+
+**Permission**: `sidePanel`
+
+**Why it's needed**:
+- Provide an alternative interface alongside your browsing
+- Allow quick access to wallet features without opening a popup
+- Improve user experience on Chromium-based browsers
+
+**Privacy impact**:
+- No additional data access beyond the main extension
+- Same security and privacy as the popup interface
+
+## Content Scripts
+
+SubWallet injects content scripts into web pages to enable wallet functionality:
+
+### What content scripts do:
+
+1. **Inject Web3 Provider**: Allows websites to detect and communicate with your wallet
+2. **Handle Connection Requests**: Manage when websites request wallet access
+3. **Facilitate Transaction Signing**: Enable dApps to request transaction approvals
+4. **Phishing Detection**: Check page URLs for safety
+
+### Matches:
+- `file://*/*` - Access local files (when explicitly permitted)
+- `http://*/*` - Access HTTP websites
+- `https://*/*` - Access HTTPS websites
+
+<Info>
+  Content scripts run in an isolated environment and cannot access your wallet's private keys or encrypted data directly.
+</Info>
+
+## What SubWallet Cannot Access
+
+<Warning>
+  Despite having certain permissions, SubWallet is designed to protect your privacy:
+</Warning>
+
+- **Cannot read your passwords**: Browser passwords are isolated from extensions
+- **Cannot access other extensions**: Each extension runs in a sandbox
+- **Cannot modify most browser settings**: Extensions have limited system access
+- **Cannot access your camera/microphone**: Unless explicitly granted for QR scanning
+- **Cannot read your files**: No access to your file system without user action
+
+## Data Privacy
+
+### What SubWallet Stores Locally:
+
+- Encrypted private keys and seed phrases
+- Account addresses and names
+- Wallet preferences and settings
+- Transaction history
+- Connected website permissions
+- Custom networks and tokens
+
+### What SubWallet Does NOT Collect:
+
+- Your browsing history
+- Personal identifying information
+- IP addresses or location data
+- Wallet balances (fetched in real-time from blockchain)
+- Social media or email information
+
+<Tip>
+  All wallet data is encrypted with your master password and stored only on your device. SubWallet has no access to your wallet or its contents.
+</Tip>
+
+## Managing Website Permissions
+
+You have full control over which websites can interact with your wallet.
+
+### Connecting to Websites
+
+When a website requests access to SubWallet:
+
+1. You'll receive a connection request popup
+2. Review the website URL carefully
+3. Select which accounts to connect
+4. Approve or reject the connection
+
+### Viewing Connected Sites
+
+1. Go to **Settings** > **Security** > **Manage Website Access**
+2. See all websites with wallet access
+3. View which accounts are connected to each site
+4. Check connection timestamps
+
+### Revoking Access
+
+1. Navigate to **Manage Website Access**
+2. Find the website you want to disconnect
+3. Click on the website
+4. Select **Disconnect** or **Forget Site**
+
+<Info>
+  Disconnecting a website removes its ability to view your account addresses and request transactions. You can always reconnect later.
+</Info>
+
+## Transaction Permissions
+
+SubWallet never signs transactions without your explicit approval.
+
+### Transaction Authorization Process:
+
+1. **Website Request**: A dApp requests a transaction
+2. **Popup Display**: SubWallet shows transaction details
+3. **User Review**: You examine the transaction
+4. **Password Entry**: Enter your wallet password to sign
+5. **Confirmation**: Transaction is broadcast to the network
+
+### What You Should Review:
+
+- **Recipient address**: Where funds/tokens are going
+- **Amount**: How much is being sent
+- **Token/Asset**: What is being transferred
+- **Network**: Which blockchain is being used
+- **Gas fees**: Transaction cost
+- **Contract interactions**: What smart contracts are involved
+
+<Warning>
+  Never approve transactions you don't understand. If details are unclear, reject the transaction and contact the dApp's support.
+</Warning>
+
+## Token Approvals
+
+Some dApps request permission to spend your tokens on your behalf.
+
+### Understanding Token Approvals:
+
+- Allows smart contracts to transfer tokens from your wallet
+- Common for DEXs, DeFi protocols, and NFT marketplaces
+- Can be limited or unlimited amounts
+- Remain active until manually revoked
+
+### Best Practices:
+
+- **Review carefully**: Understand what contract you're approving
+- **Limit amounts**: Approve only what you need
+- **Revoke unused approvals**: Remove old approvals periodically
+- **Be suspicious of unlimited approvals**: These can drain your wallet if the contract is malicious
+
+<Tip>
+  You can revoke token approvals using tools like Etherscan (Ethereum) or by reconnecting and updating the approval amount to zero.
+</Tip>
+
+## Security Best Practices
+
+### Extension Security:
+
+1. **Keep Updated**: Always use the latest version of SubWallet
+2. **Official Sources Only**: Install only from Chrome Web Store or official website
+3. **Verify After Install**: Check the extension ID matches the official one
+4. **Review Permissions**: Understand what you're granting
+5. **Lock Your Browser**: Use browser profiles with passwords
+
+### Connection Security:
+
+1. **Verify URLs**: Always check website addresses before connecting
+2. **Use HTTPS**: Never connect to HTTP-only sites
+3. **Review Permissions**: Check what accounts you're sharing
+4. **Audit Regularly**: Review connected sites monthly
+5. **Disconnect Unused**: Remove websites you no longer use
+
+### Account Security:
+
+1. **Strong Password**: Use a unique, strong master password
+2. **Auto-Lock**: Enable automatic locking after inactivity
+3. **Separate Accounts**: Use different accounts for different purposes
+4. **Hardware Wallets**: Connect hardware wallets for large holdings
+5. **Test Accounts**: Create test accounts for new/untrusted dApps
+
+## Content Security Policy
+
+SubWallet implements strict Content Security Policy (CSP) to prevent code injection attacks:
+
+```
+script-src 'self' 'wasm-unsafe-eval';
+object-src 'self'
+```
+
+This ensures:
+- Only SubWallet's own code can execute
+- WASM (WebAssembly) is allowed for cryptographic operations
+- No external scripts can be injected
+- Protection against XSS attacks
+
+## Minimum Browser Requirements
+
+SubWallet requires modern browser features for security:
+
+- **Chrome/Brave/Edge**: Version 111 or higher
+- **Firefox**: Latest version recommended
+- **Manifest V3**: Modern extension architecture
+- **Web Crypto API**: For secure encryption
+
+<Info>
+  Older browsers may lack security features necessary for safely storing cryptocurrency. Always keep your browser updated.
+</Info>
+
+## Transparency & Open Source
+
+SubWallet is committed to transparency:
+
+- **Open Source**: Code is publicly available on GitHub
+- **Community Audits**: Anyone can review the code
+- **Regular Updates**: Security patches released promptly
+- **Bug Bounty**: Responsible disclosure program
+
+### Verify the Code:
+
+1. Visit: https://github.com/Koniverse/SubWallet-Extension
+2. Review the source code
+3. Compare with your installed version
+4. Report security issues responsibly
+
+## Questions & Support
+
+If you have questions about permissions or security:
+
+- **Documentation**: Read our comprehensive guides
+- **Discord**: Join our community server
+- **GitHub**: Open an issue for technical questions
+- **Email**: Contact support@subwallet.app
+
+<Warning>
+  Never share your seed phrase, private key, or password with anyone claiming to be from SubWallet support. We will never ask for this information.
+</Warning>

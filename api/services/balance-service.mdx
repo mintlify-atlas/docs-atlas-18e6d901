@@ -1,0 +1,409 @@
+---
+title: Balance Service
+description: Service for managing account balances across multiple blockchains
+---
+
+## Overview
+
+The `BalanceService` is responsible for tracking and managing token balances across different blockchain networks supported by SubWallet Extension. It provides real-time balance updates, token detection, and cross-chain transfer capabilities.
+
+## Key Features
+
+- Multi-chain balance tracking (Substrate, EVM, Ton, Cardano, Bitcoin)
+- Real-time balance subscriptions
+- Automatic token detection and enabling
+- Transfer balance calculations
+- XCM (Cross-Consensus Message) support
+- Token optimization and balance caching
+
+## Class: BalanceService
+
+### Constructor
+
+```typescript
+constructor(state: KoniState)
+```
+
+<ParamField path="state" type="KoniState" required>
+  The global state object of the extension
+</ParamField>
+
+### Properties
+
+<ResponseField name="isStarted" type="boolean">
+  Indicates whether the service is currently running
+</ResponseField>
+
+<ResponseField name="status" type="ServiceStatus">
+  Current status of the service (NOT_INITIALIZED, INITIALIZING, INITIALIZED, STARTING, STARTED, STOPPING, STOPPED)
+</ResponseField>
+
+## Core Methods
+
+### init()
+
+Initializes the balance service and loads cached data.
+
+```typescript
+async init(): Promise<void>
+```
+
+**Usage:**
+
+```typescript
+const balanceService = new BalanceService(state);
+await balanceService.init();
+```
+
+### start()
+
+Starts the balance service and begins tracking balances.
+
+```typescript
+async start(): Promise<void>
+```
+
+### stop()
+
+Stops the balance service and unsubscribes from all balance updates.
+
+```typescript
+async stop(): Promise<void>
+```
+
+## Balance Subscription Methods
+
+### subscribeBalance()
+
+Subscribes to balance updates for a specific address, chain, and token.
+
+```typescript
+async subscribeBalance(
+  address: string,
+  chain: string,
+  tokenSlug: string | undefined,
+  balanceType: BalanceType = BalanceType.TRANSFERABLE,
+  extrinsicType?: ExtrinsicType,
+  callback?: (rs: AmountData) => void
+): Promise<[() => void, AmountData]>
+```
+
+<ParamField path="address" type="string" required>
+  The wallet address to track
+</ParamField>
+
+<ParamField path="chain" type="string" required>
+  The chain slug (e.g., 'polkadot', 'kusama', 'ethereum')
+</ParamField>
+
+<ParamField path="tokenSlug" type="string">
+  The token identifier. If undefined, uses the native token
+</ParamField>
+
+<ParamField path="balanceType" type="BalanceType" default="BalanceType.TRANSFERABLE">
+  Type of balance to track (TRANSFERABLE, TOTAL, TOTAL_MINUS_RESERVED)
+</ParamField>
+
+<ParamField path="extrinsicType" type="ExtrinsicType">
+  Optional extrinsic type for context-specific balance calculations
+</ParamField>
+
+<ParamField path="callback" type="(rs: AmountData) => void">
+  Optional callback function called on balance updates
+</ParamField>
+
+**Returns:**
+
+<ResponseField name="[0]" type="() => void">
+  Unsubscribe function to stop receiving updates
+</ResponseField>
+
+<ResponseField name="[1]" type="AmountData">
+  Current balance data
+</ResponseField>
+
+**Usage:**
+
+```typescript
+const [unsub, balance] = await balanceService.subscribeBalance(
+  '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
+  'polkadot',
+  'polkadot-NATIVE-DOT',
+  BalanceType.TRANSFERABLE,
+  undefined,
+  (balanceData) => {
+    console.log('New balance:', balanceData.value);
+  }
+);
+
+// Later, unsubscribe
+unsub();
+```
+
+### getTransferableBalance()
+
+Fetches the transferable balance for an address on a specific chain.
+
+```typescript
+async getTransferableBalance(
+  address: string,
+  chain: string,
+  tokenSlug?: string,
+  extrinsicType?: ExtrinsicType
+): Promise<AmountData>
+```
+
+**Returns:**
+
+<ResponseField name="AmountData" type="object">
+  Balance information object
+  
+  <ResponseField name="value" type="string">
+    Balance value as string
+  </ResponseField>
+  
+  <ResponseField name="decimals" type="number">
+    Token decimals
+  </ResponseField>
+  
+  <ResponseField name="symbol" type="string">
+    Token symbol
+  </ResponseField>
+  
+  <ResponseField name="metadata" type="any">
+    Additional metadata
+  </ResponseField>
+</ResponseField>
+
+### getTotalBalance()
+
+Fetches the total balance (free + locked) for an address.
+
+```typescript
+async getTotalBalance(
+  address: string,
+  chain: string,
+  tokenSlug?: string,
+  extrinsicType?: ExtrinsicType
+): Promise<AmountData>
+```
+
+### subscribeBalanceMap()
+
+Subscribes to the complete balance map for all accounts and tokens.
+
+```typescript
+subscribeBalanceMap(): BehaviorSubject<BalanceJson>
+```
+
+**Returns:**
+
+<ResponseField name="BehaviorSubject<BalanceJson>" type="BehaviorSubject">
+  Observable that emits balance updates for all tracked tokens
+</ResponseField>
+
+**Usage:**
+
+```typescript
+balanceService.subscribeBalanceMap().subscribe((balanceData) => {
+  console.log('Balance map updated:', balanceData.details);
+});
+```
+
+## Token Detection Methods
+
+### autoEnableChains()
+
+Automatically detects and enables chains with non-zero balances.
+
+```typescript
+async autoEnableChains(addresses: string[]): Promise<void>
+```
+
+<ParamField path="addresses" type="string[]" required>
+  Array of addresses to check for balances
+</ParamField>
+
+### evmDetectBalanceToken()
+
+Detects EVM tokens with balances for given addresses.
+
+```typescript
+async evmDetectBalanceToken(addresses: string[]): Promise<string[]>
+```
+
+**Returns:**
+
+<ResponseField name="string[]" type="array">
+  Array of token slugs with non-zero balances
+</ResponseField>
+
+### substrateDetectBalanceToken()
+
+Detects Substrate tokens with balances for given addresses.
+
+```typescript
+async substrateDetectBalanceToken(addresses: string[]): Promise<string[]>
+```
+
+## Transfer Methods
+
+### getOptimalTransferProcess()
+
+Determines the optimal transfer path for cross-chain transfers.
+
+```typescript
+async getOptimalTransferProcess(
+  params: RequestOptimalTransferProcess
+): Promise<CommonOptimalTransferPath>
+```
+
+<ParamField path="params" type="RequestOptimalTransferProcess" required>
+  Transfer parameters
+  
+  <ParamField path="originChain" type="string" required>
+    Source chain slug
+  </ParamField>
+  
+  <ParamField path="destChain" type="string">
+    Destination chain slug
+  </ParamField>
+  
+  <ParamField path="tokenSlug" type="string" required>
+    Token to transfer
+  </ParamField>
+  
+  <ParamField path="address" type="string" required>
+    Sender address
+  </ParamField>
+  
+  <ParamField path="amount" type="string" required>
+    Amount to transfer
+  </ParamField>
+</ParamField>
+
+### getTokensHasBalance()
+
+Retrieves tokens with non-zero balances for a specific address and chain.
+
+```typescript
+async getTokensHasBalance(
+  address: string,
+  chain: string,
+  tokenSlug?: string
+): Promise<Record<string, BalanceItem>>
+```
+
+**Returns:**
+
+<ResponseField name="Record<string, BalanceItem>" type="object">
+  Map of token slugs to balance items
+</ResponseField>
+
+## Utility Methods
+
+### reloadBalance()
+
+Reloads all balance data from scratch.
+
+```typescript
+async reloadBalance(): Promise<void>
+```
+
+### removeBalanceByAddresses()
+
+Removes balance data for specific addresses.
+
+```typescript
+removeBalanceByAddresses(addresses: string[]): void
+```
+
+<ParamField path="addresses" type="string[]" required>
+  Array of addresses to remove
+</ParamField>
+
+### optimizeEnableTokens()
+
+Optimizes the token list by enabling tokens with balances and disabling zero-balance tokens.
+
+```typescript
+async optimizeEnableTokens(): Promise<void>
+```
+
+## Types
+
+### BalanceType
+
+```typescript
+enum BalanceType {
+  TRANSFERABLE = 'TRANSFERABLE',
+  TOTAL = 'TOTAL',
+  TOTAL_MINUS_RESERVED = 'TOTAL_MINUS_RESERVED'
+}
+```
+
+### BalanceItem
+
+```typescript
+interface BalanceItem {
+  address: string;
+  tokenSlug: string;
+  free: string;
+  locked: string;
+  state: APIItemState;
+  chain: string;
+  lockedDetails?: {
+    staking?: string;
+    reserved?: string;
+    frozen?: string;
+  };
+}
+```
+
+## Events
+
+The BalanceService listens to and emits events through the EventService:
+
+- `account.updateCurrent` - Current account changed
+- `account.add` - New account added
+- `account.remove` - Account removed
+- `chain.updateState` - Chain state changed
+- `asset.updateState` - Asset state changed
+
+## Example: Complete Balance Tracking
+
+```typescript
+import { BalanceService } from '@subwallet/extension-base';
+
+// Initialize service
+const balanceService = new BalanceService(state);
+await balanceService.init();
+await balanceService.start();
+
+// Subscribe to specific token balance
+const [unsub, initialBalance] = await balanceService.subscribeBalance(
+  '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
+  'polkadot',
+  'polkadot-NATIVE-DOT',
+  BalanceType.TRANSFERABLE,
+  undefined,
+  (balance) => {
+    console.log(`DOT Balance: ${balance.value} ${balance.symbol}`);
+  }
+);
+
+// Get current balance
+const balance = await balanceService.getTransferableBalance(
+  '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
+  'polkadot'
+);
+console.log('Balance:', balance);
+
+// Subscribe to all balances
+balanceService.subscribeBalanceMap().subscribe((data) => {
+  console.log('All balances:', data.details);
+});
+
+// Cleanup
+unsub();
+```

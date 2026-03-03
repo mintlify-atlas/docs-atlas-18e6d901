@@ -1,0 +1,316 @@
+---
+title: Installation Guide
+description: Learn how to install SubWallet Extension on your browser and get started with your Web3 wallet
+---
+
+# Installing SubWallet Extension
+
+SubWallet Extension is available for all major browsers. Follow the steps below to install SubWallet and start managing your Web3 assets.
+
+## Browser Requirements
+
+Before installing SubWallet, ensure your browser meets the minimum requirements:
+
+<CardGroup cols={2}>
+  <Card title="Chrome & Chromium" icon="chrome">
+    Version 111 or higher
+  </Card>
+  
+  <Card title="Firefox" icon="firefox">
+    Latest stable version
+  </Card>
+  
+  <Card title="Brave" icon="shield">
+    Latest stable version
+  </Card>
+  
+  <Card title="Edge" icon="edge">
+    Latest stable version
+  </Card>
+</CardGroup>
+
+<Note>
+SubWallet uses Manifest V3, which requires Chrome version 111 or higher. Other Chromium-based browsers (Brave, Edge, Opera) also support the extension.
+</Note>
+
+## Installation Methods
+
+### Method 1: Install from Chrome Web Store (Recommended)
+
+<Steps>
+  <Step title="Visit the Chrome Web Store">
+    Navigate to the SubWallet Extension page on the Chrome Web Store
+    
+    <Info>
+    The extension is published as "SubWallet - Polkadot Wallet" in the store.
+    </Info>
+  </Step>
+  
+  <Step title="Click 'Add to Chrome'">
+    Click the **Add to Chrome** button to begin the installation
+    
+    A popup will appear asking you to confirm the permissions required by SubWallet.
+  </Step>
+  
+  <Step title="Confirm Permissions">
+    Review and confirm the following permissions:
+    
+    - **Storage** - Store wallet data and settings locally
+    - **Tabs** - Detect when you're on a dApp that needs wallet connection
+    - **Notifications** - Send transaction confirmations and alerts
+    - **Side Panel** - Display the extended wallet interface
+    
+    Click **Add Extension** to proceed.
+  </Step>
+  
+  <Step title="Pin the Extension">
+    After installation, click the puzzle icon in your browser toolbar and pin SubWallet for easy access
+    
+    <Tip>
+    Pinning the extension makes it visible in your browser toolbar, allowing quick access to your wallet.
+    </Tip>
+  </Step>
+</Steps>
+
+### Method 2: Install on Firefox
+
+<Steps>
+  <Step title="Visit Firefox Add-ons">
+    Navigate to the SubWallet Extension page on Firefox Add-ons
+  </Step>
+  
+  <Step title="Add to Firefox">
+    Click **Add to Firefox** and confirm the installation when prompted
+  </Step>
+  
+  <Step title="Grant Permissions">
+    Approve the required permissions for SubWallet to function properly
+  </Step>
+</Steps>
+
+### Method 3: Manual Installation (Development)
+
+For developers or users who want to install from source:
+
+<Warning>
+Manual installation is intended for developers and advanced users. For regular use, install from the Chrome Web Store or Firefox Add-ons.
+</Warning>
+
+<Steps>
+  <Step title="Clone the Repository">
+    ```bash
+    git clone https://github.com/Koniverse/Subwallet-V2.git
+    cd Subwallet-V2
+    ```
+  </Step>
+  
+  <Step title="Install Dependencies">
+    ```bash
+    yarn install
+    ```
+    
+    <Info>
+    SubWallet uses Yarn 3.0.1 as its package manager. Make sure you have the correct version installed.
+    </Info>
+  </Step>
+  
+  <Step title="Build the Extension">
+    For Chrome/Chromium browsers:
+    ```bash
+    yarn build
+    ```
+    
+    For Firefox:
+    ```bash
+    yarn build:zip:dst-ff
+    ```
+    
+    The built extension will be in `packages/extension-koni/build` (Chrome) or `packages/extension-koni/build-firefox` (Firefox).
+  </Step>
+  
+  <Step title="Load Unpacked Extension">
+    **For Chrome:**
+    1. Navigate to `chrome://extensions`
+    2. Enable "Developer mode" (toggle in top-right)
+    3. Click "Load unpacked"
+    4. Select the `packages/extension-koni/build` directory
+    
+    **For Firefox:**
+    1. Navigate to `about:debugging#/runtime/this-firefox`
+    2. Click "Load Temporary Add-on"
+    3. Select the `manifest.json` file from `packages/extension-koni/build-firefox`
+  </Step>
+</Steps>
+
+## Development Installation
+
+If you're developing or testing SubWallet:
+
+<Steps>
+  <Step title="Start Development Server">
+    For Chrome (with source maps):
+    ```bash
+    yarn watch-dev
+    ```
+    
+    For Firefox:
+    ```bash
+    yarn dev:firefox
+    ```
+  </Step>
+  
+  <Step title="Load in Browser">
+    Follow the same steps as manual installation to load the unpacked extension
+    
+    <Tip>
+    The watch command will automatically rebuild when you make changes to the source code.
+    </Tip>
+  </Step>
+</Steps>
+
+## Post-Installation
+
+After installing SubWallet Extension:
+
+### 1. Verify Installation
+
+Click the SubWallet icon in your browser toolbar. You should see the welcome screen.
+
+### 2. Check Extension Details
+
+Verify you have the correct extension installed:
+- **Name:** SubWallet - Polkadot Wallet
+- **Publisher:** SubWallet
+- **Homepage:** https://subwallet.app/
+
+### 3. Review Permissions
+
+SubWallet requires the following permissions:
+
+| Permission | Purpose |
+|------------|--------|
+| **Storage** | Securely store wallet data, settings, and encrypted keys in browser local storage |
+| **Tabs** | Detect active dApps and inject wallet provider when needed |
+| **Notifications** | Alert you about transaction confirmations and important events |
+| **Side Panel** | Provide extended portfolio and transaction views |
+
+<Info>
+All wallet data is encrypted and stored locally in your browser. SubWallet never sends your private keys or seed phrases to external servers.
+</Info>
+
+### 4. Next Steps
+
+Now that SubWallet is installed, proceed to the Quick Start guide:
+
+<Card title="Quick Start Guide" icon="rocket" href="/quickstart">
+  Set up your wallet and create your first account
+</Card>
+
+## Troubleshooting
+
+### Extension Not Appearing
+
+If the extension icon doesn't appear after installation:
+
+1. Check if it's hidden - click the puzzle icon in your browser toolbar
+2. Pin SubWallet to make it always visible
+3. Refresh your browser or restart it
+
+### Installation Failed
+
+<Steps>
+  <Step title="Check Browser Version">
+    Ensure you're running Chrome 111+ or the latest version of your browser
+  </Step>
+  
+  <Step title="Clear Browser Cache">
+    Clear your browser cache and cookies, then try installing again
+  </Step>
+  
+  <Step title="Disable Conflicting Extensions">
+    Temporarily disable other wallet extensions that might conflict
+  </Step>
+  
+  <Step title="Try Manual Installation">
+    If automatic installation fails, try the manual installation method
+  </Step>
+</Steps>
+
+### Build Errors (Development)
+
+If you encounter errors during the build process:
+
+```bash
+# Clean previous builds
+yarn clean
+
+# Reinstall dependencies
+rm -rf node_modules
+yarn install
+
+# Rebuild
+yarn build
+```
+
+<Tip>
+Run `yarn lint` before building to catch any code issues early.
+</Tip>
+
+## Updating SubWallet
+
+### Automatic Updates
+
+Extensions installed from the Chrome Web Store or Firefox Add-ons will update automatically.
+
+### Manual Updates
+
+For manually installed extensions:
+
+1. Pull the latest changes: `git pull origin master`
+2. Install new dependencies: `yarn install`
+3. Rebuild: `yarn build`
+4. Reload the extension in your browser
+
+## Security Best Practices
+
+<Warning>
+After installing SubWallet:
+
+- Never install SubWallet from unofficial sources
+- Verify the publisher is "SubWallet" before installing
+- Keep your browser updated to the latest version
+- Only download from official stores or the GitHub repository
+- Be cautious of phishing websites claiming to be SubWallet
+</Warning>
+
+## Uninstalling SubWallet
+
+If you need to uninstall SubWallet:
+
+<Steps>
+  <Step title="Export Your Accounts">
+    **CRITICAL:** Export your seed phrases and private keys before uninstalling
+    
+    <Warning>
+    Uninstalling will delete all locally stored data. Without your backup, you'll lose access to your accounts permanently.
+    </Warning>
+  </Step>
+  
+  <Step title="Remove Extension">
+    **Chrome:** Right-click the extension icon → Remove from Chrome
+    
+    **Firefox:** Navigate to Add-ons → SubWallet → Remove
+  </Step>
+</Steps>
+
+## Need Help?
+
+If you encounter issues during installation:
+
+- Check the [GitHub Issues](https://github.com/Koniverse/Subwallet-V2/issues) for known problems
+- Report new issues at the GitHub repository
+- Visit [https://subwallet.app](https://subwallet.app) for support
+
+<Card title="Continue to Quick Start" icon="arrow-right" href="/quickstart">
+  Learn how to set up your first wallet
+</Card>

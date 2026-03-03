@@ -1,0 +1,229 @@
+---
+title: "extension-chains"
+description: "Chain metadata and type definitions for SubWallet Extension"
+---
+
+## Overview
+
+The `@subwallet/extension-chains` package manages chain metadata, type registries, and chain definitions for all networks supported by SubWallet Extension. It provides utilities for expanding metadata definitions and managing chain-specific configurations.
+
+## Purpose and Responsibilities
+
+- **Metadata Management**: Stores and manages chain metadata definitions
+- **Type Registry**: Creates and configures Polkadot.js type registries for each chain
+- **Chain Properties**: Manages SS58 format, token decimals, and token symbols
+- **Metadata Expansion**: Converts compact metadata definitions into full Chain objects
+- **Chain Discovery**: Finds chains by genesis hash
+
+## Key Exports
+
+From `src/bundle.ts`:
+
+```typescript
+export { packageInfo } from './packageInfo';
+
+// Metadata expansion and chain management
+export function metadataExpand(
+  definition: MetadataDef,
+  isPartial?: boolean
+): Chain;
+
+export function findChain(
+  definitions: MetadataDef[],
+  genesisHash?: string | null
+): Chain | null;
+
+export function addMetadata(def: MetadataDef): void;
+
+export function knownMetadata(): MetadataDef[];
+```
+
+### Core Functions
+
+#### metadataExpand
+
+Expands a compact metadata definition into a full Chain object with type registry:
+
+```typescript
+const chain = metadataExpand({
+  chain: 'Polkadot',
+  genesisHash: '0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3',
+  icon: 'polkadot',
+  ss58Format: 0,
+  tokenDecimals: 10,
+  tokenSymbol: 'DOT',
+  types: {},
+  specVersion: 9420,
+  metaCalls: '...' // base64 encoded metadata
+});
+```
+
+**Returns**: `Chain` object with:
+- Configured TypeRegistry
+- Metadata instance (if `metaCalls` provided)
+- Chain properties
+- Token information
+
+#### findChain
+
+Finds a chain definition by genesis hash:
+
+```typescript
+const polkadot = findChain(
+  definitions,
+  '0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3'
+);
+```
+
+#### addMetadata
+
+Adds a new metadata definition to the known chains registry:
+
+```typescript
+addMetadata({
+  chain: 'Custom Chain',
+  genesisHash: '0x...',
+  // ... other metadata fields
+});
+```
+
+#### knownMetadata
+
+Returns all registered metadata definitions:
+
+```typescript
+const allChains = knownMetadata();
+```
+
+## Type Definitions
+
+From `src/types.ts`:
+
+```typescript
+export interface Chain {
+  definition: MetadataDef;      // Original metadata definition
+  genesisHash?: string;          // Chain genesis hash
+  hasMetadata: boolean;          // Whether metadata is loaded
+  icon: string;                  // Chain icon identifier
+  isUnknown?: boolean;           // Unknown chain flag
+  name: string;                  // Chain name
+  registry: Registry;            // Polkadot.js type registry
+  specVersion: number;           // Runtime spec version
+  ss58Format: number;            // Address format
+  tokenDecimals: number;         // Native token decimals
+  tokenSymbol: string;           // Native token symbol
+}
+```
+
+The `MetadataDef` interface is imported from `@subwallet/extension-inject/types`.
+
+## Directory Structure
+
+```
+src/
+├── bundle.ts           # Main exports and chain utilities
+├── types.ts            # TypeScript type definitions
+├── index.ts            # Package entry point
+├── packageInfo.ts      # Package metadata
+└── detectPackage.ts    # Package detection utilities
+```
+
+## Dependencies
+
+- **@polkadot/networks**: Network definitions and SS58 registry
+- **@polkadot/util**: Utility functions
+- **@polkadot/util-crypto**: Cryptographic utilities (base64 decoding)
+- **@polkadot/api**: Type registry and metadata (peer dependency)
+- **@polkadot/types**: Type system (peer dependency)
+- **@subwallet/extension-inject**: Type definitions for metadata
+
+## Integration in Architecture
+
+The `extension-chains` package:
+
+1. **Provides** type registries for Substrate chain interactions
+2. **Used by** `extension-base` for chain-specific type handling
+3. **Manages** metadata updates when connecting to new chains
+4. **Caches** expanded chain definitions for performance
+
+## Metadata Flow
+
+1. **Definition Storage**: Metadata definitions are registered via `addMetadata()`
+2. **Expansion**: When needed, definitions are expanded via `metadataExpand()`
+3. **Caching**: Expanded chains are cached by genesis hash
+4. **Registry Creation**: Each expansion creates a configured TypeRegistry
+5. **Metadata Loading**: If `metaCalls` is present, metadata is decoded and registered
+
+## Usage Examples
+
+### Basic Chain Lookup
+
+```typescript
+import { findChain } from '@subwallet/extension-chains';
+
+const definitions = [...]; // Your metadata definitions
+const chain = findChain(definitions, genesisHash);
+
+if (chain) {
+  console.log(`Connected to ${chain.name}`);
+  console.log(`Token: ${chain.tokenSymbol}`);
+  console.log(`Decimals: ${chain.tokenDecimals}`);
+}
+```
+
+### Adding Custom Chain
+
+```typescript
+import { addMetadata, metadataExpand } from '@subwallet/extension-chains';
+
+const customChain = {
+  chain: 'My Custom Chain',
+  genesisHash: '0x...',
+  icon: 'substrate',
+  ss58Format: 42,
+  tokenDecimals: 12,
+  tokenSymbol: 'CUSTOM',
+  types: {},
+  specVersion: 1,
+  metaCalls: undefined
+};
+
+addMetadata(customChain);
+const expanded = metadataExpand(customChain);
+
+// Use expanded.registry for API creation
+```
+
+### Type Registry Usage
+
+```typescript
+import { ApiPromise } from '@polkadot/api';
+import { metadataExpand } from '@subwallet/extension-chains';
+
+const chain = metadataExpand(definition);
+
+// Use the registry when creating API instance
+const api = await ApiPromise.create({
+  provider: wsProvider,
+  registry: chain.registry
+});
+```
+
+## Caching Behavior
+
+The package implements an internal cache:
+
+```typescript
+const expanded = new Map<string, Chain>();
+```
+
+- Chains are cached by genesis hash
+- Cache is checked on each `metadataExpand()` call
+- Cached chains are returned if spec version matches
+- Partial expansions (without metadata) are not cached
+
+## Related Packages
+
+- [extension-base](/developers/packages/extension-base) - Consumes chain metadata for API interactions
+- [extension-inject](/developers/packages/extension-inject) - Provides MetadataDef type definition
+- [extension-koni-ui](/developers/packages/extension-koni-ui) - Uses chain information for display

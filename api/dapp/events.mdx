@@ -1,0 +1,472 @@
+---
+title: 'Events & Subscriptions'
+description: 'Subscribe to wallet events and handle real-time updates in your dApp'
+---
+
+## Overview
+
+SubWallet Extension emits various events that your dApp can listen to. These events help you keep your application state synchronized with the user's wallet, responding to account changes, connection status, and more.
+
+## Account Change Events
+
+The primary way to listen for account changes is through the `web3AccountsSubscribe()` function.
+
+### Account Subscription
+
+```javascript
+import { web3Enable, web3AccountsSubscribe } from '@subwallet/extension-dapp';
+
+// Enable extension first
+await web3Enable('My DApp');
+
+// Subscribe to account changes
+const unsubscribe = await web3AccountsSubscribe((accounts) => {
+  console.log('Accounts changed:', accounts);
+  
+  // Update your application state
+  updateAccountList(accounts);
+  
+  // Check if previously selected account is still available
+  const selectedAddress = localStorage.getItem('selectedAddress');
+  const stillExists = accounts.find(acc => acc.address === selectedAddress);
+  
+  if (!stillExists && accounts.length > 0) {
+    // Select first account if previous selection is gone
+    selectAccount(accounts[0].address);
+  }
+});
+
+// Remember to unsubscribe when done
+// unsubscribe();
+```
+
+### React Hook for Account Subscriptions
+
+```javascript
+import { useState, useEffect } from 'react';
+import { web3Enable, web3AccountsSubscribe } from '@subwallet/extension-dapp';
+
+function useWalletAccounts() {
+  const [accounts, setAccounts] = useState([]);
+  const [isReady, setIsReady] = useState(false);
+  
+  useEffect(() => {
+    let unsubscribe;
+    
+    async function init() {
+      // Enable the extension
+      const extensions = await web3Enable('My DApp');
+      
+      if (extensions.length === 0) {
+        console.warn('No wallet extension found');
+        setIsReady(true);
+        return;
+      }
+      
+      // Subscribe to account changes
+      unsubscribe = await web3AccountsSubscribe((accs) => {
+        setAccounts(accs);
+        setIsReady(true);
+      });
+    }
+    
+    init();
+    
+    // Cleanup subscription on unmount
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, []);
+  
+  return { accounts, isReady };
+}
+
+// Usage in component
+function AccountSelector() {
+  const { accounts, isReady } = useWalletAccounts();
+  
+  if (!isReady) {
+    return <div>Loading wallet...</div>;
+  }
+  
+  if (accounts.length === 0) {
+    return <div>No accounts found. Please create an account in SubWallet.</div>;
+  }
+  
+  return (
+    <select>
+      {accounts.map(account => (
+        <option key={account.address} value={account.address}>
+          {account.meta.name || account.address}
+        </option>
+      ))}
+    </select>
+  );
+}
+```
+
+## Extension Initialization Events
+
+SubWallet dispatches custom events when it initializes. You can listen to these events to detect when the wallet becomes available.
+
+### SubWallet Substrate Initialization
+
+```javascript
+// Listen for SubWallet initialization
+window.addEventListener('subwallet#initialized', () => {
+  console.log('SubWallet extension initialized');
+  initializeYourDApp();
+});
+```
+
+### Ethereum Provider Initialization
+
+For EVM/Ethereum support:
+
+```javascript
+// Listen for Ethereum provider initialization
+window.addEventListener('ethereum#initialized', () => {
+  console.log('Ethereum provider initialized');
+  if (window.SubWallet) {
+    connectToEthereumProvider();
+  }
+});
+
+// Or listen for SubWallet-specific EVM initialization
+window.addEventListener('subwallet#initialized', () => {
+  console.log('SubWallet EVM provider ready');
+  if (window.SubWallet && window.SubWallet.isSubWallet) {
+    connectToEthereumProvider();
+  }
+});
+```
+
+### Complete Initialization Handler
+
+```javascript
+function initializeWallet() {
+  if (window.injectedWeb3 && window.injectedWeb3['subwallet-js']) {
+    // Already initialized
+    console.log('SubWallet already available');
+    enableExtension();
+  } else {
+    // Wait for initialization
+    window.addEventListener('subwallet#initialized', () => {
+      console.log('SubWallet initialized');
+      enableExtension();
+    }, { once: true });
+  }
+}
+
+async function enableExtension() {
+  const { web3Enable } = await import('@subwallet/extension-dapp');
+  const extensions = await web3Enable('My DApp');
+  console.log('Enabled extensions:', extensions);
+}
+
+// Call on page load
+initializeWallet();
+```
+
+## EIP-6963 Provider Events
+
+SubWallet supports the EIP-6963 standard for multi-wallet discovery. This allows dApps to discover multiple wallet providers.
+
+### Listening for Provider Announcements
+
+```javascript
+// Request wallet providers
+window.addEventListener('eip6963:announceProvider', (event) => {
+  const { info, provider } = event.detail;
+  
+  console.log('Found wallet:', info.name);
+  console.log('RDNS:', info.rdns);
+  console.log('UUID:', info.uuid);
+  
+  // Check if it's SubWallet
+  if (info.rdns === 'app.subwallet') {
+    console.log('SubWallet detected via EIP-6963');
+    // Store or use this provider
+  }
+});
+
+// Trigger provider discovery
+window.dispatchEvent(new Event('eip6963:requestProvider'));
+```
+
+### Multi-Wallet Support
+
+```javascript
+const walletProviders = new Map();
+
+// Collect all wallet providers
+window.addEventListener('eip6963:announceProvider', (event) => {
+  const { info, provider } = event.detail;
+  walletProviders.set(info.uuid, { info, provider });
+  
+  console.log(`Discovered wallet: ${info.name}`);
+});
+
+// Request all providers
+window.dispatchEvent(new Event('eip6963:requestProvider'));
+
+// Let user choose which wallet to use
+function selectWallet(uuid) {
+  const wallet = walletProviders.get(uuid);
+  if (wallet) {
+    console.log(`Selected: ${wallet.info.name}`);
+    // Use wallet.provider for transactions
+  }
+}
+```
+
+### React Hook for EIP-6963
+
+```javascript
+import { useState, useEffect } from 'react';
+
+function useWalletProviders() {
+  const [providers, setProviders] = useState([]);
+  
+  useEffect(() => {
+    const handleAnnouncement = (event) => {
+      setProviders(prev => {
+        // Avoid duplicates
+        if (prev.find(p => p.info.uuid === event.detail.info.uuid)) {
+          return prev;
+        }
+        return [...prev, event.detail];
+      });
+    };
+    
+    window.addEventListener('eip6963:announceProvider', handleAnnouncement);
+    
+    // Request providers
+    window.dispatchEvent(new Event('eip6963:requestProvider'));
+    
+    return () => {
+      window.removeEventListener('eip6963:announceProvider', handleAnnouncement);
+    };
+  }, []);
+  
+  return providers;
+}
+
+// Usage
+function WalletSelector() {
+  const providers = useWalletProviders();
+  const [selectedProvider, setSelectedProvider] = useState(null);
+  
+  return (
+    <div>
+      <h2>Select Wallet</h2>
+      {providers.map(({ info, provider }) => (
+        <button
+          key={info.uuid}
+          onClick={() => setSelectedProvider(provider)}
+        >
+          <img src={info.icon} alt={info.name} width="20" />
+          {info.name}
+        </button>
+      ))}
+    </div>
+  );
+}
+```
+
+## Ethereum Provider Events
+
+When using SubWallet's EVM provider, you can listen to standard Ethereum events:
+
+### Account Changes
+
+```javascript
+const provider = window.SubWallet || window.ethereum;
+
+if (provider) {
+  provider.on('accountsChanged', (accounts) => {
+    console.log('EVM accounts changed:', accounts);
+    
+    if (accounts.length === 0) {
+      // User disconnected all accounts
+      handleDisconnect();
+    } else {
+      // Account switched
+      handleAccountChange(accounts[0]);
+    }
+  });
+}
+```
+
+### Chain Changes
+
+```javascript
+const provider = window.SubWallet || window.ethereum;
+
+if (provider) {
+  provider.on('chainChanged', (chainId) => {
+    console.log('Chain changed to:', chainId);
+    
+    // Reload the page or update your app state
+    // Most dApps reload on chain change
+    window.location.reload();
+  });
+}
+```
+
+### Connection Events
+
+```javascript
+const provider = window.SubWallet || window.ethereum;
+
+if (provider) {
+  provider.on('connect', (connectInfo) => {
+    console.log('Connected to chain:', connectInfo.chainId);
+  });
+  
+  provider.on('disconnect', (error) => {
+    console.log('Disconnected:', error);
+    handleDisconnect();
+  });
+}
+```
+
+### Complete EVM Event Handler
+
+```javascript
+function setupEthereumEventListeners() {
+  const provider = window.SubWallet || window.ethereum;
+  
+  if (!provider) {
+    console.error('No Ethereum provider found');
+    return;
+  }
+  
+  // Account changes
+  provider.on('accountsChanged', (accounts) => {
+    console.log('Accounts changed:', accounts);
+    updateAccountState(accounts);
+  });
+  
+  // Chain changes
+  provider.on('chainChanged', (chainId) => {
+    console.log('Chain changed:', chainId);
+    updateChainState(chainId);
+  });
+  
+  // Connection status
+  provider.on('connect', (info) => {
+    console.log('Connected:', info);
+    setConnectionStatus(true);
+  });
+  
+  provider.on('disconnect', (error) => {
+    console.log('Disconnected:', error);
+    setConnectionStatus(false);
+  });
+  
+  // Message events (optional, for advanced use)
+  provider.on('message', (message) => {
+    console.log('Provider message:', message);
+  });
+}
+
+// Initialize on page load
+if (document.readyState === 'complete') {
+  setupEthereumEventListeners();
+} else {
+  window.addEventListener('load', setupEthereumEventListeners);
+}
+```
+
+## Best Practices
+
+<Tip>
+  **Always Unsubscribe**: When using subscriptions, always call the returned unsubscribe function when you're done (e.g., when a component unmounts) to prevent memory leaks.
+</Tip>
+
+<Warning>
+  **Handle Initialization Timing**: The extension may not be available immediately when your page loads. Use initialization events or check for availability before accessing wallet features.
+</Warning>
+
+<Tip>
+  **Debounce Rapid Changes**: If you're updating UI based on account changes, consider debouncing rapid updates to avoid excessive re-renders.
+</Tip>
+
+<Info>
+  **Chain Changes in EVM**: When the user switches chains in their wallet, it's common practice to reload the page or completely reset your dApp state to avoid inconsistencies.
+</Info>
+
+## Event Reference
+
+### Window Events
+
+| Event | Description | Detail |
+|-------|-------------|--------|
+| `subwallet#initialized` | SubWallet extension is ready | None |
+| `ethereum#initialized` | Ethereum provider is ready | None |
+| `eip6963:announceProvider` | Wallet provider announcement (EIP-6963) | `{ info: EIP6963ProviderInfo, provider: EvmProvider }` |
+| `eip6963:requestProvider` | Request wallet provider announcements | None |
+
+### Ethereum Provider Events
+
+| Event | Parameters | Description |
+|-------|-----------|-------------|
+| `accountsChanged` | `accounts: string[]` | User's connected accounts changed |
+| `chainChanged` | `chainId: string` | User switched to a different blockchain network |
+| `connect` | `connectInfo: { chainId: string }` | Provider connected to a network |
+| `disconnect` | `error: ProviderRpcError` | Provider disconnected from network |
+| `message` | `message: ProviderMessage` | Provider-specific message (rarely used) |
+
+## Type Definitions
+
+### EIP6963ProviderInfo
+
+```typescript
+interface EIP6963ProviderInfo {
+  uuid: string;
+  name: string;
+  icon: string;
+  rdns: string;
+}
+```
+
+Source: `packages/extension-inject/src/types.ts:136`
+
+### EIP6963ProviderDetail
+
+```typescript
+interface EIP6963ProviderDetail {
+  info: EIP6963ProviderInfo;
+  provider: EvmProvider;
+}
+```
+
+Source: `packages/extension-inject/src/types.ts:143`
+
+### EvmProvider
+
+```typescript
+interface EvmProvider {
+  provider?: EvmProvider;
+  isMetaMask: boolean;
+  isSubWallet: boolean;
+  version: string;
+  isConnected(): boolean;
+  // Standard Ethereum provider methods
+  request(args: RequestArguments): Promise<any>;
+  on(event: string, callback: (...args: any[]) => void): void;
+  removeListener(event: string, callback: (...args: any[]) => void): void;
+}
+```
+
+Source: `packages/extension-inject/src/types.ts:106`
+
+## See Also
+
+- [web3AccountsSubscribe](/api/dapp/accounts#web3accountssubscribe) - Subscribe to account changes
+- [Account Management](/api/dapp/accounts) - Working with accounts
+- [EIP-6963 Specification](https://eips.ethereum.org/EIPS/eip-6963) - Multi-wallet discovery standard
+- [Ethereum Provider API](https://docs.metamask.io/wallet/reference/provider-api/) - Standard Ethereum events

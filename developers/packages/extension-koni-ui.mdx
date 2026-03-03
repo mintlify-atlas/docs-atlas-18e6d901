@@ -1,0 +1,201 @@
+---
+title: "extension-koni-ui"
+description: "React-based user interface for SubWallet Extension"
+---
+
+## Overview
+
+The `@subwallet/extension-koni-ui` package contains the complete user interface implementation for SubWallet Extension. Built with React 18 and styled-components, it provides a modern, responsive wallet interface for managing accounts, tokens, NFTs, staking, and dApp connections.
+
+## Purpose and Responsibilities
+
+- **UI Components**: Comprehensive component library for wallet functionality
+- **State Management**: Redux integration with React hooks for global state
+- **Routing**: React Router-based navigation for the extension popup
+- **View Rendering**: Entry point creation for extension pages
+- **User Interactions**: Forms, confirmations, and user input handling
+- **Multi-chain UI**: Interface for interacting with Substrate, EVM, and other chains
+- **WalletConnect UI**: User interface for WalletConnect sessions and requests
+
+## Key Exports
+
+From `src/index.ts`:
+
+```typescript
+export { default as createView } from './createView';
+export { default as Popup } from './Popup';
+```
+
+### createView
+Utility function that creates a React application view for extension pages:
+
+```typescript
+function createView(Entry: React.ComponentType, rootId?: string): void
+```
+
+Handles:
+- React 18 root creation
+- Suspense wrapping for lazy loading
+- Preload style application
+- Backup reminder initialization
+
+### Popup
+Main popup component that serves as the entry point for the extension's primary interface.
+
+## Directory Structure
+
+```
+src/
+├── Popup/                  # Main popup application
+│   ├── Account/           # Account management screens
+│   ├── BuyTokens.tsx      # Token purchase interface
+│   ├── Confirmations/     # Transaction confirmation screens
+│   ├── Home/              # Dashboard and home screens
+│   ├── Keyring/           # Account creation/import flows
+│   ├── Settings/          # Settings and preferences
+│   ├── Transaction/       # Transaction screens
+│   ├── WalletConnect/     # WalletConnect session management
+│   ├── Root.tsx           # Root component with providers
+│   └── router.tsx         # Application routing configuration
+├── components/            # Reusable UI components (30+ subdirectories)
+│   ├── Modal/
+│   ├── Button/
+│   ├── Input/
+│   ├── Account/
+│   └── ...
+├── hooks/                 # Custom React hooks (25+ hooks)
+│   ├── useBalance.ts
+│   ├── useChain.ts
+│   ├── useTransaction.ts
+│   └── ...
+├── messaging/             # Message passing with background script
+├── stores/                # Redux stores and slices
+│   ├── base/             # Base store configuration
+│   ├── feature/          # Feature-specific slices
+│   └── utils/            # Store utilities
+├── contexts/              # React contexts
+│   ├── DataContext.tsx
+│   ├── ScreenContext.tsx
+│   └── ThemeContext.tsx
+├── utils/                 # UI utilities (23+ utility modules)
+│   ├── transaction/
+│   ├── validation/
+│   ├── format/
+│   └── ...
+├── assets/                # Static assets
+│   ├── images/
+│   ├── icons/
+│   └── logos/
+├── constants/             # UI constants
+├── i18n/                  # Internationalization
+├── types/                 # TypeScript type definitions
+└── themes.ts              # Theme configuration
+```
+
+## Key Features
+
+### Multi-Page Structure
+
+The popup is organized into major sections:
+
+- **Home**: Dashboard showing balances, tokens, NFTs, and crowdloans
+- **Account**: Account details, QR codes, and account management
+- **Transaction**: Send tokens, transfer NFTs, cross-chain transfers
+- **Confirmations**: Transaction signing and approval flows
+- **Settings**: General settings, security, networks, and advanced options
+- **WalletConnect**: Session management and dApp connection requests
+- **Keyring**: Create account, import seed, attach accounts
+
+### Custom Hooks
+
+Extensive collection of React hooks for:
+
+- Balance queries (`useBalance`, `useGetBalance`)
+- Chain information (`useChainInfo`, `useGetChainAssets`)
+- Transaction operations (`useTransaction`, `useHandleSubmitTransaction`)
+- Account management (`useAccountInfo`, `useGetAccountByAddress`)
+- NFT data (`useNft`, `useGetNftCollection`)
+- Staking (`useYieldPosition`, `useGetStakingReward`)
+
+### Component Library
+
+Built on `@subwallet/react-ui` with custom extensions:
+
+- Account selectors and displays
+- Token and NFT lists
+- Transaction forms and confirmations
+- Modal dialogs and alerts
+- Loading states and skeletons
+- Charts and data visualizations
+- QR code generation and scanning
+
+## Dependencies
+
+Key UI dependencies:
+
+- **React Ecosystem**: `react@18`, `react-dom@18`, `react-router-dom@6`
+- **State Management**: `@reduxjs/toolkit`, `react-redux`, `redux-persist`
+- **UI Library**: `@subwallet/react-ui`, `styled-components`
+- **Icons**: `@fortawesome/react-fontawesome`, `phosphor-react`
+- **Forms**: `rc-input`, `react-select`, `react-dropzone`
+- **Utilities**: `classnames`, `copy-to-clipboard`, `file-saver`
+- **QR Code**: `react-qr-code`, `react-qr-reader`
+- **Markdown**: `react-markdown`, `rehype-raw`
+- **Extension Packages**: `@subwallet/extension-base`, `@subwallet/extension-inject`
+
+## Integration in Architecture
+
+The UI package:
+
+1. **Communicates** with background services via message passing (see `messaging/` directory)
+2. **Consumes** types and utilities from `extension-base`
+3. **Manages** local UI state with Redux while syncing with background state
+4. **Renders** in multiple contexts: popup, fullscreen tabs, and notification windows
+
+## Styling and Theming
+
+Uses `styled-components` with a centralized theme system:
+
+```typescript
+// themes.ts exports theme configurations
+import { ThemeProps } from '@subwallet/react-ui/styles/themes/types';
+```
+
+Supports:
+- Dark and light themes
+- Responsive layouts
+- Custom color schemes
+- Typography system
+
+## Internationalization
+
+Supports multiple languages through `i18next` and `react-i18next`:
+
+```typescript
+import { useTranslation } from 'react-i18next';
+
+const { t } = useTranslation();
+```
+
+## Usage Example
+
+```typescript
+import { createView, Popup } from '@subwallet/extension-koni-ui';
+
+// Create the popup view
+createView(Popup);
+```
+
+## Development Notes
+
+- Built with TypeScript for type safety
+- Uses React 18 features including Suspense and concurrent rendering
+- Implements code splitting for performance
+- Follows atomic design principles for component organization
+- Uses React hooks exclusively (no class components)
+
+## Related Packages
+
+- [extension-base](/developers/packages/extension-base) - Core services and business logic
+- [extension-inject](/developers/packages/extension-inject) - Injection types
+- [extension-dapp](/developers/packages/extension-dapp) - dApp integration

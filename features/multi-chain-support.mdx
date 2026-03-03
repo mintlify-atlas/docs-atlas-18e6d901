@@ -1,0 +1,241 @@
+---
+title: Multi-Chain Support
+description: Access multiple blockchain networks from a single wallet interface
+---
+
+SubWallet Extension supports over 200 blockchain networks, letting you manage assets across multiple ecosystems without switching wallets. From Polkadot parachains to Ethereum Layer 2s, everything is accessible in one place.
+
+## Supported Networks
+
+SubWallet provides comprehensive support for major blockchain ecosystems and their networks.
+
+### Substrate Chains
+
+Full support for Polkadot, Kusama, and their parachains:
+
+- **Relay Chains**: Polkadot, Kusama, Westend
+- **Parachains**: Acala, Moonbeam, Astar, Parallel, Bifrost, HydraDX, and many more
+- **Solo Chains**: Substrate-based chains not connected to a relay chain
+
+SubWallet connects to Substrate chains using native RPC endpoints, providing direct access to chain features and data.
+
+### EVM-Compatible Chains
+
+Connect to Ethereum and EVM networks:
+
+- **Ethereum Mainnet and Testnets**
+- **Layer 2 Solutions**: Arbitrum, Optimism, Base, Polygon
+- **EVM Parachains**: Moonbeam, Moonriver, Astar EVM
+- **Other EVM Chains**: BSC, Avalanche, Fantom, and more
+
+All standard Ethereum features are supported, including smart contract interactions and ERC-20/ERC-721 tokens.
+
+### Additional Ecosystems
+
+<CardGroup cols={2}>
+  <Card title="TON Network" icon="cube">
+    Native support for The Open Network (TON), including TON coin transfers and token management.
+  </Card>
+  <Card title="Cardano" icon="network-wired">
+    Connect to Cardano networks with support for ADA transfers and native assets.
+  </Card>
+  <Card title="Bitcoin" icon="bitcoin-sign">
+    Bitcoin mainnet and testnet support for BTC transactions.
+  </Card>
+</CardGroup>
+
+## Managing Networks
+
+### Enabling and Disabling Networks
+
+Control which networks appear in your wallet:
+
+<Steps>
+  <Step title="Open network settings">
+    Access the network management interface from the main menu.
+  </Step>
+  <Step title="Browse or search networks">
+    Find networks by name, or browse by ecosystem (Polkadot, Kusama, Ethereum).
+  </Step>
+  <Step title="Toggle networks">
+    Enable the networks you want to use. Disabled networks won't appear in your token list or transaction options.
+  </Step>
+</Steps>
+
+<Tip>
+Disable networks you don't use to keep your interface clean and focused. You can always re-enable them later.
+</Tip>
+
+### Custom Networks
+
+Add networks that aren't in SubWallet's default list:
+
+1. **For EVM Chains**: Provide the chain ID, RPC URL, currency symbol, and block explorer URL
+2. **For Substrate Chains**: Enter the chain name, RPC endpoint, and optionally the token decimals and symbol
+
+Custom networks appear alongside built-in networks in all features.
+
+### Network Endpoints
+
+SubWallet connects to each network through RPC endpoints:
+
+- **Default Endpoints**: Pre-configured, tested endpoints for each network
+- **Custom Endpoints**: Add your own RPC endpoints for better performance or privacy
+- **Endpoint Selection**: Switch between multiple endpoints if the current one is slow or down
+
+<Note>
+Endpoint health is monitored automatically. If an endpoint becomes unavailable, SubWallet attempts to reconnect or you can manually switch to an alternative.
+</Note>
+
+## Chain Features
+
+### Automatic Chain Detection
+
+When you create or import accounts, SubWallet automatically detects compatible networks:
+
+- **Substrate Accounts**: Work with all Polkadot and Kusama ecosystem chains
+- **Ethereum Accounts**: Compatible with all EVM networks
+- **Specialized Accounts**: TON, Cardano, and Bitcoin accounts for their respective networks
+
+### Chain-Specific Metadata
+
+SubWallet maintains accurate metadata for each network:
+
+- Native token symbol and decimals
+- Block explorers for transaction viewing
+- Chain logos and branding
+- Network type and capabilities
+
+### Network Status Monitoring
+
+Stay informed about network connectivity:
+
+<CardGroup cols={3}>
+  <Card title="Connected" icon="circle-check">
+    Network is online and ready for transactions
+  </Card>
+  <Card title="Connecting" icon="spinner">
+    Establishing connection to network endpoint
+  </Card>
+  <Card title="Disconnected" icon="circle-xmark">
+    Network is unavailable or endpoint is down
+  </Card>
+</CardGroup>
+
+## Multi-Chain Account Management
+
+### Unified Account View
+
+With unified accounts, your single seed phrase creates addresses for multiple networks:
+
+- View all network balances in one account
+- Switch networks without changing accounts
+- Manage assets across ecosystems seamlessly
+
+### Network-Specific Addresses
+
+Each network may use different address formats:
+
+- **Substrate**: SS58 format (starts with different characters based on the chain)
+- **Ethereum**: Hex format (starts with 0x)
+- **Bitcoin**: Base58 or Bech32 format
+- **TON**: Base64 format
+
+SubWallet handles address formatting automatically for each network.
+
+## Cross-Chain Features
+
+### Asset Discovery
+
+SubWallet automatically discovers your assets across all enabled networks:
+
+- Native tokens on each chain
+- Custom tokens and smart contract tokens
+- NFTs on supported networks
+
+No manual configuration needed - just enable a network and your assets appear.
+
+### Network Switching
+
+Quickly switch between networks when:
+
+- Sending tokens or NFTs
+- Connecting to dApps
+- Viewing transaction history
+- Managing staking positions
+
+The current network is always clearly indicated in the interface.
+
+### Multi-Chain Transactions
+
+Perform actions across different networks:
+
+- Transfer tokens from one network to another (cross-chain transfers)
+- Swap tokens across chains
+- Stake on multiple networks simultaneously
+
+## Network Organization
+
+### Grouping by Ecosystem
+
+Networks are organized by their ecosystem:
+
+- **Polkadot Ecosystem**: Polkadot relay chain and parachains
+- **Kusama Ecosystem**: Kusama relay chain and parachains  
+- **Ethereum Ecosystem**: Ethereum and EVM-compatible chains
+- **Independent Chains**: Standalone networks not part of a larger ecosystem
+
+This organization makes it easy to find the network you need.
+
+### Test Networks
+
+Access testnets for development and testing:
+
+- Westend (Polkadot testnet)
+- Rococo (Parachain testnet)
+- Ethereum Sepolia and Goerli
+- Other network-specific testnets
+
+Testnet tokens have no real value and are used for testing purposes only.
+
+## Performance Optimization
+
+### Selective Network Loading
+
+SubWallet only loads data for enabled networks, which:
+
+- Reduces memory usage
+- Speeds up wallet startup
+- Improves overall performance
+
+### Connection Management
+
+Network connections are intelligently managed:
+
+- Active networks maintain persistent connections
+- Inactive networks disconnect to save resources
+- Automatic reconnection when networks become active
+
+<Tip>
+For the best performance, only enable networks you actively use. You can always enable additional networks when needed.
+</Tip>
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Enable Only What You Use">
+    Keep your enabled networks list focused on chains you actively use. This reduces clutter and improves performance.
+  </Accordion>
+  <Accordion title="Verify Network Before Transactions">
+    Always double-check which network you're using before sending assets. Sending to the wrong network can result in lost funds.
+  </Accordion>
+  <Accordion title="Use Custom Endpoints for Privacy">
+    If privacy is important, consider running your own RPC endpoint or using a trusted private endpoint.
+  </Accordion>
+  <Accordion title="Keep Endpoint Lists Updated">
+    Periodically check for new endpoints if you experience slow connections. Network operators often add new infrastructure.
+  </Accordion>
+  <Accordion title="Test Network First">
+    When working with new networks or dApps, test with small amounts first to ensure everything works as expected.
+  </Accordion>
+</AccordionGroup>

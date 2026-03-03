@@ -1,0 +1,137 @@
+---
+title: "extension-base"
+description: "Core functionality and services for SubWallet Extension"
+---
+
+## Overview
+
+The `@subwallet/extension-base` package is the foundational package of the SubWallet Extension, providing core functionality, utilities, and services used throughout the extension. It serves as the backbone for blockchain interactions, state management, and business logic.
+
+## Purpose and Responsibilities
+
+- **Background Services**: Implements all major background services for wallet operations
+- **Chain Interactions**: Provides APIs for interacting with Substrate, EVM, Cardano, Bitcoin, and TON networks
+- **State Management**: Manages application state and subscriptions using Redux Toolkit
+- **Transaction Handling**: Handles signing, validation, and submission of transactions
+- **Account Management**: Manages keyring operations and account derivation
+- **Balance & Asset Tracking**: Tracks balances, NFTs, and token prices across chains
+- **Staking & Earning**: Implements staking, nomination pools, and earning mechanisms
+- **WalletConnect Integration**: Manages WalletConnect sessions and requests
+
+## Key Exports
+
+The package primarily exports through `src/bundle.ts`:
+
+```typescript
+export { packageInfo } from './packageInfo';
+```
+
+However, the package is designed to be consumed internally by other extension packages, which import directly from subdirectories.
+
+## Directory Structure
+
+```
+src/
+├── background/          # Background script types and handlers
+│   ├── KoniTypes.ts    # Core type definitions
+│   ├── errors/         # Custom error classes
+│   ├── handlers/       # Request handlers and state management
+│   └── warnings/       # Warning types
+├── constants/          # Application constants
+│   ├── bitcoin.ts
+│   ├── signing.ts
+│   ├── staking.ts
+│   └── storage.ts
+├── core/               # Core business logic
+│   ├── logic-validation/  # Validation for transfers, swaps, earning
+│   └── substrate/         # Substrate-specific pallets and utilities
+├── koni/               # SubWallet-specific implementations
+│   └── api/            # External API integrations
+├── page/               # Page-level message handlers
+├── services/           # Business logic services (33 services)
+│   ├── balance-service/
+│   ├── chain-service/
+│   ├── earning-service/
+│   ├── history-service/
+│   ├── keyring-service/
+│   ├── nft-service/
+│   ├── price-service/
+│   ├── request-service/
+│   ├── swap-service/
+│   ├── transaction-service/
+│   ├── wallet-connect-service/
+│   └── ... (and many more)
+├── storage/            # Storage utilities
+├── stores/             # Redux stores and slices
+├── strategy/           # Strategy patterns for multi-chain operations
+├── types/              # TypeScript type definitions
+└── utils/              # Utility functions
+```
+
+## Major Services
+
+### Balance Service
+Tracks account balances across all supported chains and handles multi-asset balance queries.
+
+### Chain Service
+Manages chain connections, API instances, and network status. Handles Substrate, EVM, and other chain types.
+
+### Earning Service
+Implements staking, nomination pools, liquid staking, and other earning mechanisms across different chains.
+
+### History Service
+Tracks transaction history and provides historical data for user operations.
+
+### Keyring Service
+Manages account creation, derivation, import/export, and keyring operations.
+
+### Transaction Service
+Handles transaction creation, signing, validation, and submission across different chain types.
+
+### WalletConnect Service
+Manages WalletConnect v2 sessions, request handling, and dApp connections.
+
+### Price Service
+Fetches and caches token prices from various sources like CoinGecko.
+
+### NFT Service
+Tracks NFT ownership and metadata across supported chains.
+
+## Dependencies
+
+Key dependencies include:
+
+- **Polkadot.js Stack**: `@polkadot/api`, `@polkadot/util`, `@polkadot/util-crypto`
+- **Ethereum**: `ethers`, `web3`, `@ethereumjs/tx`
+- **State Management**: `@reduxjs/toolkit`, `redux`
+- **Storage**: `dexie` (IndexedDB wrapper)
+- **Blockchain SDKs**: `@ton/ton`, `@emurgo/cardano-serialization-lib-nodejs`, `bitcoinjs-lib`
+- **WalletConnect**: `@walletconnect/sign-client`
+- **Other Extensions**: `@subwallet/extension-chains`, `@subwallet/extension-inject`, `@subwallet/extension-dapp`
+
+## Integration in Architecture
+
+`extension-base` is consumed by:
+
+- **extension-koni-ui**: Uses services and types for UI state management
+- **Background scripts**: Instantiates services and handles message passing
+- **Content scripts**: Uses types and utilities for dApp communication
+
+The package follows a service-oriented architecture where each service is responsible for a specific domain (balances, chains, staking, etc.) and communicates through a centralized state management system.
+
+## Usage Example
+
+```typescript
+import { packageInfo } from '@subwallet/extension-base';
+
+// Internal usage within extension packages
+import { ChainService } from '@subwallet/extension-base/services/chain-service';
+import { BalanceService } from '@subwallet/extension-base/services/balance-service';
+```
+
+## Related Packages
+
+- [extension-chains](/developers/packages/extension-chains) - Chain metadata and definitions
+- [extension-inject](/developers/packages/extension-inject) - Injection types and interfaces
+- [extension-koni-ui](/developers/packages/extension-koni-ui) - UI components and views
+- [extension-dapp](/developers/packages/extension-dapp) - dApp integration utilities

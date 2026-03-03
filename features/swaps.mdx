@@ -1,0 +1,341 @@
+---
+title: Token Swaps
+description: Exchange tokens instantly across multiple chains and swap providers
+---
+
+SubWallet Extension's built-in swap feature lets you exchange tokens without leaving your wallet. Access multiple swap providers, compare rates, and execute trades across different blockchain networks.
+
+## How Swaps Work
+
+Swapping in SubWallet is straightforward and secure.
+
+<Steps>
+  <Step title="Select tokens">
+    Choose the token you want to swap from and the token you want to receive.
+  </Step>
+  <Step title="Enter amount">
+    Input how much you want to swap. SubWallet shows the estimated amount you'll receive.
+  </Step>
+  <Step title="Review quotes">
+    Compare quotes from multiple swap providers. SubWallet automatically selects the best rate.
+  </Step>
+  <Step title="Confirm and swap">
+    Review the transaction details including fees and slippage, then confirm the swap.
+  </Step>
+</Steps>
+
+## Swap Providers
+
+SubWallet aggregates quotes from multiple swap providers to get you the best rates.
+
+### Supported Providers
+
+<CardGroup cols={2}>
+  <Card title="Chainflip" icon="shuffle">
+    Cross-chain swaps without bridges. Swap between different blockchains (e.g., BTC to ETH) natively.
+  </Card>
+  <Card title="HydraDX" icon="water">
+    Substrate-native DEX on Polkadot. Efficient swaps with deep liquidity for DOT ecosystem tokens.
+  </Card>
+  <Card title="Asset Hub" icon="cube">
+    Native swaps on Polkadot and Kusama Asset Hubs. Low fees and direct on-chain execution.
+  </Card>
+  <Card title="Uniswap" icon="ethereum">
+    Leading Ethereum DEX. Access deep liquidity for ERC-20 tokens across multiple EVM chains.
+  </Card>
+  <Card title="Kyber" icon="arrows-rotate">
+    Multi-chain DEX aggregator. Finds optimal swap routes across multiple liquidity sources.
+  </Card>
+  <Card title="SimpleSwap" icon="right-left">
+    Cross-chain exchange service. Swap between different blockchain ecosystems easily.
+  </Card>
+</CardGroup>
+
+<Note>
+SubWallet automatically queries multiple providers and selects the one offering the best rate for your trade. You can also manually choose a preferred provider.
+</Note>
+
+## Quote Comparison
+
+SubWallet shows you multiple quotes so you can make informed decisions.
+
+### What You See
+
+For each quote:
+
+- **Provider Name**: Which service is offering the quote
+- **Exchange Rate**: Price per token
+- **Amount Received**: Estimated tokens you'll get after the swap
+- **Fees**: Network fees and provider fees
+- **Route**: Trading path taken (for complex swaps)
+
+### Optimal Quote Selection
+
+By default, SubWallet selects the quote that gives you the most tokens after all fees. Quotes are sorted by:
+
+1. **Best Rate**: Highest amount received
+2. **Trusted Providers**: Priority for established providers like Chainflip and Uniswap when rates are equal
+3. **Available Liquidity**: Ensures the swap can actually be executed
+
+<Tip>
+While SubWallet selects the optimal quote automatically, you can manually choose a different provider if you prefer - for example, to use a specific protocol you trust.
+</Tip>
+
+## Swap Types
+
+### Same-Chain Swaps
+
+Exchange tokens on the same blockchain:
+
+- **EVM Swaps**: ETH to USDC, DOT to USDT on Moonbeam, etc.
+- **Substrate Swaps**: DOT to USDT on Asset Hub, HDX to DOT on HydraDX
+- **Fast Execution**: Usually complete in one transaction
+- **Lower Fees**: No cross-chain complexity
+
+### Cross-Chain Swaps
+
+Swap tokens across different blockchains:
+
+- **Native Cross-Chain**: BTC to ETH, DOT to USDC (via Chainflip)
+- **Bridged Swaps**: Tokens move across chains then swap
+- **Multi-Step Process**: May require multiple transactions
+- **Longer Duration**: Can take 1-60 minutes depending on the route
+
+<Warning>
+Cross-chain swaps take longer than same-chain swaps and may involve additional risks. Always verify the destination address and be patient during processing.
+</Warning>
+
+## Fees and Costs
+
+### Network Fees
+
+Gas fees for executing the swap transaction:
+
+- **EVM Chains**: Gas paid in ETH, MATIC, BNB, etc.
+- **Substrate Chains**: Transaction fees in DOT, KSM, or native token
+- **Variable Costs**: Fees change based on network congestion
+
+Network fees are shown before you confirm the swap.
+
+### Provider Fees
+
+Swap service fees (typically 0.1% - 0.3%):
+
+- **Protocol Fees**: Fee taken by the swap provider
+- **Liquidity Provider Fees**: Rewards for liquidity providers
+- **Included in Quote**: The amount you receive is already net of these fees
+
+### Slippage
+
+Price movement between quote and execution:
+
+- **Default Slippage**: Usually 0.5% - 1%
+- **Slippage Tolerance**: Maximum price difference you'll accept
+- **Adjustable**: Increase for faster execution or volatile markets
+
+<Tip>
+For large swaps or volatile tokens, consider increasing slippage tolerance to avoid failed transactions. For stablecoins, 0.1% slippage is often sufficient.
+</Tip>
+
+## Swap Process Details
+
+### Multi-Step Swaps
+
+Some swaps require multiple steps:
+
+<Steps>
+  <Step title="Token Approval">
+    First transaction approves the swap contract to spend your tokens (EVM chains only).
+  </Step>
+  <Step title="Cross-Chain Transfer">
+    If swapping across chains, tokens are bridged to the destination network.
+  </Step>
+  <Step title="Execute Swap">
+    The actual token exchange happens on the swap provider's platform.
+  </Step>
+  <Step title="Receive Tokens">
+    New tokens arrive in your wallet on the destination chain.
+  </Step>
+</Steps>
+
+### Swap Status Tracking
+
+Monitor your swap progress:
+
+- **Pending**: Transaction submitted to the network
+- **Processing**: Swap provider is executing the trade
+- **Bridging**: For cross-chain swaps, tokens are moving between networks
+- **Completed**: Tokens received in your wallet
+- **Failed**: Swap unsuccessful (tokens returned or refunded)
+
+## Token Approvals
+
+For ERC-20 and similar tokens, you need to approve spending before swapping.
+
+### How Approvals Work
+
+<AccordionGroup>
+  <Accordion title="First-Time Approval">
+    Before your first swap of a token, approve the swap contract to access your tokens. This is a separate transaction with its own gas fee.
+  </Accordion>
+  <Accordion title="Approval Amount">
+    You can approve unlimited spending or a specific amount. Unlimited saves gas on future swaps but has security implications.
+  </Accordion>
+  <Accordion title="One-Time Cost">
+    After approving, future swaps of the same token don't require approval again (unless you revoked it or need to increase the amount).
+  </Accordion>
+</AccordionGroup>
+
+<Warning>
+Unlimited token approvals can be risky. If a smart contract is exploited, attackers could drain approved tokens. Consider approving specific amounts for large holdings.
+</Warning>
+
+## Supported Token Pairs
+
+### Common Pairs
+
+Popular trading pairs with deep liquidity:
+
+- **Stablecoins**: USDT, USDC, DAI
+- **Major Tokens**: ETH, BTC, DOT, KSM
+- **Wrapped Assets**: WBTC, WETH, wDOT
+- **DeFi Tokens**: AAVE, UNI, LIDO, COMP
+
+### Finding Available Pairs
+
+SubWallet shows which tokens can be swapped:
+
+1. Select your source token
+2. Browse available destination tokens
+3. Only tokens with active swap routes are shown
+4. Search by token name or symbol
+
+<Note>
+If a swap pair isn't available, it means no supported provider offers a route between those tokens. Try swapping to an intermediary token first.
+</Note>
+
+## Advanced Swap Features
+
+### Routing Optimization
+
+For complex swaps, providers use multi-hop routes:
+
+- **Direct Route**: Token A → Token B
+- **Single Hop**: Token A → Intermediary → Token B
+- **Multi-Hop**: Token A → Token B → Token C → Token D
+
+SubWallet's providers automatically find the most efficient route.
+
+### Slippage Control
+
+Adjust how much price movement you'll tolerate:
+
+- **Low Slippage (0.1% - 0.5%)**: For stablecoins and low volatility pairs
+- **Medium Slippage (0.5% - 1%)**: Default for most swaps
+- **High Slippage (1% - 5%)**: For volatile tokens or low liquidity pairs
+
+<Warning>
+Very high slippage settings can result in receiving significantly fewer tokens than expected. Only increase slippage when necessary.
+</Warning>
+
+### Deadline Settings
+
+Set how long quotes remain valid:
+
+- Prevents execution at stale prices
+- Protects against significant price movements
+- Default is usually 20 minutes
+
+## Swap Security
+
+### Verifying Swaps
+
+Before confirming:
+
+<Steps>
+  <Step title="Check token addresses">
+    Verify you're swapping the correct tokens, not fake versions with similar names.
+  </Step>
+  <Step title="Review amounts">
+    Confirm the amount you're sending and the estimated amount you'll receive.
+  </Step>
+  <Step title="Verify destination">
+    Ensure tokens are going to the correct address and network.
+  </Step>
+  <Step title="Check fees">
+    Review all fees to ensure they're reasonable for the swap size.
+  </Step>
+</Steps>
+
+### Common Scams
+
+<Warning>
+Beware of:
+- Fake tokens with names similar to popular tokens
+- Suspiciously good exchange rates (likely fake tokens)
+- Requests to approve unusual contracts
+- Swap providers not listed in SubWallet's supported providers
+</Warning>
+
+## Transaction History
+
+View all your swap history:
+
+- **Swap Pairs**: Tokens exchanged
+- **Amounts**: Input and output quantities
+- **Rates**: Exchange rate at execution time
+- **Provider**: Which service executed the swap
+- **Status**: Success or failure
+- **Timestamps**: When swaps occurred
+- **Block Explorer Links**: Full transaction details
+
+## Swap Limits
+
+### Minimum Amounts
+
+Each provider has minimum swap amounts:
+
+- Usually $10 - $50 equivalent
+- Prevents economically unviable swaps where fees exceed value
+- SubWallet shows minimums when you select tokens
+
+### Maximum Amounts
+
+Large swaps may be limited by:
+
+- **Liquidity**: Available tokens in liquidity pools
+- **Slippage**: Large swaps move prices significantly
+- **Provider Limits**: Maximum transaction size restrictions
+
+<Tip>
+For very large swaps, consider breaking them into smaller transactions to reduce price impact and slippage.
+</Tip>
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Start with Small Amounts">
+    Test new swap routes or providers with small amounts first to ensure everything works as expected.
+  </Accordion>
+  <Accordion title="Check Multiple Quotes">
+    While SubWallet selects the best rate, review all available quotes to understand the market and verify the optimal choice.
+  </Accordion>
+  <Accordion title="Understand Fees">
+    Factor in all fees (network + provider) when evaluating if a swap makes sense, especially for smaller amounts.
+  </Accordion>
+  <Accordion title="Set Reasonable Slippage">
+    Don't set slippage too high - you could receive much less than expected. Only increase it if transactions fail due to price movement.
+  </Accordion>
+  <Accordion title="Verify Token Addresses">
+    Always confirm you're swapping real tokens, not fakes. Check contract addresses on block explorers.
+  </Accordion>
+  <Accordion title="Be Patient with Cross-Chain">
+    Cross-chain swaps can take time. Don't panic if tokens don't arrive immediately - check the transaction status.
+  </Accordion>
+  <Accordion title="Monitor Approvals">
+    Regularly review which contracts can spend your tokens and revoke approvals you no longer need.
+  </Accordion>
+  <Accordion title="Consider Timing">
+    Swap during low network congestion to save on gas fees. For Ethereum, early mornings or weekends are often cheaper.
+  </Accordion>
+</AccordionGroup>

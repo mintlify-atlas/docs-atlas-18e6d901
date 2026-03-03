@@ -1,122 +1,172 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "SubWallet Extension",
+  "theme": "palm",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#004BFF",
+    "light": "#7B3FE4",
+    "dark": "#2A1A4D"
   },
-  "favicon": "/favicon.svg",
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/Koniverse/SubWallet-Extension"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/Koniverse/SubWallet-Extension"
+    }
+  },
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Documentation",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Get Started",
             "pages": [
-              "index",
-              "quickstart",
-              "development"
+              "introduction",
+              "installation",
+              "quickstart"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Core Features",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "features/account-management",
+              "features/multi-chain-support",
+              "features/token-management",
+              "features/nft-support",
+              "features/staking",
+              "features/swaps",
+              "features/cross-chain-transfers"
             ]
           },
           {
-            "group": "Writing content",
+            "group": "User Guides",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
+              "guides/creating-account",
+              "guides/importing-account",
+              "guides/sending-tokens",
+              "guides/receiving-tokens",
+              "guides/managing-nfts",
+              "guides/staking-tokens",
+              "guides/swapping-tokens"
             ]
           },
           {
-            "group": "AI tools",
+            "group": "Advanced Features",
             "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "advanced/multisig-accounts",
+              "advanced/proxy-accounts",
+              "advanced/walletconnect",
+              "advanced/metamask-compatibility",
+              "advanced/ledger-integration"
+            ]
+          },
+          {
+            "group": "Security",
+            "pages": [
+              "security/backup-restore",
+              "security/phishing-detection",
+              "security/permissions"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "Developer Guide",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Getting Started",
             "pages": [
-              "api-reference/introduction"
+              "developers/overview",
+              "developers/architecture",
+              "developers/setup"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Architecture",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "developers/architecture/background-services",
+              "developers/architecture/extension-ui",
+              "developers/architecture/content-scripts",
+              "developers/architecture/message-passing",
+              "developers/architecture/state-management"
+            ]
+          },
+          {
+            "group": "Package Structure",
+            "pages": [
+              "developers/packages/extension-base",
+              "developers/packages/extension-koni-ui",
+              "developers/packages/extension-chains",
+              "developers/packages/extension-inject",
+              "developers/packages/extension-dapp"
+            ]
+          },
+          {
+            "group": "Development",
+            "pages": [
+              "developers/development/building",
+              "developers/development/testing",
+              "developers/development/debugging",
+              "developers/development/adding-features"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "developers/concepts/stores",
+              "developers/concepts/services",
+              "developers/concepts/apis",
+              "developers/concepts/cron-jobs"
+            ]
+          },
+          {
+            "group": "Contributing",
+            "pages": [
+              "developers/contributing/guidelines",
+              "developers/contributing/code-style",
+              "developers/contributing/pull-requests"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "DApp Integration",
+            "pages": [
+              "api/dapp/overview",
+              "api/dapp/web3-enable",
+              "api/dapp/accounts",
+              "api/dapp/signing",
+              "api/dapp/events"
+            ]
+          },
+          {
+            "group": "Extension API",
+            "pages": [
+              "api/extension/messaging",
+              "api/extension/state",
+              "api/extension/storage"
+            ]
+          },
+          {
+            "group": "Services",
+            "pages": [
+              "api/services/balance-service",
+              "api/services/nft-service",
+              "api/services/earning-service",
+              "api/services/transaction-service",
+              "api/services/chain-service"
             ]
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
-  },
-  "contextual": {
-    "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
-  },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
+    ]
   }
 }

@@ -1,0 +1,380 @@
+---
+title: "extension-inject"
+description: "Injection interface for dApp integration"
+---
+
+## Overview
+
+The `@subwallet/extension-inject` package defines the interface between SubWallet Extension and web pages (dApps). It provides type definitions and injection functions that enable dApps to interact with the wallet through the `window.injectedWeb3` object and EVM providers.
+
+## Purpose and Responsibilities
+
+- **Window Injection**: Injects wallet providers into web pages
+- **Type Definitions**: Defines interfaces for dApp-wallet communication
+- **Multi-Chain Support**: Provides injection for Substrate, EVM, Cardano, and Bitcoin
+- **EIP-6963**: Implements EIP-6963 provider discovery for Ethereum
+- **Provider Interface**: Defines standard interfaces for accounts, signing, and metadata
+
+## Key Exports
+
+From `src/bundle.ts`:
+
+```typescript
+export { packageInfo } from './packageInfo';
+
+// Injection functions
+export function injectExtension(
+  enable: (origin: string, opt?: AuthRequestOption) => Promise<Injected>,
+  { name, version }: InjectOptions
+): void;
+
+export function injectEvmExtension(evmProvider: EvmProvider): void;
+
+export function injectCardanoExtension(cardanoProvider: CardanoProvider): void;
+
+export function injectBitcoinExtension(bitcoinProvider: BitcoinProvider): void;
+
+export function inject6963EIP(provider: EvmProvider): void;
+
+export const eip6963ProviderInfo: EIP6963ProviderInfo;
+```
+
+### Core Functions
+
+#### injectExtension
+
+Injects the Substrate wallet provider into `window.injectedWeb3`:
+
+```typescript
+injectExtension(
+  (origin: string, opt?: AuthRequestOption) => {
+    // Return Injected interface with accounts, signer, etc.
+    return Promise.resolve(injected);
+  },
+  { name: 'subwallet-js', version: '1.0.0' }
+);
+```
+
+**Creates**: `window.injectedWeb3['subwallet-js']` with `enable()` and `version`
+
+#### injectEvmExtension
+
+Injects EVM provider into `window.ethereum` and `window.SubWallet`:
+
+```typescript
+injectEvmExtension(evmProvider);
+
+// Creates:
+// - window.SubWallet
+// - window.ethereum (if not already set)
+// Dispatches events:
+// - 'subwallet#initialized'
+// - 'ethereum#initialized'
+// - EIP-6963 announcements
+```
+
+#### injectCardanoExtension
+
+Injects Cardano provider into `window.cardano.subwallet`:
+
+```typescript
+injectCardanoExtension(cardanoProvider);
+
+// Creates: window.cardano.subwallet
+```
+
+#### injectBitcoinExtension
+
+Injects Bitcoin provider into `window.SubWalletBitcoin`:
+
+```typescript
+injectBitcoinExtension(bitcoinProvider);
+
+// Creates: window.SubWalletBitcoin
+```
+
+#### inject6963EIP
+
+Implements EIP-6963 provider discovery for Ethereum:
+
+```typescript
+inject6963EIP(evmProvider);
+
+// Listens for 'eip6963:requestProvider' events
+// Announces provider with 'eip6963:announceProvider' events
+```
+
+## Type Definitions
+
+From `src/types.ts`:
+
+### Core Interfaces
+
+```typescript
+// Account types
+export interface InjectedAccount {
+  address: string;
+  genesisHash?: string | null;
+  name?: string;
+  type?: KeypairType;
+}
+
+export interface InjectedAccountWithMeta {
+  address: string;
+  meta: {
+    genesisHash?: string | null;
+    name?: string;
+    source: string;
+  };
+  type?: KeypairType;
+}
+
+// Account access
+export interface InjectedAccounts {
+  get: (anyType?: boolean) => Promise<InjectedAccount[]>;
+  subscribe: (cb: (accounts: InjectedAccount[]) => void | Promise<void>) => Unsubcall;
+}
+
+// Authorization options
+export type AuthAccountSubstrateType = 'substrate' | 'both' | 'evm';
+
+export interface AuthRequestOption {
+  accountAuthType: AuthAccountSubstrateType;
+}
+
+// Main injected interface
+export interface Injected {
+  accounts: InjectedAccounts;
+  metadata?: InjectedMetadata;
+  provider?: InjectedProvider;
+  signer: InjectedSigner;
+}
+
+// Window provider
+export interface InjectedWindowProvider {
+  enable: (origin: string, opt?: AuthRequestOption) => Promise<Injected>;
+  version: string;
+}
+
+// Augmented window
+export interface InjectedWindow extends This {
+  injectedWeb3: Record<string, InjectedWindowProvider>;
+  ethereum: EvmProvider;
+  SubWallet: EvmProvider;
+  cardano: Record<string, CardanoProvider>;
+  SubWalletBitcoin: BitcoinProvider;
+}
+```
+
+### EVM Provider
+
+```typescript
+export interface EvmProvider {
+  provider?: EvmProvider;
+  isMetaMask: boolean;
+  isSubWallet: boolean;
+  version: string;
+  isConnected(): boolean;
+  // ... EIP-1193 methods
+}
+```
+
+### Cardano Provider
+
+```typescript
+export interface CardanoProvider {
+  apiVersion: string;
+  name: string;
+  icon: string;
+  enable: () => Promise<unknown>;
+  supportedExtensions: CardanoExtensionCIP[];
+  isEnable: () => Promise<boolean>;
+}
+```
+
+### Bitcoin Provider
+
+```typescript
+export interface BitcoinProvider {
+  isSubWallet: boolean;
+  requestAccounts: () => Promise<any[]>;
+  getAccounts: () => Promise<any[]>;
+  signPsbt(params: any): Promise<any>;
+  signMessage(params: any): Promise<any>;
+  sendTransfer(params: any): Promise<any>;
+  request: <T>(method: string, params?: any) => Promise<T>;
+  getProductInfo: () => { name: string; version: string };
+}
+```
+
+### Metadata Types
+
+```typescript
+export interface MetadataDefBase {
+  chain: string;
+  genesisHash: string;
+  icon: string;
+  ss58Format: number;
+  chainType?: 'substrate' | 'ethereum';
+}
+
+export interface MetadataDef extends MetadataDefBase {
+  color?: string;
+  specVersion: number;
+  tokenDecimals: number;
+  tokenSymbol: string;
+  types: Record<string, Record<string, string> | string>;
+  metaCalls?: string;
+  userExtensions?: ExtDef;
+}
+
+export interface InjectedMetadata {
+  get: () => Promise<InjectedMetadataKnown[]>;
+  provide: (definition: MetadataDef) => Promise<boolean>;
+}
+```
+
+### Provider Types
+
+```typescript
+export interface ProviderMeta {
+  network: string;
+  node: 'full' | 'light';
+  source: string;
+  transport: string;
+}
+
+export type ProviderList = Record<string, ProviderMeta>;
+
+export interface InjectedProvider extends ProviderInterface {
+  listProviders: () => Promise<ProviderList>;
+  startProvider: (key: string) => Promise<ProviderMeta>;
+}
+```
+
+### EIP-6963 Types
+
+```typescript
+export interface EIP6963ProviderInfo {
+  uuid: string;
+  name: string;
+  icon: string;
+  rdns: string;
+}
+
+export interface EIP6963ProviderDetail {
+  info: EIP6963ProviderInfo;
+  provider: EvmProvider;
+}
+```
+
+## Directory Structure
+
+```
+src/
+├── bundle.ts           # Injection functions and exports
+├── types.ts            # TypeScript type definitions
+├── chrome.ts           # Chrome-specific utilities
+├── crossenv.ts         # Cross-environment utilities
+├── index.ts            # Package entry point
+└── packageInfo.ts      # Package metadata
+```
+
+## Dependencies
+
+- **@polkadot/rpc-provider**: RPC provider interfaces
+- **@polkadot/types**: Type system
+- **@polkadot/util**: Utility functions
+- **@polkadot/util-crypto**: Cryptographic utilities
+- **@polkadot/x-global**: Global environment utilities
+- **@subwallet/keyring**: Keyring types
+- **web3-core**: Web3 core types
+
+Dev dependencies:
+- **@types/chrome**: Chrome extension API types
+- **@types/firefox-webext-browser**: Firefox WebExtensions API types
+
+## Integration in Architecture
+
+The `extension-inject` package:
+
+1. **Content Script**: Imported and executed in content scripts
+2. **Window Object**: Injects providers into the page's window object
+3. **dApp Communication**: Enables dApps to detect and interact with SubWallet
+4. **Multi-Chain**: Supports multiple blockchain ecosystems simultaneously
+5. **Standards Compliance**: Implements EIP-6963 and other wallet standards
+
+## EIP-6963 Provider Discovery
+
+SubWallet implements EIP-6963 for improved wallet discovery:
+
+```typescript
+export const eip6963ProviderInfo: EIP6963ProviderInfo = {
+  uuid: '10c67337-9211-48d9-aab0-cecdc4224acc',
+  name: 'SubWallet',
+  icon: 'data:image/svg+xml;base64,...',
+  rdns: 'app.subwallet'
+};
+```
+
+**Benefits**:
+- Multiple wallets can coexist
+- dApps can discover all available wallets
+- No race conditions for `window.ethereum`
+- Better user experience for wallet selection
+
+## Usage Examples
+
+### Substrate Injection (Content Script)
+
+```typescript
+import { injectExtension } from '@subwallet/extension-inject';
+
+injectExtension(
+  (origin: string) => {
+    // Request authorization from background script
+    return requestAccess(origin);
+  },
+  {
+    name: 'subwallet-js',
+    version: '1.0.0'
+  }
+);
+```
+
+### EVM Injection
+
+```typescript
+import { injectEvmExtension } from '@subwallet/extension-inject';
+
+const evmProvider = createEvmProvider();
+injectEvmExtension(evmProvider);
+```
+
+### dApp Usage (External)
+
+```typescript
+// Substrate
+const injected = window.injectedWeb3['subwallet-js'];
+const extension = await injected.enable('my-dapp');
+const accounts = await extension.accounts.get();
+
+// EVM
+const accounts = await window.ethereum.request({
+  method: 'eth_requestAccounts'
+});
+
+// EIP-6963
+window.addEventListener('eip6963:announceProvider', (event) => {
+  const { info, provider } = event.detail;
+  if (info.rdns === 'app.subwallet') {
+    // Use SubWallet provider
+  }
+});
+```
+
+## Related Packages
+
+- [extension-base](/developers/packages/extension-base) - Implements the injected interfaces
+- [extension-dapp](/developers/packages/extension-dapp) - Helper utilities for dApp developers
+- [extension-chains](/developers/packages/extension-chains) - Uses MetadataDef types

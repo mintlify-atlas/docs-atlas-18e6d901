@@ -1,0 +1,203 @@
+---
+title: 'Phishing Detection'
+description: 'How SubWallet protects you from phishing attacks and malicious websites'
+icon: 'shield-exclamation'
+---
+
+## Overview
+
+Phishing attacks are one of the most common threats in the cryptocurrency space. SubWallet includes built-in phishing detection to protect you from malicious websites that attempt to steal your funds or private information.
+
+## How Phishing Detection Works
+
+SubWallet uses multiple layers of protection to detect and prevent phishing attacks:
+
+### 1. Domain Blocklist
+
+SubWallet maintains a database of known phishing domains and malicious websites. When you visit a website:
+
+- The URL is checked against the Polkadot phishing list
+- If a match is found, you'll be redirected to a warning page
+- You can choose to proceed at your own risk or return to safety
+
+<Info>
+  The phishing database is regularly updated with newly discovered malicious sites reported by the community.
+</Info>
+
+### 2. Advanced Detection (Chain Patrol)
+
+SubWallet integrates with Chain Patrol for enhanced phishing detection:
+
+- Real-time analysis of website authenticity
+- Detection of lookalike domains and typosquatting
+- Protection against newly created phishing sites
+
+<Warning>
+  Even with phishing detection enabled, always verify website URLs before connecting your wallet or signing transactions.
+</Warning>
+
+## Phishing Warning Page
+
+When SubWallet detects a potential phishing site, you'll see a warning page with:
+
+- **Website URL**: The potentially malicious URL you attempted to visit
+- **Warning Message**: Explanation of why the site was flagged
+- **Options**:
+  - **Go Back**: Return to the previous page (recommended)
+  - **Proceed Anyway**: Continue to the site at your own risk
+
+### Bypassing Warnings (Advanced Users)
+
+If you believe a website was incorrectly flagged:
+
+1. Click **I understand the risk and want to proceed**
+2. The website will be added to your personal allowlist
+3. You won't see warnings for this site again
+
+<Warning>
+  Only bypass phishing warnings if you are absolutely certain the website is legitimate. Malicious sites can steal your funds instantly.
+</Warning>
+
+## Managing Trusted Sites
+
+You can manage websites you've allowed through the phishing detection:
+
+1. Go to **Settings** > **Security** > **Manage Website Access**
+2. View all connected and trusted websites
+3. Remove websites from your allowlist if needed
+
+## Common Phishing Tactics
+
+Be aware of these common phishing techniques:
+
+### Fake Websites
+
+- **Lookalike Domains**: Sites that mimic legitimate platforms (e.g., `subwa11et.app` instead of `subwallet.app`)
+- **Typosquatting**: Domains with common typos (e.g., `subwalet.app`)
+- **Subdomain Tricks**: Using legitimate names in subdomains (e.g., `subwallet.malicious-site.com`)
+
+### Social Engineering
+
+- **Urgent Messages**: Claiming your account will be locked or funds frozen
+- **Too Good to Be True**: Promising guaranteed returns or free tokens
+- **Impersonation**: Pretending to be support staff or team members
+- **Fake Airdrops**: Requiring seed phrases or private keys to claim tokens
+
+### Technical Attacks
+
+- **Malicious Transactions**: Disguising theft as legitimate transactions
+- **Contract Exploits**: Requesting approval for malicious smart contracts
+- **Clipboard Hijacking**: Replacing copied addresses with attacker addresses
+
+## How to Stay Safe
+
+<Tip>
+  Follow these best practices to protect yourself from phishing:
+</Tip>
+
+### Verify Website URLs
+
+- Always check the URL before connecting your wallet
+- Bookmark legitimate websites and use bookmarks to access them
+- Look for HTTPS and SSL certificates
+- Beware of slight misspellings or extra characters
+
+### Never Share Sensitive Information
+
+- **Never share your seed phrase** - No legitimate service will ask for it
+- **Never share your private key** - This gives complete access to your funds
+- **Never share your password** - SubWallet support will never ask for it
+- **Be suspicious of DMs** - Official support happens in public channels
+
+### Verify Transaction Details
+
+- Always review transaction details before signing
+- Check recipient addresses carefully
+- Verify token amounts and contract interactions
+- Be cautious of unlimited token approvals
+
+### Use Official Channels
+
+- Download SubWallet only from official sources:
+  - Chrome Web Store
+  - Firefox Add-ons
+  - SubWallet.app website
+- Follow official social media accounts
+- Join official Discord and Telegram channels
+
+### Enable Additional Security
+
+- Use hardware wallets for large holdings
+- Create separate accounts for testing/new dApps
+- Enable transaction confirmations
+- Keep your extension updated
+
+## Reporting Phishing Sites
+
+Help protect the community by reporting phishing sites:
+
+### Report to SubWallet
+
+If you encounter a phishing site:
+
+1. Take a screenshot of the malicious site
+2. Copy the full URL
+3. Report via:
+   - SubWallet Discord
+   - SubWallet Telegram
+   - GitHub Issues
+
+### Report to Polkadot
+
+You can also report to the Polkadot phishing list:
+
+- Visit: https://github.com/polkadot-js/phishing
+- Submit an issue with the malicious URL
+- Provide evidence if possible
+
+## What SubWallet Will Never Do
+
+<Warning>
+  SubWallet and its team members will NEVER:
+</Warning>
+
+- Ask for your seed phrase or private key
+- Ask for your password
+- Request remote access to your computer
+- Send you direct messages first on social media
+- Ask you to send funds for any reason
+- Promise guaranteed returns or investment opportunities
+- Request payment for support or troubleshooting
+
+## Red Flags to Watch For
+
+- Misspelled URLs or unusual domain names
+- Websites requesting your seed phrase
+- Unsolicited messages claiming to be from support
+- Pop-ups asking for sensitive information
+- Transactions with unclear or suspicious details
+- Apps requesting excessive permissions
+- Sites lacking HTTPS encryption
+- Pressure to act quickly or urgently
+
+## If You've Been Phished
+
+If you suspect you've fallen victim to a phishing attack:
+
+1. **Immediately**: Create a new wallet with a new seed phrase
+2. **Transfer funds**: Move all assets to your new wallet
+3. **Revoke approvals**: Cancel any token approvals you may have granted
+4. **Report**: Inform SubWallet and the community
+5. **Learn**: Understand what happened to avoid future attacks
+
+<Info>
+  Speed is critical. If you've shared your seed phrase or private key, assume your wallet is compromised and take action immediately.
+</Info>
+
+## Additional Resources
+
+- [SubWallet Security Guide](https://docs.subwallet.app/main/extension-user-guide/security)
+- [Polkadot Phishing List](https://github.com/polkadot-js/phishing)
+- [Chain Patrol](https://chainpatrol.io/)
+
+Stay vigilant and remember: if something seems too good to be true, it probably is.

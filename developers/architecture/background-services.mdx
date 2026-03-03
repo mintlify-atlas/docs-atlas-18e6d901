@@ -1,0 +1,353 @@
+---
+title: Background Services
+description: Understanding SubWallet Extension's background service worker architecture, handlers, and state management
+---
+
+## Overview
+
+The SubWallet Extension background runs as a service worker that handles all core wallet operations including keyring management, blockchain interactions, transaction processing, and state management. It operates independently of the UI and manages communication with both content scripts and the extension popup.
+
+## Entry Point
+
+The background service initializes in `packages/extension-koni/src/background.ts`:
+
+```typescript
+import { SWHandler } from '@subwallet/extension-base/koni/background/handlers';
+import { ActionHandler } from '@subwallet/extension-koni/helper/ActionHandler';
+import keyring from '@subwallet/ui-keyring';
+import { cryptoWaitReady } from '@polkadot/util-crypto';
+
+// Set handler
+const actionHandler = ActionHandler.instance;
+actionHandler.setHandler(SWHandler.instance);
+
+cryptoWaitReady()
+  .then((): void => {
+    const koniState = SWHandler.instance.state;
+
+    // Initialize environment config
+    koniState.initEnvConfig(envConfig);
+
+    // Load all keyring data
+    keyring.loadAll({ 
+      store: new AccountsStore(), 
+      type: 'sr25519', 
+      password_store: new KeyringStore() 
+    });
+
+    keyring.restoreKeyringPassword().finally(() => {
+      koniState.updateKeyringState();
+    });
+    
+    koniState.eventService.emit('crypto.ready', true);
+
+    // Initialize state after first active message
+    actionHandler.waitFirstActiveMessage.then(() => {
+      koniState.init().catch(console.error);
+    });
+  });
+```
+
+Source: `packages/extension-koni/src/background.ts:25-59`
+
+## Core Components
+
+### 1. ActionHandler
+
+The `ActionHandler` is a singleton that manages the lifecycle of port connections and message routing.
+
+**Location**: `packages/extension-koni/src/helper/ActionHandler.ts`
+
+```typescript
+export class ActionHandler {
+  private mainHandler?: SWHandler;
+  private connectionMap: Record<string, string> = {};
+  private isActive = false;
+  private isFullActive = false;
+  private sleepTimeout?: NodeJS.Timeout;
+
+  get isContentConnecting(): boolean {
+    return Object.values(this.connectionMap).some((v) => v === PORT_CONTENT);
+  }
+
+  get isExtensionConnecting(): boolean {
+    return Object.values(this.connectionMap).some((v) => v === PORT_EXTENSION);
+  }
+
+  public handlePort(port: chrome.runtime.Port): void {
+    assert([PORT_CONTENT, PORT_EXTENSION].includes(port.name));
+    const portId = this._getPortId(port);
+
+    port.onMessage.addListener((data) => {
+      this._onPortMessage(port, data, portId).catch(console.error);
+    });
+
+    port.onDisconnect.addListener(() => {
+      this._onPortDisconnect(port, portId);
+    });
+  }
+}
+```
+
+Source: `packages/extension-koni/src/helper/ActionHandler.ts:16-148`
+
+**Key Responsibilities**:
+- Manages port connections from content scripts and UI
+- Tracks active connections and handles sleep/wake cycles
+- Routes messages to the appropriate handler
+- Implements a 60-second timeout before entering sleep mode
+
+### 2. SWHandler
+
+The `SWHandler` orchestrates all background handlers and routes requests.
+
+**Location**: `packages/extension-base/src/koni/background/handlers/index.ts`
+
+```typescript
+export class SWHandler {
+  _state?: KoniState;
+  _extensionHandler?: KoniExtension;
+  _tabsHandler?: KoniTabs;
+  _mobileHandler?: Mobile;
+
+  public get state(): KoniState {
+    if (!this._state) {
+      this._state = new KoniState();
+    }
+    return this._state;
+  }
+
+  public handle<TMessageType extends MessageTypes>(
+    { id, message, request }: TransportRequestMessage<TMessageType>, 
+    port: chrome.runtime.Port
+  ): void {
+    const isMobile = port.name === PORT_MOBILE;
+    const isExtension = port.name === PORT_EXTENSION;
+    
+    const promise = isMobile
+      ? this.mobileHandler.handle(id, message, request, port)
+      : isExtension
+        ? this.extensionHandler.handle(id, message, request, port)
+        : this.tabHandler.handle(id, message, request, from, port);
+
+    promise
+      .then((response): void => {
+        port.postMessage({ id, response, sender: 'BACKGROUND' });
+      })
+      .catch((error: ProviderError): void => {
+        port.postMessage({ 
+          error: error.message, 
+          errorCode: error.code, 
+          id, 
+          sender: 'BACKGROUND' 
+        });
+      });
+  }
+}
+```
+
+Source: `packages/extension-base/src/koni/background/handlers/index.ts:14-88`
+
+### 3. KoniState
+
+The central state manager that coordinates all services.
+
+**Location**: `packages/extension-base/src/koni/background/handlers/State.ts`
+
+```typescript
+export default class KoniState {
+  private injectedProviders = new Map<chrome.runtime.Port, ProviderInterface>();
+  private readonly providers: Providers;
+  private externalRequest: Record<string, ExternalRequestPromise> = {};
+  
+  // Services
+  public eventService: EventService;
+  public chainService: ChainService;
+  public balanceService: BalanceService;
+  public priceService: PriceService;
+  public transactionService: TransactionService;
+  public earningService: EarningService;
+  public swapService: SwapService;
+  public walletConnectService: WalletConnectService;
+  public requestService: RequestService;
+  public keyringService: KeyringService;
+  // ... and more
+
+  public async init(): Promise<void> {
+    // Initialize all services
+    await this.eventService.init();
+    await this.chainService.init();
+    await this.balanceService.init();
+    // ...
+  }
+
+  public async wakeup(isFullActive: boolean): Promise<void> {
+    // Wake up services from sleep mode
+  }
+
+  public async sleep(): Promise<void> {
+    // Put services into sleep mode
+  }
+}
+```
+
+Source: `packages/extension-base/src/koni/background/handlers/State.ts:96-100`
+
+## Background Services
+
+KoniState manages multiple specialized services:
+
+### Core Services
+
+- **EventService**: Event bus for inter-service communication
+- **ChainService**: Manages blockchain connections and metadata
+- **BalanceService**: Tracks account balances across chains
+- **PriceService**: Fetches and caches token prices
+- **KeyringService**: Manages accounts and keys
+- **TransactionService**: Handles transaction creation and submission
+
+### Feature Services
+
+- **EarningService**: Manages staking and yield positions
+- **SwapService**: Handles token swaps across protocols
+- **NftService**: NFT collection and item management
+- **WalletConnectService**: WalletConnect protocol integration
+- **RequestService**: Manages dApp authorization and signing requests
+- **HistoryService**: Transaction history tracking
+- **MultisigService**: Multisig account operations
+
+## Port Communication
+
+The background service communicates through Chrome runtime ports:
+
+### Port Types
+
+```typescript
+const PORT_CONTENT = 'koni-content';    // Content script connections
+const PORT_EXTENSION = 'koni-extension'; // UI popup connections
+const PORT_MOBILE = 'mobile';            // Mobile app connections
+```
+
+Source: `packages/extension-base/src/defaults.ts:17-19`
+
+### Connection Lifecycle
+
+1. **Connection**: Content script or UI connects via `chrome.runtime.connect()`
+2. **Registration**: ActionHandler registers the port and assigns an ID
+3. **Activation**: First message triggers service wakeup
+4. **Message Handling**: Messages routed through SWHandler to appropriate handler
+5. **Disconnection**: Port disconnect triggers cleanup and sleep timeout
+6. **Sleep**: After 60 seconds of no connections, services enter sleep mode
+
+## Message Flow
+
+```
+UI/Content Script
+       |
+       v
+   Port.postMessage
+       |
+       v
+  ActionHandler
+       |
+       v
+   SWHandler.handle
+       |
+       v
+  +-----------------+
+  | Route by port   |
+  +-----------------+
+       |
+       +---> ExtensionHandler (UI messages)
+       |
+       +---> TabsHandler (Content script messages)
+       |
+       +---> MobileHandler (Mobile messages)
+       |
+       v
+   KoniState (services)
+       |
+       v
+  Port.postMessage (response)
+```
+
+## Service Lifecycle
+
+### Initialization
+
+```typescript
+// Wait for crypto libraries
+cryptoWaitReady()
+  .then(() => {
+    // 1. Initialize keyring
+    keyring.loadAll({ ... });
+    
+    // 2. Wait for first active message
+    actionHandler.waitFirstActiveMessage.then(() => {
+      // 3. Initialize all services
+      koniState.init();
+    });
+  });
+```
+
+### Sleep/Wake Cycle
+
+**Wake Conditions**:
+- First port connection
+- Message requiring active services
+- Full wake for `pri()` or `mobile()` messages
+
+**Sleep Conditions**:
+- All ports disconnected
+- 60-second timeout elapsed
+- Services pause background operations
+
+## Global Variables (Development)
+
+In non-production mode, debug helpers are exposed:
+
+```typescript
+if (!isProductionMode) {
+  globalThis.KoniState = SWHandler.instance.state;
+  globalThis.KoniHandler = SWHandler.instance;
+}
+```
+
+Source: `packages/extension-koni/src/background.ts:74-77`
+
+Access in console: `KoniState`, `KoniHandler`
+
+## Best Practices
+
+1. **Service Initialization**: Always check if services are initialized before use
+2. **Error Handling**: Wrap service calls in try-catch blocks
+3. **Memory Management**: Services should clean up subscriptions on sleep
+4. **Port Management**: Always handle port disconnect events
+5. **State Synchronization**: Use event service for cross-service communication
+
+## Common Patterns
+
+### Adding a New Service
+
+1. Create service class extending base service
+2. Add service instance to KoniState
+3. Initialize service in `KoniState.init()`
+4. Implement `wakeup()` and `sleep()` methods
+5. Register message handlers in appropriate handler class
+
+### Service Communication
+
+```typescript
+// Use event service for cross-service communication
+this.eventService.emit('balance.updated', balanceData);
+
+this.eventService.on('balance.updated', (data) => {
+  // Handle balance update
+});
+```
+
+## Related Documentation
+
+- [Message Passing](./message-passing.mdx) - Inter-component communication
+- [State Management](./state-management.mdx) - State storage and persistence
+- [Extension UI](./extension-ui.mdx) - UI component architecture

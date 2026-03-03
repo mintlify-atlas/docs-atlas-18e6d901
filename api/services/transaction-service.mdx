@@ -1,0 +1,457 @@
+---
+title: Transaction Service
+description: Service for handling, validating, and submitting transactions across all blockchain types
+---
+
+## Overview
+
+The `TransactionService` is the central service for managing all transaction-related operations in SubWallet Extension. It handles transaction validation, signing, submission, and monitoring across Substrate, EVM, Ton, Cardano, and Bitcoin networks.
+
+## Key Features
+
+- Multi-chain transaction support (Substrate, EVM, Ton, Cardano, Bitcoin)
+- Transaction validation and error checking
+- Fee estimation
+- Transaction signing and submission
+- Transaction status monitoring
+- Multisig and proxy account support
+- Process-based transaction flows
+
+## Class: TransactionService
+
+### Constructor
+
+```typescript
+constructor(state: KoniState)
+```
+
+<ParamField path="state" type="KoniState" required>
+  The global state object of the extension
+</ParamField>
+
+## Core Transaction Methods
+
+### handleTransaction()
+
+Validates and executes a transaction.
+
+```typescript
+async handleTransaction(
+  transaction: SWTransactionInput
+): Promise<SWTransactionResponse>
+```
+
+<ParamField path="transaction" type="SWTransactionInput" required>
+  Transaction input data
+  
+  <ParamField path="address" type="string" required>
+    Sender address
+  </ParamField>
+  
+  <ParamField path="chain" type="string" required>
+    Chain slug
+  </ParamField>
+  
+  <ParamField path="chainType" type="ChainType" required>
+    Type of chain (substrate, evm, ton, cardano, bitcoin)
+  </ParamField>
+  
+  <ParamField path="extrinsicType" type="ExtrinsicType" required>
+    Type of transaction (TRANSFER_BALANCE, STAKING_BOND, etc.)
+  </ParamField>
+  
+  <ParamField path="data" type="any" required>
+    Transaction-specific data
+  </ParamField>
+  
+  <ParamField path="transaction" type="any">
+    Pre-built transaction object (optional)
+  </ParamField>
+</ParamField>
+
+**Returns:**
+
+<ResponseField name="SWTransactionResponse" type="object">
+  Transaction response with ID, hash, and validation results
+  
+  <ResponseField name="id" type="string">
+    Transaction ID
+  </ResponseField>
+  
+  <ResponseField name="extrinsicHash" type="string">
+    Transaction hash after submission
+  </ResponseField>
+  
+  <ResponseField name="errors" type="TransactionError[]">
+    Array of validation errors
+  </ResponseField>
+  
+  <ResponseField name="warnings" type="TransactionWarning[]">
+    Array of warnings
+  </ResponseField>
+  
+  <ResponseField name="estimateFee" type="FeeData">
+    Estimated transaction fees
+  </ResponseField>
+</ResponseField>
+
+**Usage:**
+
+```typescript
+const response = await transactionService.handleTransaction({
+  address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
+  chain: 'polkadot',
+  chainType: ChainType.SUBSTRATE,
+  extrinsicType: ExtrinsicType.TRANSFER_BALANCE,
+  data: {
+    to: '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty',
+    value: '1000000000000', // 1 DOT
+    tokenSlug: 'polkadot-NATIVE-DOT'
+  }
+});
+
+if (response.errors.length === 0) {
+  console.log('Transaction submitted:', response.extrinsicHash);
+} else {
+  console.error('Transaction failed:', response.errors);
+}
+```
+
+### validateTransaction()
+
+Validates a transaction without submitting it.
+
+```typescript
+async validateTransaction(
+  transaction: SWTransactionInput
+): Promise<SWTransactionResponse>
+```
+
+**Returns:**
+
+<ResponseField name="SWTransactionResponse" type="object">
+  Validation response with errors, warnings, and fee estimates
+</ResponseField>
+
+**Usage:**
+
+```typescript
+const validation = await transactionService.validateTransaction({
+  address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
+  chain: 'polkadot',
+  chainType: ChainType.SUBSTRATE,
+  extrinsicType: ExtrinsicType.TRANSFER_BALANCE,
+  data: { /* ... */ }
+});
+
+if (validation.errors.length > 0) {
+  console.error('Validation failed:', validation.errors);
+} else {
+  console.log('Estimated fee:', validation.estimateFee);
+}
+```
+
+## Transaction Monitoring
+
+### getTransaction()
+
+Retrieves a transaction by ID.
+
+```typescript
+getTransaction(id: string): SWTransactionBase | undefined
+```
+
+<ParamField path="id" type="string" required>
+  Transaction ID
+</ParamField>
+
+### getTransactionSubject()
+
+Subscribes to all transaction updates.
+
+```typescript
+getTransactionSubject(): BehaviorSubject<Record<string, SWTransactionBase>>
+```
+
+**Returns:**
+
+<ResponseField name="BehaviorSubject" type="BehaviorSubject">
+  Observable emitting transaction map updates
+</ResponseField>
+
+**Usage:**
+
+```typescript
+transactionService.getTransactionSubject().subscribe((transactions) => {
+  Object.values(transactions).forEach(tx => {
+    console.log(`${tx.id}: ${tx.status}`);
+  });
+});
+```
+
+## Advanced Features
+
+### handleWrappedTransaction()
+
+Handles multisig or proxy-wrapped transactions.
+
+```typescript
+async handleWrappedTransaction(
+  transaction: SWTransactionInput
+): Promise<SWTransactionResponse>
+```
+
+**Description:**
+
+This method is used when a transaction needs to be wrapped by a multisig or proxy account. The flow:
+
+1. Creates base transaction (marked as WRAPPABLE)
+2. User selects signer (multisig signatory or proxy)
+3. Builds wrapped transaction
+4. Submits wrapped transaction
+5. Forwards events to base transaction
+
+**Usage:**
+
+```typescript
+// Base transaction (will be wrapped)
+const baseTransaction = {
+  address: 'MULTISIG_ADDRESS',
+  chain: 'polkadot',
+  chainType: ChainType.SUBSTRATE,
+  extrinsicType: ExtrinsicType.TRANSFER_BALANCE,
+  data: { /* ... */ },
+  wrappingStatus: SubstrateTransactionWrappingStatus.WRAPPABLE
+};
+
+// This will create the wrapped transaction
+const response = await transactionService.handleWrappedTransaction({
+  ...baseTransaction,
+  data: {
+    transactionId: 'BASE_TX_ID',
+    multisigMetadata: {
+      threshold: 2,
+      signatories: ['ADDRESS_1', 'ADDRESS_2', 'ADDRESS_3']
+    }
+  },
+  wrappingStatus: SubstrateTransactionWrappingStatus.WRAP_RESULT
+});
+```
+
+## Transaction Events
+
+Transactions emit events through EventEmitter:
+
+### Event Types
+
+```typescript
+interface TransactionEventMap {
+  send: (response: TransactionEventResponse) => void;
+  signed: (response: TransactionEventResponse) => void;
+  extrinsicHash: (response: TransactionEventResponse) => void;
+  error: (response: TransactionEventResponse) => void;
+  success: (response: TransactionEventResponse) => void;
+  timeout: (response: TransactionEventResponse) => void;
+}
+```
+
+### Listening to Events
+
+```typescript
+const transaction = await transactionService.addTransaction(txInput);
+
+transaction.on('send', (data) => {
+  console.log('Transaction sent to network');
+});
+
+transaction.on('signed', (data) => {
+  console.log('Transaction signed:', data.id);
+});
+
+transaction.on('extrinsicHash', (data) => {
+  console.log('Transaction hash received:', data.extrinsicHash);
+});
+
+transaction.on('success', (data) => {
+  console.log('Transaction successful!', data);
+});
+
+transaction.on('error', (data) => {
+  console.error('Transaction failed:', data.errors);
+});
+
+transaction.on('timeout', (data) => {
+  console.warn('Transaction timed out');
+});
+```
+
+## Process-Based Transactions
+
+For multi-step transactions (e.g., swap with approval):
+
+```typescript
+const step: BriefProcessStep = {
+  processId: 'swap-process-123',
+  stepId: 1,
+  name: 'Approve Token'
+};
+
+const txResponse = await transactionService.handleTransaction({
+  address: '0x123...',
+  chain: 'ethereum',
+  chainType: ChainType.EVM,
+  extrinsicType: ExtrinsicType.TOKEN_APPROVE,
+  data: { /* approval data */ },
+  step
+});
+
+// Service automatically updates process status
+// and tracks multi-step flows
+```
+
+## Transaction Types
+
+### ExtrinsicType
+
+```typescript
+enum ExtrinsicType {
+  TRANSFER_BALANCE = 'TRANSFER_BALANCE',
+  TRANSFER_TOKEN = 'TRANSFER_TOKEN',
+  TRANSFER_XCM = 'TRANSFER_XCM',
+  SEND_NFT = 'SEND_NFT',
+  STAKING_BOND = 'STAKING_BOND',
+  STAKING_UNBOND = 'STAKING_UNBOND',
+  STAKING_CLAIM_REWARD = 'STAKING_CLAIM_REWARD',
+  STAKING_WITHDRAW = 'STAKING_WITHDRAW',
+  JOIN_YIELD_POOL = 'JOIN_YIELD_POOL',
+  MINT_VDOT = 'MINT_VDOT',
+  MINT_LDOT = 'MINT_LDOT',
+  UNSTAKE_VDOT = 'UNSTAKE_VDOT',
+  SWAP = 'SWAP',
+  // ... many more
+}
+```
+
+### TransactionStatus
+
+```typescript
+enum ExtrinsicStatus {
+  QUEUED = 'queued',
+  SUBMITTING = 'submitting',
+  PROCESSING = 'processing',
+  SUCCESS = 'success',
+  FAIL = 'fail',
+  CANCELLED = 'cancelled',
+  TIMEOUT = 'timeout'
+}
+```
+
+## Error Handling
+
+### TransactionError
+
+```typescript
+class TransactionError {
+  errorType: TransactionErrorType;
+  message: string;
+  
+  constructor(errorType: TransactionErrorType, message?: string);
+}
+```
+
+### Common Error Types
+
+```typescript
+enum BasicTxErrorType {
+  INTERNAL_ERROR = 'INTERNAL_ERROR',
+  INVALID_PARAMS = 'INVALID_PARAMS',
+  UNSUPPORTED = 'UNSUPPORTED',
+  USER_REJECT_REQUEST = 'USER_REJECT_REQUEST',
+  UNABLE_TO_SIGN = 'UNABLE_TO_SIGN',
+  DUPLICATE_TRANSACTION = 'DUPLICATE_TRANSACTION',
+  TIMEOUT = 'TIMEOUT',
+  CHAIN_DISCONNECTED = 'CHAIN_DISCONNECTED',
+  NOT_ENOUGH_BALANCE = 'NOT_ENOUGH_BALANCE',
+  INVALID_ADDRESS = 'INVALID_ADDRESS'
+}
+```
+
+## Example: Complete Transfer Flow
+
+```typescript
+import TransactionService from '@subwallet/extension-base/services/transaction-service';
+
+const transactionService = new TransactionService(state);
+
+// 1. Validate transaction first
+const validation = await transactionService.validateTransaction({
+  address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
+  chain: 'polkadot',
+  chainType: ChainType.SUBSTRATE,
+  extrinsicType: ExtrinsicType.TRANSFER_BALANCE,
+  data: {
+    to: '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty',
+    value: '1000000000000',
+    tokenSlug: 'polkadot-NATIVE-DOT'
+  }
+});
+
+if (validation.errors.length > 0) {
+  console.error('Validation errors:', validation.errors);
+  return;
+}
+
+console.log('Estimated fee:', validation.estimateFee);
+
+// 2. If validation passes, submit transaction
+const response = await transactionService.handleTransaction({
+  address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
+  chain: 'polkadot',
+  chainType: ChainType.SUBSTRATE,
+  extrinsicType: ExtrinsicType.TRANSFER_BALANCE,
+  data: {
+    to: '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty',
+    value: '1000000000000',
+    tokenSlug: 'polkadot-NATIVE-DOT'
+  },
+  eventsHandler: (emitter) => {
+    emitter.on('signed', (data) => {
+      console.log('Transaction signed!');
+    });
+    
+    emitter.on('success', (data) => {
+      console.log('Transfer successful!', data.extrinsicHash);
+    });
+    
+    emitter.on('error', (data) => {
+      console.error('Transfer failed:', data.errors);
+    });
+  }
+});
+
+console.log('Transaction ID:', response.id);
+console.log('Transaction Hash:', response.extrinsicHash);
+```
+
+## Fee Estimation
+
+The service automatically estimates fees for all transaction types:
+
+```typescript
+const validation = await transactionService.validateTransaction(txInput);
+
+if (validation.estimateFee) {
+  console.log('Fee:', validation.estimateFee.value);
+  console.log('Fee symbol:', validation.estimateFee.symbol);
+  console.log('Fee decimals:', validation.estimateFee.decimals);
+}
+```
+
+## Best Practices
+
+1. **Always validate before submitting**: Use `validateTransaction()` first
+2. **Handle errors gracefully**: Check `errors` array in response
+3. **Monitor transaction status**: Subscribe to transaction events
+4. **Use event handlers**: Attach event listeners for real-time updates
+5. **Check balance before transfer**: Service validates but explicit checks are good
+6. **Handle timeouts**: Transactions can timeout, implement retry logic if needed

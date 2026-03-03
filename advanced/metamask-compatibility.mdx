@@ -1,0 +1,309 @@
+---
+title: "MetaMask Compatibility"
+description: "Use SubWallet with dApps built for MetaMask"
+---
+
+## What is MetaMask compatibility?
+
+SubWallet includes MetaMask compatibility mode, allowing you to use SubWallet with web3 dApps that are designed to work with MetaMask. This means you can access thousands of Ethereum and EVM-compatible dApps without needing a separate MetaMask installation.
+
+<Info>
+When MetaMask compatibility is enabled, SubWallet presents itself to websites using the same interface (API) that MetaMask uses, making it a drop-in replacement.
+</Info>
+
+## Why use SubWallet instead of MetaMask?
+
+While MetaMask is popular for Ethereum, SubWallet offers advantages:
+
+- **Multi-ecosystem support**: Access both EVM and Substrate chains in one wallet
+- **Better UX**: Modern interface with advanced features
+- **Cross-chain management**: Manage all your crypto assets in one place
+- **Polkadot integration**: Native support for Polkadot, Kusama, and parachains
+- **Enhanced security**: Advanced security features and account management
+
+## How it works
+
+SubWallet implements the Ethereum Provider API that MetaMask uses:
+
+1. When you visit a dApp, it looks for the Ethereum provider (`window.ethereum`)
+2. SubWallet injects its own provider that mimics MetaMask's interface
+3. The dApp communicates with SubWallet thinking it's MetaMask
+4. All requests are handled by SubWallet with your approval
+
+<Note>
+This compatibility layer is automatic - you don't need to configure anything special in most cases.
+</Note>
+
+## Using SubWallet with EVM dApps
+
+### Connecting to a dApp
+
+1. Navigate to an EVM-based dApp (Uniswap, Aave, OpenSea, etc.)
+2. Click the dApp's **Connect Wallet** button
+3. Select **MetaMask** from the wallet options (it will use SubWallet)
+4. SubWallet will show a connection request popup:
+   - Review the dApp URL and permissions
+   - Select the account(s) to connect
+   - Click **Connect**
+5. You're now connected and can interact with the dApp
+
+<Tip>
+Some dApps may show "MetaMask" in their UI even though you're using SubWallet. This is normal and expected behavior.
+</Tip>
+
+### Switching networks
+
+Many dApps support multiple EVM networks:
+
+1. The dApp may request a network switch
+2. SubWallet will show a confirmation:
+   - Review the requested network
+   - Approve or reject the switch
+3. Or manually switch networks in SubWallet before connecting
+
+### Managing transactions
+
+When the dApp requests a transaction:
+
+1. SubWallet displays transaction details:
+   - Contract interaction or transfer
+   - Amount (if applicable)
+   - Gas fee estimate
+   - Total cost
+2. Review carefully and approve or reject
+3. SubWallet signs and broadcasts the transaction
+4. You can track status in SubWallet's transaction history
+
+## Supported EVM networks
+
+SubWallet's MetaMask compatibility works with all EVM-compatible networks, including:
+
+- Ethereum Mainnet
+- Polygon
+- Binance Smart Chain (BNB Chain)
+- Avalanche C-Chain
+- Fantom
+- Arbitrum
+- Optimism
+- Base
+- All other EVM chains supported by SubWallet
+
+<Info>
+If a dApp requires a network not in SubWallet, it may request to add it. Review the network details before approving.
+</Info>
+
+## Compatibility features
+
+### Automatic provider injection
+
+SubWallet automatically injects the Ethereum provider when:
+- You have SubWallet installed and enabled
+- You visit a website that uses web3
+- The provider API is available
+
+### Standard Ethereum methods
+
+Supported Ethereum JSON-RPC methods include:
+
+- `eth_requestAccounts`: Connect wallet
+- `eth_accounts`: Get connected accounts
+- `eth_chainId`: Get current chain ID
+- `eth_sendTransaction`: Send transactions
+- `personal_sign`: Sign messages
+- `eth_signTypedData_v4`: Sign structured data
+- `wallet_switchEthereumChain`: Switch networks
+- `wallet_addEthereumChain`: Add custom networks
+- `eth_getBalance`: Check balances
+- And many more standard methods
+
+### Event subscriptions
+
+dApps can subscribe to events:
+
+- `accountsChanged`: Fires when you switch accounts
+- `chainChanged`: Fires when you switch networks
+- `disconnect`: Fires when you disconnect
+- `connect`: Fires when connection establishes
+
+## Handling conflicts with MetaMask
+
+If you have both SubWallet and MetaMask installed:
+
+### Setting SubWallet as default
+
+1. Disable or remove the MetaMask extension
+2. Or configure your browser to prioritize SubWallet
+3. Some dApps let you choose which wallet to use
+
+### Using both wallets
+
+You can keep both installed:
+
+- Some dApps detect both and let you choose
+- Disable one wallet temporarily when using the other
+- Use different browser profiles for each wallet
+
+<Warning>
+Having multiple wallet extensions enabled can cause conflicts. If a dApp doesn't work correctly, try disabling other wallet extensions temporarily.
+</Warning>
+
+## Differences from MetaMask
+
+While SubWallet is highly compatible, there are some differences:
+
+### Interface differences
+
+- SubWallet has its own UI design and flow
+- Account management works differently
+- Network management uses SubWallet's multi-chain approach
+
+### Feature differences
+
+<CardGroup cols={2}>
+  <Card title="SubWallet advantages" icon="plus">
+    - Multi-chain support (EVM + Substrate)
+    - Better account organization
+    - Built-in staking for multiple chains
+    - NFT gallery for all chains
+    - Advanced transaction history
+  </Card>
+  
+  <Card title="Potential limitations" icon="minus">
+    - Some MetaMask-specific extensions may not work
+    - MetaMask Snaps are not supported
+    - Some very MetaMask-specific features may differ
+  </Card>
+</CardGroup>
+
+### API compatibility
+
+SubWallet implements the Ethereum Provider API (EIP-1193) but:
+
+- Some experimental MetaMask methods may not be available
+- SubWallet-specific features extend beyond MetaMask's API
+- Legacy MetaMask APIs are supported where possible
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="dApp doesn't detect SubWallet">
+    Try:
+    - Refreshing the page
+    - Ensuring SubWallet is unlocked
+    - Disabling other wallet extensions
+    - Checking if the dApp is supported (very old dApps may have issues)
+    - Looking for a "Use WalletConnect" option instead
+  </Accordion>
+  
+  <Accordion title="dApp shows MetaMask errors">
+    If you see "Install MetaMask" or similar:
+    - The dApp may be checking for MetaMask specifically
+    - Try refreshing after unlocking SubWallet
+    - Contact the dApp support about SubWallet compatibility
+    - Use WalletConnect as an alternative
+  </Accordion>
+  
+  <Accordion title="Transactions fail or don't appear">
+    Check:
+    - You're on the correct network
+    - You have sufficient balance for amount + gas
+    - Gas limit is adequate for the transaction
+    - Network is not congested
+    - Try increasing gas price
+  </Accordion>
+  
+  <Accordion title="Network switch requests don't work">
+    This can happen if:
+    - The network isn't enabled in SubWallet (enable it first)
+    - The network details don't match (check chain ID)
+    - Try manually switching networks in SubWallet
+  </Accordion>
+  
+  <Accordion title="Signature requests rejected">
+    Ensure:
+    - You're signing with the connected account
+    - The account is unlocked
+    - You understand what you're signing
+    - The dApp is legitimate (don't sign suspicious requests)
+  </Accordion>
+</AccordionGroup>
+
+## Security considerations
+
+When using SubWallet with dApps:
+
+<CardGroup cols={1}>
+  <Card title="Verify dApp authenticity" icon="badge-check">
+    - Check the URL is correct (watch for phishing)
+    - Ensure HTTPS connection
+    - Research unfamiliar dApps before connecting
+  </Card>
+  
+  <Card title="Review all requests" icon="eye">
+    - Read transaction details completely
+    - Verify addresses and amounts
+    - Understand contract interactions
+    - Don't approve suspicious requests
+  </Card>
+  
+  <Card title="Manage permissions" icon="sliders">
+    - Only connect accounts you need to use
+    - Disconnect from dApps when done
+    - Revoke token approvals periodically
+    - Monitor connected dApps regularly
+  </Card>
+</CardGroup>
+
+## Best practices
+
+1. **Test with small amounts first**: When using a new dApp, start with small transactions
+2. **Keep SubWallet updated**: Updates include security fixes and compatibility improvements
+3. **Use dedicated accounts**: Consider separate accounts for DeFi, NFTs, etc.
+4. **Monitor gas prices**: Use gas price recommendations to avoid overpaying
+5. **Back up your wallet**: Always maintain secure backups of your seed phrase
+
+## Supported dApp categories
+
+SubWallet's MetaMask compatibility works with:
+
+- **DeFi protocols**: Uniswap, Aave, Compound, Curve, etc.
+- **NFT marketplaces**: OpenSea, Rarible, LooksRare, etc.
+- **Gaming**: Axie Infinity, Gods Unchained, etc.
+- **DAOs**: Snapshot, Tally, etc.
+- **Bridges**: Cross-chain bridges and protocols
+- **Other**: Any dApp using standard Ethereum provider API
+
+<Tip>
+If a dApp doesn't work with the MetaMask compatibility mode, try using WalletConnect as an alternative connection method.
+</Tip>
+
+## Advanced configuration
+
+### Custom RPC endpoints
+
+You can configure custom RPC endpoints for networks:
+
+1. Go to SubWallet settings
+2. Navigate to **Network management**
+3. Select a network to edit
+4. Update the RPC endpoint URL
+5. Save changes
+
+### Gas settings
+
+Customize gas settings for transactions:
+
+- **Gas limit**: Set custom limits for complex transactions
+- **Gas price**: Adjust for faster or cheaper transactions
+- **EIP-1559**: Use priority fee and max fee on supported networks
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="WalletConnect" icon="qrcode" href="/advanced/walletconnect">
+    Alternative connection method for maximum compatibility
+  </Card>
+  <Card title="Proxy Accounts" icon="user-shield" href="/advanced/proxy-accounts">
+    Use proxy accounts for safer dApp interactions
+  </Card>
+</CardGroup>

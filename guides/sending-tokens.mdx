@@ -1,0 +1,211 @@
+---
+title: Sending Tokens
+description: Learn how to send tokens and transfer funds to other addresses using SubWallet Extension
+---
+
+SubWallet Extension makes it easy to send tokens across multiple blockchain networks, including support for cross-chain transfers (XCM).
+
+## Basic Token Transfer
+
+<Steps>
+  <Step title="Access the send function">
+    From the home screen, click the **Send** button, or navigate to a specific token and select **Send**.
+  </Step>
+
+  <Step title="Select the token to send">
+    Click on the token selector and choose which token you want to send. You'll see:
+    - Token name and symbol
+    - Available balance
+    - The origin chain
+
+    <Tip>
+      Use the search bar to quickly find tokens if you have many assets. Tokens are sorted by balance by default.
+    </Tip>
+  </Step>
+
+  <Step title="Choose the destination chain">
+    Select the destination chain from the dropdown. This can be:
+    - **Same as origin chain**: For standard transfers
+    - **Different chain**: For cross-chain (XCM) transfers
+
+    <Note>
+      Only chains that support the selected token will appear in the destination chain list.
+    </Note>
+  </Step>
+
+  <Step title="Select sender account (if needed)">
+    If you have multiple accounts, select which account you want to send from. This field may be hidden if you only have one account.
+
+    <Warning>
+      Cross-chain transfers are not supported for multisig accounts. If you select a multisig account and try to send cross-chain, you'll see an error.
+    </Warning>
+  </Step>
+
+  <Step title="Enter the recipient address">
+    Type or paste the recipient's address in the **To** field. You can:
+    - Paste an address from your clipboard
+    - Select from your address book
+    - Scan a QR code using your camera
+    - Choose from recent recipients
+
+    SubWallet will validate the address and show an error if it's invalid for the selected destination chain.
+  </Step>
+
+  <Step title="Enter the amount">
+    Type the amount you want to send. You can:
+    - Enter a specific amount
+    - Click **Max** to send all available tokens (if available)
+
+    Your available balance is displayed below the token selector. The maximum transferable amount accounts for transaction fees.
+
+    <Note>
+      The **Max** button may be disabled for certain chains (like EVM chains) when sending native tokens, as you need to reserve some for gas fees.
+    </Note>
+  </Step>
+
+  <Step title="Review transaction fee">
+    The estimated transaction fee is displayed at the bottom. For supported chains, you can:
+    - Adjust the fee by clicking on the fee selector
+    - Choose between slow, average, and fast transaction speeds
+    - Pay fees with alternative tokens (if available)
+
+    <Tip>
+      On some chains, you can pay transaction fees with tokens other than the native token. Look for the fee token selector if this option is available.
+    </Tip>
+  </Step>
+
+  <Step title="Submit the transaction">
+    Click **Transfer** to proceed. If you're using **Transfer All**, the button will be orange and labeled **Transfer All**.
+
+    Review the transaction details in the confirmation screen, then enter your password to sign and send the transaction.
+  </Step>
+
+  <Step title="Track the transaction">
+    After submission, you can:
+    - View the transaction hash
+    - Monitor its status in the **History** tab
+    - See the transaction on the blockchain explorer by clicking the transaction hash
+  </Step>
+</Steps>
+
+## Cross-Chain Transfers (XCM)
+
+SubWallet supports cross-chain transfers between compatible networks using XCM (Cross-Consensus Messaging):
+
+<Steps>
+  <Step title="Select source and destination chains">
+    Choose different chains for the origin and destination. For example:
+    - Send DOT from Polkadot to AssetHub
+    - Transfer USDT from Polkadot to Moonbeam
+  </Step>
+
+  <Step title="Review cross-chain warnings">
+    SubWallet displays important warnings for cross-chain transfers:
+
+    <Warning>
+      **Do not send cross-chain transfers to centralized exchange (CEX) addresses.** Most exchanges don't support cross-chain deposits and you may lose your funds.
+    </Warning>
+  </Step>
+
+  <Step title="Confirm the destination address format">
+    Different chains may use different address formats. SubWallet will reformat the address if needed, but always verify the recipient can receive tokens on the destination chain.
+  </Step>
+
+  <Step title="Complete the transfer">
+    Cross-chain transfers may take longer than same-chain transfers. The transaction will show as pending until it's confirmed on both the source and destination chains.
+  </Step>
+</Steps>
+
+## Advanced Features
+
+### Transfer All
+
+When you click the **Max** button or manually enter your full balance, SubWallet enables **Transfer All** mode:
+
+- Automatically calculates the exact amount needed for fees
+- Sends all remaining tokens to the recipient
+- The submit button changes to orange and shows **Transfer All**
+
+<Warning>
+  When using Transfer All with native tokens, you won't be able to pay for future transactions on that account. Make sure you have tokens on other chains or plan to deposit more funds.
+</Warning>
+
+### Custom Fee Configuration
+
+For EVM chains and some Substrate chains, you can customize transaction fees:
+
+1. Click on the fee display
+2. Choose a fee option: **Slow**, **Average**, or **Fast**
+3. Or select **Custom** to manually set gas price and gas limit
+4. Review the estimated time and total cost
+
+### Alternative Fee Tokens
+
+On supported chains, you can pay fees with different tokens:
+
+1. Look for the fee token selector (appears when available)
+2. Select an alternative token to pay fees
+3. Ensure you have sufficient balance in the selected token
+
+## Special Cases
+
+### Sending NFTs
+
+To send NFTs, use the [NFT management guide](/guides/managing-nfts) instead of the token send function.
+
+### Multisig Transactions
+
+Multisig accounts require multiple signatures to send tokens. See the multisig documentation for details on the approval process.
+
+### Ledger Hardware Wallets
+
+When sending from a Ledger device:
+1. Ensure your Ledger is connected and unlocked
+2. Open the appropriate blockchain app on your Ledger
+3. Review and approve the transaction on your Ledger device
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Transaction fails with 'Insufficient balance'">
+    You need more tokens to cover the amount plus transaction fees. Try:
+    - Reducing the send amount
+    - Using the **Max** button to automatically calculate the right amount
+    - Adding more funds to your account
+  </Accordion>
+
+  <Accordion title="Invalid address error">
+    The recipient address may be:
+    - Invalid for the destination chain
+    - Incorrectly formatted
+    - Missing characters (verify the full address was pasted)
+
+    For cross-chain transfers, ensure the address format matches the destination chain.
+  </Accordion>
+
+  <Accordion title="Cross-chain transfer not arriving">
+    Cross-chain transfers can take several minutes. Check:
+    - The source chain transaction is confirmed
+    - The destination chain is fully synced
+    - You're viewing the correct account on the destination chain
+
+    If the transfer hasn't arrived after 30 minutes, check the blockchain explorer for the transaction status.
+  </Accordion>
+
+  <Accordion title="Can't select certain tokens">
+    Some tokens may be disabled because:
+    - You have zero balance
+    - The token's chain is inactive
+    - The token doesn't support sending (e.g., some LP tokens)
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+<Tip>
+  - Always double-check the recipient address before sending
+  - Start with a small test transaction for new recipients
+  - For large amounts, consider using multiple smaller transactions
+  - Keep some native tokens for future transaction fees
+  - Save frequently used addresses to your address book
+</Tip>

@@ -1,0 +1,385 @@
+---
+title: Code Style Guide
+description: Code formatting, linting rules, and naming conventions for SubWallet Extension
+---
+
+## Overview
+
+SubWallet Extension enforces code quality through automated linting and formatting. All code must pass ESLint validation before being committed.
+
+## Linting Setup
+
+### ESLint Configuration
+
+SubWallet extends the [@polkadot/dev](https://github.com/polkadot-js/dev) ESLint configuration with custom rules.
+
+#### Configuration File
+
+The project uses `.eslintrc.js` at the root level:
+
+```javascript
+const base = require('@polkadot/dev/config/eslint.cjs');
+
+module.exports = {
+  ...base,
+  ignorePatterns: [
+    ...base.ignorePatterns,
+    "i18next-scanner.config.js",
+    "koni-*.mjs",
+    "packages/extension-web-ui/**/*",
+  ],
+  parserOptions: {
+    ...base.parserOptions,
+    project: [
+      './tsconfig.eslint.json'
+    ]
+  },
+  rules: {
+    ...base.rules,
+    'header/header': [2, 'line', [
+      { pattern: ' Copyright 20(17|18|19|20|21|22)(-2022)? (@polkadot|@subwallet)/' },
+      ' SPDX-License-Identifier: Apache-2.0'
+    ], 2],
+    '@typescript-eslint/unbound-method': 'off',
+    '@typescript-eslint/ban-ts-comment': 'off',
+    'sort-keys': 'off'
+  }
+};
+```
+
+### Custom Rules
+
+#### File Headers
+
+All source files must include a copyright header:
+
+```typescript
+// Copyright 2019-2022 @subwallet/extension authors & contributors
+// SPDX-License-Identifier: Apache-2.0
+```
+
+This is enforced by the `header/header` rule.
+
+#### Disabled Rules
+
+The following rules are disabled:
+- `@typescript-eslint/unbound-method`: Turned off due to false positives
+- `@typescript-eslint/ban-ts-comment`: Allows TypeScript comments like `@ts-ignore`
+- `sort-keys`: Object key sorting is not enforced
+
+### Running the Linter
+
+Before committing any code, run:
+
+```bash
+yarn lint
+```
+
+This command will:
+- Check all TypeScript files for linting errors
+- Report any violations of the coding standards
+- Suggest fixes where possible
+
+### Editor Integration
+
+<Tip>
+Set up ESLint in your editor for real-time validation and automatic fixes on save.
+</Tip>
+
+**VS Code:**
+
+Install the ESLint extension and add to your `.vscode/settings.json`:
+
+```json
+{
+  "eslint.validate": [
+    "javascript",
+    "typescript",
+    "typescriptreact"
+  ],
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true
+  }
+}
+```
+
+**Other Editors:**
+- WebStorm/IntelliJ: ESLint is supported natively
+- Vim/Neovim: Use ALE or coc-eslint
+- Sublime Text: Use SublimeLinter-eslint
+
+## Code Formatting
+
+### Prettier Configuration
+
+SubWallet uses Prettier for code formatting, extending the Polkadot configuration:
+
+```javascript
+// .prettierrc.cjs
+module.exports = require('@polkadot/dev/config/prettier.cjs');
+```
+
+This includes:
+- **Print Width**: 80 characters (from @polkadot/dev)
+- **Tab Width**: 2 spaces
+- **Semicolons**: Required
+- **Quotes**: Single quotes
+- **Trailing Commas**: ES5 style
+- **Arrow Function Parens**: Always
+
+### Formatting Commands
+
+Format your code before committing:
+
+```bash
+# Format all files
+yarn format
+
+# Check formatting without making changes
+yarn format:check
+```
+
+## TypeScript Guidelines
+
+### Type Safety
+
+Always use explicit types where possible:
+
+```typescript
+// Good
+function getPrice(tokenId: string): Promise<PriceJson> {
+  return this.priceStore.get(tokenId);
+}
+
+// Avoid
+function getPrice(tokenId) {
+  return this.priceStore.get(tokenId);
+}
+```
+
+### Interfaces vs Types
+
+Use interfaces for object shapes that may be extended:
+
+```typescript
+// For message signatures
+export interface KoniRequestSignatures {
+  'pri(price.getPrice)': [RequestPrice, PriceJson];
+  'pri(price.getSubscription)': [RequestSubscribePrice, boolean, PriceJson];
+}
+
+// For data structures
+export interface PriceJson {
+  tokenId: string;
+  price: number;
+  currency: string;
+}
+```
+
+### Async/Await
+
+Prefer async/await over Promise chains:
+
+```typescript
+// Good
+async function fetchData(): Promise<void> {
+  const response = await api.getData();
+  const processed = await processData(response);
+  
+  return processed;
+}
+
+// Avoid
+function fetchData(): Promise<void> {
+  return api.getData()
+    .then(response => processData(response))
+    .then(processed => processed);
+}
+```
+
+## Naming Conventions
+
+### Files and Folders
+
+- **React Components**: PascalCase (e.g., `AccountList.tsx`)
+- **Utilities**: camelCase (e.g., `formatBalance.ts`)
+- **Stores**: PascalCase (e.g., `Price.ts`)
+- **Tests**: Match source file with `.spec.ts` suffix (e.g., `Price.spec.ts`)
+
+### Code Elements
+
+**Classes**: PascalCase
+```typescript
+export default class KoniState extends State {
+  // ...
+}
+```
+
+**Functions/Methods**: camelCase
+```typescript
+public setPrice(priceData: PriceJson): void {
+  // ...
+}
+```
+
+**Constants**: UPPER_SNAKE_CASE
+```typescript
+const EXTENSION_PREFIX = 'subwallet';
+const MAX_RETRY_COUNT = 3;
+```
+
+**Interfaces**: PascalCase with descriptive names
+```typescript
+interface RequestPrice {
+  tokenId: string;
+}
+
+interface PriceJson {
+  price: number;
+}
+```
+
+**Message Types**: Use predefined patterns
+```typescript
+// Extension messages start with 'pri'
+'pri(price.getPrice)'
+'pri(accounts.subscribe)'
+
+// Tab messages start with 'pub'
+'pub(utils.getRandom)'
+'pub(accounts.list)'
+```
+
+### Feature Branch Names
+
+Use the format: `<initials>-<feature-description>`
+
+```bash
+# Good
+git checkout -b jd-add-staking-api
+git checkout -b sm-fix-balance-display
+git checkout -b ab-refactor-message-handler
+
+# Avoid
+git checkout -b new-feature
+git checkout -b fix
+git checkout -b john-doe-branch
+```
+
+## Store Patterns
+
+### Extending BaseStore
+
+```typescript
+export default class Price extends SubscribableStore<PriceJson> {
+  constructor() {
+    super(EXTENSION_PREFIX ? `${EXTENSION_PREFIX}price` : null);
+  }
+}
+```
+
+### Usage in KoniState
+
+```typescript
+export default class KoniState extends State {
+  private readonly priceStore = new Price();
+  private priceStoreReady = false;
+
+  public setPrice(priceData: PriceJson, callback?: (priceData: PriceJson) => void): void {
+    // Implementation
+  }
+
+  public getPrice(update: (value: PriceJson) => void): void {
+    // Implementation
+  }
+
+  public subscribePrice() {
+    return this.priceStore.getSubject();
+  }
+}
+```
+
+## React and UI Conventions
+
+### Component Structure
+
+```typescript
+import React, { useCallback, useEffect } from 'react';
+import { useSelector } from 'react-redux';
+
+interface Props {
+  accountId: string;
+  onSelect?: (id: string) => void;
+}
+
+export const AccountItem: React.FC<Props> = ({ accountId, onSelect }) => {
+  // Hooks first
+  const account = useSelector(selectAccount(accountId));
+  
+  // Event handlers
+  const handleClick = useCallback(() => {
+    onSelect?.(accountId);
+  }, [accountId, onSelect]);
+  
+  // Effects
+  useEffect(() => {
+    // Side effects
+  }, []);
+  
+  // Render
+  return (
+    <div onClick={handleClick}>
+      {account.name}
+    </div>
+  );
+};
+```
+
+### Redux with Toolkit
+
+```typescript
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+
+interface AccountState {
+  accounts: Account[];
+  selectedId: string | null;
+}
+
+const accountSlice = createSlice({
+  name: 'accounts',
+  initialState: {
+    accounts: [],
+    selectedId: null
+  } as AccountState,
+  reducers: {
+    setAccounts(state, action: PayloadAction<Account[]>) {
+      state.accounts = action.payload;
+    },
+    selectAccount(state, action: PayloadAction<string>) {
+      state.selectedId = action.payload;
+    }
+  }
+});
+```
+
+## Best Practices
+
+<Warning>
+Always run `yarn lint` and `yarn test` before committing code.
+</Warning>
+
+<Check>
+**Pre-commit Checklist:**
+- [ ] Code passes ESLint validation
+- [ ] All files have copyright headers
+- [ ] TypeScript types are explicit
+- [ ] Tests are written and passing
+- [ ] Code is formatted with Prettier
+- [ ] Naming conventions are followed
+</Check>
+
+## Additional Resources
+
+- [@polkadot/dev ESLint Config](https://github.com/polkadot-js/dev/tree/master/packages/dev/config)
+- [TypeScript Style Guide](https://google.github.io/styleguide/tsguide.html)
+- [Redux Toolkit Documentation](https://redux-toolkit.js.org/)

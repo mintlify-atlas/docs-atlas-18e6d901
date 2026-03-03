@@ -1,0 +1,199 @@
+---
+title: Contribution Guidelines
+description: Learn how to contribute to SubWallet Extension development
+---
+
+## Overview
+
+SubWallet Extension follows an open contribution model where individuals making significant and valuable contributions are given commit access to contribute as they see fit. The project operates more like an open wiki than a standard guarded open source project.
+
+## Ground Rules
+
+There are a few basic ground rules for all contributors (including maintainers):
+
+### 1. No Force Pushes
+
+Never use `--force` pushes or modify the Git history in any way. If you need to rebase, ensure you do it in your own repository.
+
+### 2. Use Feature Branches
+
+All ongoing work must be done in non-master branches, prefixed with a short name moniker:
+
+```bash
+# Format: <initials>-<feature>
+git checkout -b jd-add-new-api
+git checkout -b ab-fix-storage-bug
+```
+
+### 3. All Changes Require Pull Requests
+
+All modifications must be made in a pull request to solicit feedback from other contributors. Direct commits to master are not allowed.
+
+### 4. Wait for CI to Pass
+
+A pull request must not be merged until CI has finished successfully.
+
+## Getting Started
+
+### Prerequisites
+
+Before you begin contributing, make sure you have:
+
+- Node.js and Yarn installed
+- A code editor with ESLint support configured
+- Familiarity with the project structure
+
+### Project Architecture
+
+SubWallet Extension is forked from polkadot-js/extension and follows a specific architecture:
+
+**Background Environment**
+- Compiled from `packages/extension-koni/src/background.ts`
+- Handles messages from extension pages and Chrome tabs via Chrome API Message Passing
+- Saves all state to store and persists to Chrome storage
+- Runs cronjobs
+
+**Extension Pages**
+- `popup.html`: Main page that opens when clicking the extension icon
+- `portfolio.html`: More complex views like dashboard and transactions
+
+**Inject Scripts**
+- Scripts injected into Chrome tabs
+
+### Key Packages
+
+- **extension-base**: Main features for background, API calls, data persistence, and inject scripts
+- **extension-koni-base**: Custom package extending extension-base
+- **extension-koni-ui**: UI components for the extension popup
+- **extension-koni**: Main entry point with injection and background processing logic
+- **extension-chains**: Chain definitions and metadata
+- **extension-dapp**: Wrapper for dapp integration
+- **extension-inject**: Wrapper for extension injection
+- **extension-compat-metamask**: MetaMask compatibility layer
+
+## Development Workflow
+
+### Adding a New API
+
+1. Navigate to `packages/extension-koni-base/src/api`
+2. Add a new file based on the API type
+3. Simple APIs can be defined as functions; complex APIs should be defined as objects
+
+### Adding a Store
+
+Stores persist data into local storage and are defined in `packages/extension-koni-base/src/store`:
+
+```typescript
+export default class Price extends SubscribableStore<PriceJson> {
+  constructor () {
+    super(EXTENSION_PREFIX ? `${EXTENSION_PREFIX}price` : null);
+  }
+}
+```
+
+Store classes should extend:
+- **BaseStore**: Basic functions for Chrome local storage persistence
+- **SubscribableStore**: Extends BaseStore with RxJS subject for subscriptions
+
+### Adding Message Handlers
+
+SubWallet uses message passing to communicate between Background, Extensions, and Chrome Tabs:
+
+1. **Define request type** in `KoniRequestSignatures` interface:
+
+```typescript
+export interface KoniRequestSignatures {
+  // One-time message from extension
+  'pri(price.getPrice)': [RequestPrice, PriceJson]
+  
+  // Subscription message from extension
+  'pri(price.getSubscription)': [RequestSubscribePrice, boolean, PriceJson]
+  
+  // Message from tabs
+  'pub(utils.getRandom)': [RandomTestRequest, number]
+}
+```
+
+Message types must include:
+- Type name starting with `pri` (extension) or `pub` (tabs)
+- Request type
+- Response type
+- Subscription param type (optional)
+
+2. **Add handler** in `KoniExtension` or `KoniTabs` of `extension-koni-base`
+3. **Add caller** in `messaging.ts` of `extension-koni-ui`
+
+### Adding Cronjobs
+
+Cronjobs are defined in `packages/extension-koni-base/src/cron`:
+
+1. Create a separate file for related cron actions
+2. Define the cronjob in the `init` method of class `KoniCron`
+
+### UI Development
+
+SubWallet Extension UI is built with ReactJS:
+
+**Structure:**
+- `assets/`: Images and resources
+- `components/`: Common components
+- `hooks/`: Global function hooks
+- `i18n/`: Internationalization
+- `stores/`: Redux stores with React hooks
+- `partials/`: Header components
+- `util/`: Utility methods
+- `messaging.ts`: Background communication
+
+**Redux Store:**
+SubWallet uses [redux-toolkit](https://redux-toolkit.js.org/):
+
+1. Define store reducers and state using `createSlice`
+2. Map reducers to root store in `index.ts`
+
+## Testing
+
+SubWallet uses [Jest](https://jestjs.io/) for testing:
+
+1. Create test files with the naming pattern `filename.spec.ts`
+2. Run tests with `yarn test`
+3. Ensure all tests pass before submitting a PR
+
+## Before You Commit
+
+### Code Validation
+
+Run the linter before every commit:
+
+```bash
+yarn lint
+```
+
+Ensure your editor has ESLint configured for real-time validation.
+
+### Run Tests
+
+```bash
+yarn test
+```
+
+## Important Notes
+
+<Warning>
+All data requests must be called and processed in the background. Extension pages and inject scripts use data from the background environment and do not call APIs directly.
+</Warning>
+
+<Info>
+SubWallet aims to add more features while maintaining the ability to rebase the polkadot-js origin at any time.
+</Info>
+
+## Releases
+
+Declaring formal releases remains the prerogative of the project maintainers.
+
+## Changes to These Guidelines
+
+This is an experiment and feedback is welcome! This document may be subject to pull requests or changes by contributors with valuable additions.
+
+## Heritage
+
+These contributing guidelines are modified from the "OPEN Open Source Project" guidelines for the Level project.

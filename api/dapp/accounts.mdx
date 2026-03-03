@@ -1,0 +1,553 @@
+---
+title: 'Account Management'
+description: 'Retrieve and manage user accounts from SubWallet Extension'
+---
+
+## Overview
+
+SubWallet provides multiple functions for retrieving and managing user accounts. These functions allow you to get all accounts, subscribe to account changes, and find specific extension instances for signing operations.
+
+<Warning>
+  All account management functions require `web3Enable()` to be called first. See [web3Enable](/api/dapp/web3-enable) for details.
+</Warning>
+
+## web3Accounts
+
+Retrieve all accounts from all enabled extensions.
+
+### Function Signature
+
+```typescript
+function web3Accounts(
+  options?: Web3AccountsOptions
+): Promise<InjectedAccountWithMeta[]>
+```
+
+### Source Code Reference
+
+`packages/extension-dapp/src/bundle.ts:114`
+
+### Parameters
+
+<ParamField path="options" type="Web3AccountsOptions" optional>
+  Optional configuration object for filtering and formatting accounts.
+  
+  <Expandable title="Web3AccountsOptions properties">
+    <ParamField path="ss58Format" type="number" optional>
+      The SS58 format to use for encoding Substrate addresses. If specified, all Substrate addresses will be re-encoded using this format.
+      
+      Common values:
+      - `0` - Polkadot
+      - `2` - Kusama
+      - `42` - Generic Substrate
+    </ParamField>
+    
+    <ParamField path="accountType" type="KeypairType[]" optional>
+      Filter accounts by type. Only accounts matching the specified types will be returned.
+      
+      Possible values:
+      - `'sr25519'` - Substrate Schnorrkel accounts
+      - `'ed25519'` - Substrate Ed25519 accounts
+      - `'ecdsa'` - ECDSA accounts
+      - `'ethereum'` - Ethereum accounts
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Return Value
+
+<ResponseField name="accounts" type="InjectedAccountWithMeta[]">
+  Array of accounts with metadata. Each account contains:
+  
+  <Expandable title="InjectedAccountWithMeta properties">
+    <ResponseField name="address" type="string">
+      The account address (encoded according to `ss58Format` if specified)
+    </ResponseField>
+    
+    <ResponseField name="meta" type="object">
+      Metadata about the account
+      
+      <Expandable title="meta properties">
+        <ResponseField name="source" type="string">
+          The name of the extension providing this account (e.g., "subwallet-js")
+        </ResponseField>
+        
+        <ResponseField name="name" type="string" optional>
+          The user-defined name for this account
+        </ResponseField>
+        
+        <ResponseField name="genesisHash" type="string | null" optional>
+          The genesis hash of the chain this account is associated with, or null for generic accounts
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="type" type="KeypairType" optional>
+      The cryptographic key type of the account (sr25519, ed25519, ecdsa, ethereum, etc.)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Usage Examples
+
+#### Basic Usage
+
+```javascript
+import { web3Enable, web3Accounts } from '@subwallet/extension-dapp';
+
+// First, enable the extension
+await web3Enable('My DApp');
+
+// Get all accounts
+const accounts = await web3Accounts();
+
+console.log(`Found ${accounts.length} accounts`);
+accounts.forEach(account => {
+  console.log(`${account.meta.name}: ${account.address}`);
+});
+```
+
+#### Filter by Account Type
+
+```javascript
+import { web3Accounts } from '@subwallet/extension-dapp';
+
+// Get only Ethereum accounts
+const ethereumAccounts = await web3Accounts({ 
+  accountType: ['ethereum'] 
+});
+
+// Get Substrate accounts (sr25519 and ed25519)
+const substrateAccounts = await web3Accounts({ 
+  accountType: ['sr25519', 'ed25519'] 
+});
+```
+
+#### Custom Address Format
+
+```javascript
+import { web3Accounts } from '@subwallet/extension-dapp';
+
+// Get accounts with Polkadot address format
+const polkadotAccounts = await web3Accounts({ 
+  ss58Format: 0 
+});
+
+// Get accounts with Kusama address format
+const kusamaAccounts = await web3Accounts({ 
+  ss58Format: 2 
+});
+```
+
+#### React Hook Example
+
+```javascript
+import { useState, useEffect } from 'react';
+import { web3Enable, web3Accounts } from '@subwallet/extension-dapp';
+
+function useAccounts() {
+  const [accounts, setAccounts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    async function loadAccounts() {
+      await web3Enable('My DApp');
+      const allAccounts = await web3Accounts();
+      setAccounts(allAccounts);
+      setLoading(false);
+    }
+    
+    loadAccounts();
+  }, []);
+  
+  return { accounts, loading };
+}
+
+// Usage in component
+function AccountSelector() {
+  const { accounts, loading } = useAccounts();
+  
+  if (loading) return <div>Loading accounts...</div>;
+  
+  return (
+    <select>
+      {accounts.map(account => (
+        <option key={account.address} value={account.address}>
+          {account.meta.name || account.address}
+        </option>
+      ))}
+    </select>
+  );
+}
+```
+
+---
+
+## web3AccountsSubscribe
+
+Subscribe to account changes across all extensions. This is useful for keeping your UI in sync when users add, remove, or modify accounts in SubWallet.
+
+### Function Signature
+
+```typescript
+function web3AccountsSubscribe(
+  callback: (accounts: InjectedAccountWithMeta[]) => void | Promise<void>,
+  options?: Web3AccountsOptions
+): Promise<Unsubcall>
+```
+
+### Source Code Reference
+
+`packages/extension-dapp/src/bundle.ts:146`
+
+### Parameters
+
+<ParamField path="callback" type="(accounts: InjectedAccountWithMeta[]) => void | Promise<void>" required>
+  Function called whenever accounts change. Receives the updated list of accounts as a parameter.
+  
+  Can be synchronous or asynchronous (return a Promise).
+</ParamField>
+
+<ParamField path="options" type="Web3AccountsOptions" optional>
+  Same options as `web3Accounts()` for filtering and formatting.
+</ParamField>
+
+### Return Value
+
+<ResponseField name="unsubscribe" type="Unsubcall (function)">
+  A function to call when you want to stop receiving updates. Call this function to unsubscribe from account changes.
+  
+  ```typescript
+  type Unsubcall = () => void;
+  ```
+</ResponseField>
+
+### Usage Examples
+
+#### Basic Subscription
+
+```javascript
+import { web3Enable, web3AccountsSubscribe } from '@subwallet/extension-dapp';
+
+await web3Enable('My DApp');
+
+const unsubscribe = await web3AccountsSubscribe((accounts) => {
+  console.log(`Accounts updated: ${accounts.length} accounts`);
+  accounts.forEach(account => {
+    console.log(`  - ${account.meta.name}: ${account.address}`);
+  });
+});
+
+// Later, when you want to stop listening
+unsubscribe();
+```
+
+#### React Hook with Subscription
+
+```javascript
+import { useState, useEffect } from 'react';
+import { web3Enable, web3AccountsSubscribe } from '@subwallet/extension-dapp';
+
+function useAccountSubscription() {
+  const [accounts, setAccounts] = useState([]);
+  
+  useEffect(() => {
+    let unsubscribe;
+    
+    async function subscribe() {
+      await web3Enable('My DApp');
+      unsubscribe = await web3AccountsSubscribe(setAccounts);
+    }
+    
+    subscribe();
+    
+    // Cleanup: unsubscribe when component unmounts
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, []);
+  
+  return accounts;
+}
+
+// Usage
+function App() {
+  const accounts = useAccountSubscription();
+  
+  return (
+    <div>
+      <h2>Active Accounts ({accounts.length})</h2>
+      <ul>
+        {accounts.map(account => (
+          <li key={account.address}>
+            {account.meta.name || 'Unnamed'} - {account.address}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+#### With Custom Formatting
+
+```javascript
+import { web3AccountsSubscribe } from '@subwallet/extension-dapp';
+
+const unsubscribe = await web3AccountsSubscribe(
+  (accounts) => {
+    // Update your UI with Polkadot-formatted addresses
+    updateAccountList(accounts);
+  },
+  { ss58Format: 0 } // Polkadot format
+);
+```
+
+---
+
+## web3FromSource
+
+Get the injected extension instance for a specific source (extension name). This is useful when you need to access the signer or other features of a specific extension.
+
+### Function Signature
+
+```typescript
+function web3FromSource(
+  source: string
+): Promise<InjectedExtension>
+```
+
+### Source Code Reference
+
+`packages/extension-dapp/src/bundle.ts:183`
+
+### Parameters
+
+<ParamField path="source" type="string" required>
+  The name of the extension source (e.g., "subwallet-js"). This value comes from the `meta.source` property of accounts.
+</ParamField>
+
+### Return Value
+
+<ResponseField name="extension" type="InjectedExtension">
+  The extension instance containing accounts, signer, and other interfaces. See [web3Enable return value](/api/dapp/web3-enable#return-value) for the complete structure.
+</ResponseField>
+
+### Usage Examples
+
+#### Get Extension by Source
+
+```javascript
+import { web3Enable, web3FromSource } from '@subwallet/extension-dapp';
+
+await web3Enable('My DApp');
+
+try {
+  const extension = await web3FromSource('subwallet-js');
+  console.log(`Found extension: ${extension.name} v${extension.version}`);
+  
+  // Access the signer
+  const signer = extension.signer;
+  // Use signer for transactions...
+} catch (error) {
+  console.error('Extension not found:', error);
+}
+```
+
+---
+
+## web3FromAddress
+
+Get the injected extension instance that manages a specific address. This is the most common way to get a signer for transaction signing.
+
+### Function Signature
+
+```typescript
+function web3FromAddress(
+  address: string
+): Promise<InjectedExtension>
+```
+
+### Source Code Reference
+
+`packages/extension-dapp/src/bundle.ts:199`
+
+### Parameters
+
+<ParamField path="address" type="string" required>
+  The account address to look up. Can be in any valid SS58 format - the function will decode and compare addresses correctly.
+</ParamField>
+
+### Return Value
+
+<ResponseField name="extension" type="InjectedExtension">
+  The extension instance that manages this address. Contains the signer needed for transaction signing.
+</ResponseField>
+
+### Usage Examples
+
+#### Basic Usage
+
+```javascript
+import { web3Enable, web3Accounts, web3FromAddress } from '@subwallet/extension-dapp';
+import { ApiPromise, WsProvider } from '@polkadot/api';
+
+// Initialize
+await web3Enable('My DApp');
+const accounts = await web3Accounts();
+const selectedAddress = accounts[0].address;
+
+// Get the injected extension for this address
+const injected = await web3FromAddress(selectedAddress);
+
+// Connect to blockchain
+const api = await ApiPromise.create({ 
+  provider: new WsProvider('wss://rpc.polkadot.io') 
+});
+
+// Create and sign a transaction
+const transfer = api.tx.balances.transfer(
+  'DESTINATION_ADDRESS',
+  12345
+);
+
+await transfer.signAndSend(
+  selectedAddress,
+  { signer: injected.signer },
+  ({ status }) => {
+    if (status.isInBlock) {
+      console.log(`Transaction included in block`);
+    }
+  }
+);
+```
+
+#### Complete Transaction Example
+
+```javascript
+import { web3Enable, web3FromAddress } from '@subwallet/extension-dapp';
+import { ApiPromise, WsProvider } from '@polkadot/api';
+
+async function sendTransaction(fromAddress, toAddress, amount) {
+  try {
+    // Enable extension
+    await web3Enable('My DApp');
+    
+    // Get the signer for this address
+    const injected = await web3FromAddress(fromAddress);
+    
+    // Connect to chain
+    const api = await ApiPromise.create({
+      provider: new WsProvider('wss://rpc.polkadot.io')
+    });
+    
+    // Create transaction
+    const transfer = api.tx.balances.transfer(toAddress, amount);
+    
+    // Sign and send
+    const hash = await transfer.signAndSend(
+      fromAddress,
+      { signer: injected.signer }
+    );
+    
+    console.log('Transaction hash:', hash.toHex());
+    return hash;
+  } catch (error) {
+    console.error('Transaction failed:', error);
+    throw error;
+  }
+}
+
+// Usage
+await sendTransaction(
+  'SENDER_ADDRESS',
+  'RECIPIENT_ADDRESS',
+  1000000000000 // 1 DOT (10 decimals)
+);
+```
+
+#### With Error Handling
+
+```javascript
+import { web3FromAddress } from '@subwallet/extension-dapp';
+
+async function getSignerForAddress(address) {
+  try {
+    const injected = await web3FromAddress(address);
+    return injected.signer;
+  } catch (error) {
+    if (error.message.includes('Unable to find injected')) {
+      console.error('This address is not managed by any extension');
+      // Show error to user
+    } else {
+      console.error('Unexpected error:', error);
+    }
+    return null;
+  }
+}
+```
+
+---
+
+## Type Definitions
+
+### InjectedAccountWithMeta
+
+```typescript
+interface InjectedAccountWithMeta {
+  address: string;
+  meta: {
+    genesisHash?: string | null;
+    name?: string;
+    source: string;
+  };
+  type?: KeypairType;
+}
+```
+
+Source: `packages/extension-inject/src/types.ts:21`
+
+### Web3AccountsOptions
+
+```typescript
+interface Web3AccountsOptions {
+  ss58Format?: number;
+  accountType?: KeypairType[];
+}
+```
+
+Source: `packages/extension-inject/src/types.ts:131`
+
+### KeypairType
+
+```typescript
+type KeypairType = 'ed25519' | 'sr25519' | 'ecdsa' | 'ethereum';
+```
+
+---
+
+## Best Practices
+
+<Tip>
+  **Cache Account Lists**: Use `web3AccountsSubscribe()` instead of repeatedly calling `web3Accounts()` to keep your account list up to date efficiently.
+</Tip>
+
+<Tip>
+  **Address Format Consistency**: If your dApp uses a specific chain, always request accounts with the appropriate `ss58Format` to ensure address display consistency.
+</Tip>
+
+<Warning>
+  **Always Check for Accounts**: After calling `web3Accounts()`, always check if the array is empty. Users might not have any accounts created yet.
+</Warning>
+
+<Info>
+  **Source Names**: The `meta.source` property identifies which extension manages an account. For SubWallet, this is typically "subwallet-js".
+</Info>
+
+## See Also
+
+- [web3Enable](/api/dapp/web3-enable) - Enable extension access
+- [Signing Transactions](/api/dapp/signing) - Sign transactions with account signers
+- [Events & Subscriptions](/api/dapp/events) - Handle account change events

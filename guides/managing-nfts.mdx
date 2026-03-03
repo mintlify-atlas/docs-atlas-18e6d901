@@ -1,0 +1,281 @@
+---
+title: Managing NFTs
+description: View, import, and send NFTs using SubWallet Extension
+---
+
+SubWallet Extension provides a comprehensive NFT management interface where you can view your NFT collections, import custom NFTs, and send NFTs to other addresses.
+
+## Viewing Your NFTs
+
+<Steps>
+  <Step title="Open the NFTs tab">
+    From the SubWallet home screen, click on the **NFTs** tab. This displays all NFT collections in your wallet.
+  </Step>
+
+  <Step title="Browse your collections">
+    Your NFTs are organized by collection. Each collection card shows:
+    - Collection name
+    - Collection image (or the image from one of the NFTs if no collection image is available)
+    - Number of items in the collection
+
+    <Tip>
+      Use the search bar at the top to quickly find specific collections by name or collection ID.
+    </Tip>
+  </Step>
+
+  <Step title="View collection details">
+    Click on any collection to see all NFTs within that collection.
+  </Step>
+
+  <Step title="View individual NFT details">
+    Click on a specific NFT to view:
+    - NFT image or media
+    - NFT name and ID
+    - Collection information
+    - Blockchain network
+    - Properties and attributes (if available)
+    - Send and external link options
+  </Step>
+</Steps>
+
+## Refreshing NFT Data
+
+SubWallet automatically loads your NFTs, but you can manually refresh the data:
+
+<Steps>
+  <Step title="Click the refresh button">
+    In the NFTs tab, click the **refresh icon** (circular arrow) in the top-right corner.
+  </Step>
+
+  <Step title="Wait for the reload">
+    A "Reloading" notification will appear. SubWallet will fetch the latest NFT data from the blockchain.
+
+    <Note>
+      Refreshing NFT data can take a few moments, especially if you have many NFTs across multiple chains.
+    </Note>
+  </Step>
+</Steps>
+
+## Importing Custom NFTs
+
+If an NFT doesn't appear automatically, you can manually import it:
+
+<Steps>
+  <Step title="Access the import screen">
+    In the NFTs tab, click the **+ icon** in the top-right corner, or navigate to **Settings** > **Manage Tokens** > **Import NFT**.
+  </Step>
+
+  <Step title="Select the blockchain network">
+    Choose the network where the NFT exists:
+    - Ethereum
+    - Polygon
+    - Kusama
+    - Polkadot
+    - And other supported NFT chains
+  </Step>
+
+  <Step title="Enter the contract address">
+    Paste the NFT contract address. For EVM chains, this is the smart contract address of the NFT collection.
+
+    <Tip>
+      You can find the contract address on NFT marketplaces like OpenSea, or blockchain explorers like Etherscan.
+    </Tip>
+  </Step>
+
+  <Step title="Enter the token ID">
+    Input the specific Token ID of the NFT you want to import. This is the unique identifier for that NFT within the collection.
+  </Step>
+
+  <Step title="Import the NFT">
+    Click **Import** and wait for SubWallet to fetch the NFT data. Once loaded, the NFT will appear in your collections.
+  </Step>
+</Steps>
+
+<Note>
+  SubWallet supports importing NFTs from both ERC-721 and ERC-1155 standards on EVM chains, as well as native NFTs on Substrate chains.
+</Note>
+
+## Sending NFTs
+
+To transfer an NFT to another address:
+
+<Steps>
+  <Step title="Select the NFT">
+    Navigate to the NFT you want to send and click on it to open the details view.
+  </Step>
+
+  <Step title="Click the Send button">
+    In the NFT detail screen, click the **Send** button.
+  </Step>
+
+  <Step title="Choose the sender account">
+    If you have multiple accounts, select which account owns the NFT and will sign the transaction.
+  </Step>
+
+  <Step title="Enter the recipient address">
+    Type or paste the recipient's address. You can also:
+    - Scan a QR code
+    - Select from your address book
+    - Choose from recent recipients
+
+    <Warning>
+      Ensure the recipient address is correct. NFT transfers are irreversible.
+    </Warning>
+  </Step>
+
+  <Step title="Review the transaction fee">
+    Check the estimated gas/transaction fee. For NFTs, you'll pay the fee in the chain's native token (e.g., ETH for Ethereum NFTs).
+  </Step>
+
+  <Step title="Submit the transaction">
+    Click **Transfer** to proceed. Review the transaction details in the confirmation popup.
+  </Step>
+
+  <Step title="Sign and send">
+    Enter your password to sign the transaction. Once confirmed on the blockchain, the NFT will be removed from your wallet and appear in the recipient's wallet.
+  </Step>
+</Steps>
+
+## Understanding NFT Display
+
+### Collection View
+
+The NFT collections screen groups NFTs by their collection. This makes it easy to:
+- See how many NFTs you have in each collection
+- Browse collections across multiple chains
+- Quickly identify valuable collections
+
+### Grid Layout
+
+NFTs are displayed in a responsive grid layout that:
+- Shows NFT images as thumbnails
+- Adapts to your screen size
+- Displays the collection name and item count
+
+### Fallback Images
+
+If a collection doesn't have a designated image:
+- SubWallet uses the image from one of the NFTs in the collection
+- If no images are available, a placeholder icon is shown
+
+## NFT Metadata
+
+When viewing an NFT, SubWallet displays metadata including:
+
+- **Image/Media**: The visual representation of the NFT
+- **Name**: The NFT's name as defined in the metadata
+- **Description**: Additional details about the NFT
+- **Properties**: Attributes and traits (common for PFP collections)
+- **Collection Info**: Parent collection name and details
+
+<Note>
+  NFT metadata is typically stored on IPFS or centralized servers. If metadata isn't loading, it may be due to the storage provider being temporarily unavailable.
+</Note>
+
+## Cross-Chain NFT Support
+
+SubWallet supports NFTs on multiple blockchain networks:
+
+### EVM-Compatible Chains
+- Ethereum
+- Polygon
+- BNB Smart Chain
+- Moonbeam
+- Moonriver
+- And other EVM chains
+
+### Substrate Chains
+- Polkadot (AssetHub)
+- Kusama (AssetHub)
+- Unique Network
+- Acala
+- Other Substrate-based chains with NFT pallets
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="NFT not appearing in my wallet">
+    If an NFT you own isn't showing:
+    1. Click the refresh button to reload NFT data
+    2. Try manually importing the NFT using the contract address and token ID
+    3. Verify you're looking at the correct account
+    4. Ensure the NFT's blockchain is supported and active in SubWallet
+    5. Check if the NFT is on a different network than expected
+  </Accordion>
+
+  <Accordion title="NFT image not loading">
+    If an NFT image isn't displaying:
+    - The metadata server may be temporarily down
+    - The IPFS gateway may be slow (refresh the page)
+    - The NFT may not have image metadata
+    - Check your internet connection
+
+    Try refreshing the NFT or checking the NFT on a blockchain explorer to see if it's a widespread issue.
+  </Accordion>
+
+  <Accordion title="Can't send NFT">
+    If you're unable to send an NFT:
+    - Ensure you have enough native tokens for gas fees
+    - Verify you're using the correct account that owns the NFT
+    - Check if the NFT is locked in a staking contract or other protocol
+    - Some NFTs may have transfer restrictions (soulbound tokens)
+  </Accordion>
+
+  <Accordion title="Import fails with 'Invalid contract address'">
+    When importing an NFT:
+    - Verify the contract address is correct
+    - Ensure you've selected the right blockchain network
+    - Check that the contract address is for an NFT collection, not a regular token
+    - Verify the token ID exists in that collection
+  </Accordion>
+
+  <Accordion title="NFT disappeared after sending">
+    This is normal behavior:
+    - Once sent, the NFT is removed from your wallet
+    - Check the transaction in the History tab to confirm it was sent
+    - Use a blockchain explorer to verify the NFT arrived at the recipient's address
+    - If you sent to the wrong address, the NFT cannot be recovered unless the recipient sends it back
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+<Tip>
+  - Keep track of your NFT contract addresses and token IDs for easy re-importing if needed
+  - Before buying NFTs, ensure the collection's blockchain is supported by SubWallet
+  - When sending valuable NFTs, double-check the recipient address
+  - Regularly refresh your NFT data to ensure you're seeing the most up-to-date collection
+  - Be cautious of scam or spam NFTs that may appear in your wallet
+</Tip>
+
+## Advanced Features
+
+### Batch NFT Operations
+
+While SubWallet doesn't currently support batch sending of NFTs, you can:
+- Send multiple NFTs one at a time
+- Use the search function to quickly find NFTs across collections
+
+### NFT Marketplaces
+
+To buy, sell, or trade NFTs:
+1. Connect SubWallet to an NFT marketplace (like OpenSea, Rarible, or Singular)
+2. Use the marketplace's interface to list or purchase NFTs
+3. Approve transactions in SubWallet when prompted
+
+### Viewing NFTs on Explorers
+
+From the NFT detail screen, click the **external link** icon to:
+- View the NFT on a blockchain explorer
+- See the full transaction history
+- Verify authenticity and provenance
+
+## Security Considerations
+
+<Warning>
+  - Be cautious of unsolicited NFTs in your wallet (potential scams or phishing)
+  - Don't interact with suspicious NFT contracts
+  - Verify collection authenticity before purchasing NFTs
+  - Never share your seed phrase or private keys, even if someone claims it's needed to "verify" an NFT
+  - Be aware that clicking on malicious NFT metadata links could be harmful
+</Warning>

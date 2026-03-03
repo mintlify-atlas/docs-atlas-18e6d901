@@ -1,0 +1,419 @@
+---
+title: Staking Tokens
+description: Learn how to stake tokens and earn rewards using SubWallet Extension's earning features
+---
+
+SubWallet Extension provides a comprehensive staking interface that supports multiple staking methods across various blockchain networks. Earn passive rewards by staking your tokens.
+
+## Accessing the Earning Dashboard
+
+<Steps>
+  <Step title="Navigate to Earning options">
+    From the SubWallet home screen, click on the **Earning** tab or select **Earning** from the menu.
+  </Step>
+
+  <Step title="View available opportunities">
+    The Earning dashboard shows:
+    - **Earning Positions**: Your active stakes and their current rewards
+    - **Earning Options**: Available staking opportunities across all chains
+
+    <Tip>
+      Earning options are sorted by APY (Annual Percentage Yield) by default, showing the most profitable opportunities first.
+    </Tip>
+  </Step>
+
+  <Step title="Filter by staking type (optional)">
+    You can filter opportunities by:
+    - **Native Staking**: Direct validator staking
+    - **Nomination Pools**: Pooled staking with lower minimums
+    - **Liquid Staking**: Stake while maintaining liquidity
+    - **Lending**: Lend tokens to DeFi protocols
+  </Step>
+</Steps>
+
+## Staking Tokens (General Process)
+
+<Steps>
+  <Step title="Select a staking opportunity">
+    Click on a staking pool or option that interests you. Review:
+    - **APY**: Expected annual yield
+    - **Minimum stake**: Required minimum amount
+    - **Total staked**: Amount already staked in the pool
+    - **Commission**: Validator or pool fees
+  </Step>
+
+  <Step title="Click 'Stake'">
+    Click the **Stake** button to begin the staking process.
+  </Step>
+
+  <Step title="Select the account">
+    Choose which account you want to stake from. Ensure the account has:
+    - Sufficient token balance for staking
+    - Extra tokens to cover transaction fees
+
+    <Note>
+      Some chains require you to maintain a minimum balance even after staking (existential deposit).
+    </Note>
+  </Step>
+
+  <Step title="Enter the stake amount">
+    Type the amount you want to stake. SubWallet displays:
+    - **Available balance**: Maximum you can stake
+    - **Minimum stake**: Required minimum for the pool
+    - **Maintain balance**: Amount you should keep for fees and existential deposit
+
+    <Warning>
+      Don't stake your entire balance. Keep some tokens for:
+      - Transaction fees for unstaking later
+      - Maintaining the minimum account balance (existential deposit)
+      - Other on-chain operations
+    </Warning>
+  </Step>
+
+  <Step title="Choose validator(s) or pool (if applicable)">
+    Depending on the staking type:
+    
+    **For Native Staking:**
+    - Select one or more validators from the list
+    - Review their commission rates and total stake
+    - Choose validators with good performance and reasonable commission
+
+    **For Nomination Pools:**
+    - Select a nomination pool
+    - Review the pool's commission and member count
+
+    **For Liquid Staking:**
+    - No validator selection needed
+    - You'll receive liquid staking tokens (like stDOT, LDOT) in return
+  </Step>
+
+  <Step title="Review transaction details">
+    Check the summary:
+    - Stake amount
+    - Selected validator(s) or pool
+    - Estimated rewards
+    - Transaction fee
+    - Any cross-chain fees (for liquid staking that requires XCM)
+  </Step>
+
+  <Step title="Confirm and sign">
+    Click **Stake** to proceed, then enter your password to sign the transaction.
+  </Step>
+
+  <Step title="Wait for confirmation">
+    The staking transaction will be processed. Once confirmed:
+    - Your tokens will show as "staked" in your earning positions
+    - Rewards will start accumulating after the staking activation period (varies by chain)
+  </Step>
+</Steps>
+
+## Staking Methods Explained
+
+### Native Staking
+
+Direct staking with validators on networks like Polkadot, Kusama, and others.
+
+**Characteristics:**
+- Higher minimum stake requirements (e.g., 250 DOT on Polkadot)
+- You select specific validators
+- Typically higher yields
+- Longer unbonding periods
+
+<Steps>
+  <Step title="Select Native Staking option">
+    Choose a native staking opportunity for your desired chain.
+  </Step>
+
+  <Step title="Choose up to 16 validators">
+    On most networks, you can nominate multiple validators (up to 16 on Polkadot/Kusama). This helps ensure your stake is always earning, even if one validator becomes inactive.
+
+    <Tip>
+      Diversify across multiple validators to reduce risk. Choose validators with:
+      - High uptime and performance
+      - Reasonable commission (5-10% is typical)
+      - Not oversaturated (too much stake reduces rewards)
+    </Tip>
+  </Step>
+
+  <Step title="Stake and wait">
+    After staking, your nomination will become active in the next era (typically 24 hours on Polkadot). Rewards are paid out each era.
+  </Step>
+</Steps>
+
+### Nomination Pools
+
+Pooled staking that allows smaller stakes and easier management.
+
+**Characteristics:**
+- Lower minimum stake (as low as 1 token)
+- Pool operator manages validators
+- Slightly lower yields due to pool commission
+- Same unbonding period as native staking
+
+<Steps>
+  <Step title="Select a Nomination Pool">
+    Choose from available nomination pools. Consider:
+    - Pool commission rate
+    - Total staked in the pool
+    - Pool's performance history
+  </Step>
+
+  <Step title="Join the pool">
+    Enter your stake amount (must meet the pool's minimum) and confirm the transaction.
+  </Step>
+
+  <Step title="Earn rewards automatically">
+    The pool operator manages validator selection. You earn rewards based on the pool's performance minus the pool commission.
+  </Step>
+</Steps>
+
+### Liquid Staking
+
+Stake tokens while receiving a liquid derivative token that you can use in DeFi.
+
+**Characteristics:**
+- Receive liquid staking tokens (LSTs) like stDOT, LDOT
+- No unbonding period (sell LSTs anytime)
+- Use LSTs in DeFi protocols for additional yields
+- May involve cross-chain transfers
+
+<Steps>
+  <Step title="Select a Liquid Staking protocol">
+    Choose from options like:
+    - Acala Liquid DOT (LDOT)
+    - Lido staked DOT (stDOT)
+    - Bifrost (vDOT)
+  </Step>
+
+  <Step title="Stake tokens">
+    Enter the amount and confirm. You may see multiple transaction steps:
+    1. Cross-chain transfer (if needed)
+    2. Minting of liquid staking tokens
+  </Step>
+
+  <Step title="Receive LSTs">
+    You'll receive liquid staking tokens at a 1:1 ratio. These tokens automatically accrue staking rewards through price appreciation relative to the native token.
+  </Step>
+
+  <Step title="Use or hold your LSTs">
+    - **Hold**: Simply hold the LSTs to earn staking rewards
+    - **DeFi**: Use LSTs as collateral, in liquidity pools, or other DeFi strategies
+  </Step>
+</Steps>
+
+### Lending
+
+Lend tokens to DeFi protocols to earn interest.
+
+**Characteristics:**
+- Variable APY based on utilization
+- Can withdraw anytime (if liquidity is available)
+- Different risk profile than staking
+- Supported on networks like Acala, Moonbeam
+
+<Steps>
+  <Step title="Select a Lending protocol">
+    Choose from available lending opportunities.
+  </Step>
+
+  <Step title="Supply tokens">
+    Enter the amount to lend and confirm the transaction.
+  </Step>
+
+  <Step title="Earn interest">
+    Interest accrues automatically. Withdraw anytime (subject to protocol liquidity).
+  </Step>
+</Steps>
+
+## Managing Your Stakes
+
+### Viewing Active Stakes
+
+<Steps>
+  <Step title="Open Earning Positions">
+    In the Earning tab, view your active staking positions.
+  </Step>
+
+  <Step title="Click on a position">
+    Select a position to see detailed information:
+    - Total staked amount
+    - Current rewards
+    - Validator or pool details
+    - Unstaking options
+  </Step>
+</Steps>
+
+### Claiming Rewards
+
+Depending on the staking type:
+
+**Auto-compounding pools:**
+- Rewards are automatically restaked
+- No manual claim needed
+
+**Manual claim pools:**
+<Steps>
+  <Step title="Open the earning position">
+    Navigate to the position with claimable rewards.
+  </Step>
+
+  <Step title="Click 'Claim Rewards'">
+    Click the claim button to collect your rewards.
+  </Step>
+
+  <Step title="Confirm the transaction">
+    Sign the transaction to claim rewards to your wallet. Note that claiming requires a transaction fee.
+  </Step>
+</Steps>
+
+### Unstaking Tokens
+
+<Warning>
+  Most staking methods have an **unbonding period** (typically 7-28 days) during which your tokens are locked and not earning rewards.
+</Warning>
+
+<Steps>
+  <Step title="Open your earning position">
+    Navigate to the staking position you want to unstake from.
+  </Step>
+
+  <Step title="Click 'Unstake'">
+    Select the unstake option in the position details.
+  </Step>
+
+  <Step title="Enter the amount to unstake">
+    Specify how much to unstake. You can:
+    - Unstake a portion
+    - Unstake all
+  </Step>
+
+  <Step title="Confirm and wait">
+    Sign the transaction and wait for the unbonding period to complete.
+
+    <Note>
+      During the unbonding period:
+      - Your tokens are locked
+      - You don't earn rewards
+      - You can't cancel the unbonding (on most networks)
+    </Note>
+  </Step>
+
+  <Step title="Withdraw unbonded tokens">
+    After the unbonding period, return to the position and click **Withdraw** to claim your unbonded tokens.
+  </Step>
+</Steps>
+
+## Advanced Staking Features
+
+### Changing Validators
+
+For native staking, you can change your validator selection without unstaking:
+
+<Steps>
+  <Step title="Open the earning position">
+    Navigate to your native staking position.
+  </Step>
+
+  <Step title="Edit nominations">
+    Click the edit or change validator option.
+  </Step>
+
+  <Step title="Select new validators">
+    Choose different validators from the list.
+  </Step>
+
+  <Step title="Confirm the change">
+    Sign the transaction. Changes will take effect in the next era.
+  </Step>
+</Steps>
+
+### Increasing Your Stake
+
+To add more tokens to an existing stake:
+
+<Steps>
+  <Step title="Access the earning position">
+    Open the position you want to increase.
+  </Step>
+
+  <Step title="Click 'Stake More'">
+    Select the option to add to your stake.
+  </Step>
+
+  <Step title="Enter additional amount">
+    Input how much more you want to stake.
+  </Step>
+
+  <Step title="Confirm">
+    Sign the transaction. The additional stake will start earning rewards immediately (or after activation period).
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Stake button is disabled">
+    Common reasons:
+    - Insufficient balance (need more tokens)
+    - Below minimum stake requirement
+    - Chain is not connected or syncing
+    - Account type not supported (e.g., read-only account)
+
+    Solution: Ensure you meet the minimum requirement and have extra tokens for fees.
+  </Accordion>
+
+  <Accordion title="Not earning rewards">
+    Possible causes:
+    - Staking hasn't activated yet (wait for next era)
+    - Validator is inactive or oversubscribed
+    - Your stake is too small compared to others in the pool
+    - Network is experiencing issues
+
+    Solution: Wait for activation period, or change to a more active validator.
+  </Accordion>
+
+  <Accordion title="Can't unstake all tokens">
+    Some networks require:
+    - A minimum stake to remain active
+    - Keeping existential deposit
+
+    Solution: Unstake slightly less, or unstake all and accept account reaping.
+  </Accordion>
+
+  <Accordion title="Transaction fails with insufficient balance">
+    You need tokens to:
+    - Pay transaction fees for staking
+    - Maintain existential deposit
+    - Pay future unstaking fees
+
+    Solution: Reduce the stake amount to keep some tokens free.
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+<Tip>
+  - Start with small amounts to understand the staking process
+  - Diversify across multiple validators or pools
+  - Regularly check validator performance and adjust nominations
+  - Keep some tokens unstaked for fees and liquidity
+  - Research APY, commission rates, and unbonding periods before staking
+  - For native staking, nominate the maximum number of validators (16) for better rewards
+  - Consider liquid staking if you want flexibility to exit quickly
+</Tip>
+
+## Security and Risks
+
+<Warning>
+  **Staking Risks:**
+  - Slashing: Validators can be penalized for misbehavior, affecting your rewards (rare but possible)
+  - Lock-up periods: Your tokens are illiquid during unbonding
+  - Smart contract risk: For liquid staking and DeFi lending
+  - Market risk: Token price can fluctuate while staked
+
+  **Best Practices:**
+  - Only stake with reputable validators
+  - Don't stake 100% of your holdings
+  - Understand the unbonding period before staking
+  - Research the protocol's security and audit history
+</Warning>

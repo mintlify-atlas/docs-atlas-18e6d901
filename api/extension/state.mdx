@@ -1,0 +1,501 @@
+---
+title: State Management
+description: RxJS-based state stores for managing extension data
+---
+
+## Overview
+
+SubWallet Extension uses a store-based state management system built on Chrome storage API and RxJS Subjects. The system provides persistent storage with reactive updates across the extension.
+
+## Store Architecture
+
+### Base Store Classes
+
+#### BaseStore
+
+Foundation class providing Chrome storage integration.
+
+```typescript
+abstract class BaseStore<T> {
+  constructor(prefix: string | null);
+  
+  get(key: string, update: (value: T) => void): void;
+  set(key: string, value: T, update?: () => void): void;
+  remove(key: string, update?: () => void): void;
+  all(update: (key: string, value: T) => void): void;
+  allMap(update: (value: Record<string, T>) => void): void;
+  getPrefix(): string;
+}
+```
+
+<ParamField path="prefix" type="string | null" required>
+  Storage key prefix to namespace store data
+</ParamField>
+
+#### SubscribableStore
+
+Extends `BaseStore` with RxJS Subject for reactive updates.
+
+```typescript
+abstract class SubscribableStore<T> extends BaseStore<T> {
+  getSubject(): Subject<T>;
+  asyncGet(key: string): Promise<T>;
+  removeAll(): void;
+  set(key: string, value: T, update?: () => void): void; // Emits to subject
+}
+```
+
+## Core Stores
+
+### AccountsStore
+
+Manages keyring account data.
+
+```typescript
+import { AccountsStore } from '@subwallet/extension-base/stores';
+
+class AccountsStore extends BaseStore<KeyringJson> implements KeyringStore {
+  constructor();
+}
+```
+
+#### Usage
+
+```typescript
+const accountsStore = new AccountsStore();
+
+// Get account
+accountsStore.get('account:0x123...', (account) => {
+  console.log('Account:', account);
+});
+
+// Set account
+accountsStore.set('account:0x123...', keyringJson);
+
+// Get all accounts
+accountsStore.allMap((accounts) => {
+  Object.entries(accounts).forEach(([key, value]) => {
+    console.log(key, value);
+  });
+});
+```
+
+### CurrentAccountStore
+
+Manages the currently selected account.
+
+```typescript
+import { CurrentAccountStore } from '@subwallet/extension-base/stores';
+
+class CurrentAccountStore extends SubscribableStore<CurrentAccountInfo> {
+  constructor();
+}
+
+interface CurrentAccountInfo {
+  address: string;
+}
+```
+
+#### Usage
+
+```typescript
+const currentAccountStore = new CurrentAccountStore();
+
+// Subscribe to current account changes
+currentAccountStore.getSubject().subscribe((accountInfo) => {
+  console.log('Current account:', accountInfo.address);
+});
+
+// Set current account
+currentAccountStore.set('current', { address: '0x123...' });
+
+// Get current account asynchronously
+const currentAccount = await currentAccountStore.asyncGet('current');
+```
+
+### SettingsStore
+
+Manages user preferences and settings.
+
+```typescript
+import SettingsStore from '@subwallet/extension-base/stores/Settings';
+
+class SettingsStore extends SubscribableStore<RequestSettingsType> {
+  constructor();
+}
+```
+
+#### Usage
+
+```typescript
+const settingsStore = new SettingsStore();
+
+// Subscribe to settings changes
+settingsStore.getSubject().subscribe((settings) => {
+  console.log('Settings updated:', settings);
+});
+
+// Update settings
+settingsStore.set('user-settings', {
+  theme: 'dark',
+  language: 'en',
+  currency: 'usd'
+});
+```
+
+### AssetSettingStore
+
+Manages visibility and configuration of assets/tokens.
+
+```typescript
+import AssetSettingStore from '@subwallet/extension-base/stores/AssetSetting';
+
+class AssetSettingStore extends SubscribableStore<Record<string, AssetSetting>> {
+  constructor();
+}
+
+interface AssetSetting {
+  visible: boolean;
+  // ... other asset settings
+}
+```
+
+#### Usage
+
+```typescript
+const assetSettingStore = new AssetSettingStore();
+
+// Get all asset settings
+const settings = await assetSettingStore.asyncGet('asset-settings');
+
+// Update specific asset visibility
+assetSettingStore.set('asset-settings', {
+  ...settings,
+  'polkadot-dot': { visible: true },
+  'kusama-ksm': { visible: false }
+});
+```
+
+### ChainlistStore
+
+Manages chain configuration and patch versions.
+
+```typescript
+import ChainlistStore from '@subwallet/extension-base/stores/ChainlistStore';
+
+interface ChainlistConfig {
+  patchVersion: string;
+}
+
+class ChainlistStore extends SubscribableStore<ChainlistConfig> {
+  constructor();
+}
+```
+
+#### Usage
+
+```typescript
+const chainlistStore = new ChainlistStore();
+
+chainlistStore.set('config', { patchVersion: '1.2.3' });
+```
+
+### MetadataStore
+
+Manages chain metadata.
+
+```typescript
+import { MetadataStore } from '@subwallet/extension-base/stores';
+
+class MetadataStore extends BaseStore<MetadataDef> {
+  constructor();
+}
+```
+
+### CurrentCurrencyStore
+
+Manages the selected fiat currency for price display.
+
+```typescript
+import { CurrentCurrencyStore } from '@subwallet/extension-base/stores';
+
+class CurrentCurrencyStore extends SubscribableStore<CurrencyType> {
+  constructor();
+}
+```
+
+## Store Methods
+
+### BaseStore Methods
+
+#### get
+
+Retrieve a value from storage.
+
+```typescript
+get(key: string, update: (value: T) => void): void
+```
+
+<ParamField path="key" type="string" required>
+  Storage key (without prefix)
+</ParamField>
+
+<ParamField path="update" type="function" required>
+  Callback receiving the stored value
+</ParamField>
+
+**Example:**
+
+```typescript
+store.get('my-key', (value) => {
+  console.log('Value:', value);
+});
+```
+
+#### set
+
+Store a value in storage.
+
+```typescript
+set(key: string, value: T, update?: () => void): void
+```
+
+<ParamField path="key" type="string" required>
+  Storage key (without prefix)
+</ParamField>
+
+<ParamField path="value" type="T" required>
+  Value to store
+</ParamField>
+
+<ParamField path="update" type="function">
+  Optional callback after storage completes
+</ParamField>
+
+**Example:**
+
+```typescript
+store.set('my-key', { data: 'value' }, () => {
+  console.log('Saved!');
+});
+```
+
+#### remove
+
+Remove a value from storage.
+
+```typescript
+remove(key: string, update?: () => void): void
+```
+
+<ParamField path="key" type="string" required>
+  Storage key to remove
+</ParamField>
+
+<ParamField path="update" type="function">
+  Optional callback after removal
+</ParamField>
+
+**Example:**
+
+```typescript
+store.remove('my-key', () => {
+  console.log('Removed!');
+});
+```
+
+#### all
+
+Iterate over all stored values.
+
+```typescript
+all(update: (key: string, value: T) => void): void
+```
+
+**Example:**
+
+```typescript
+store.all((key, value) => {
+  console.log(`${key}:`, value);
+});
+```
+
+#### allMap
+
+Retrieve all values as a single object.
+
+```typescript
+allMap(update: (value: Record<string, T>) => void): void
+```
+
+**Example:**
+
+```typescript
+store.allMap((allValues) => {
+  console.log('All data:', allValues);
+});
+```
+
+### SubscribableStore Methods
+
+#### getSubject
+
+Get the RxJS Subject for reactive updates.
+
+```typescript
+getSubject(): Subject<T>
+```
+
+**Returns:** RxJS `Subject<T>`
+
+**Example:**
+
+```typescript
+const subscription = store.getSubject().subscribe((value) => {
+  console.log('Updated:', value);
+});
+
+// Cleanup
+subscription.unsubscribe();
+```
+
+#### asyncGet
+
+Promise-based retrieval.
+
+```typescript
+asyncGet(key: string): Promise<T>
+```
+
+**Returns:** `Promise<T>` resolving to stored value
+
+**Example:**
+
+```typescript
+const value = await store.asyncGet('my-key');
+console.log('Value:', value);
+```
+
+#### removeAll
+
+Remove all items from the store.
+
+```typescript
+removeAll(): void
+```
+
+**Example:**
+
+```typescript
+store.removeAll();
+```
+
+## Storage Keys
+
+Stores use prefixed keys to avoid collisions:
+
+```typescript
+const EXTENSION_PREFIX = 'subwallet-';
+
+// Example keys:
+// subwallet-accounts:account:0x123...
+// subwallet-current_account:current
+// subwallet-settings:user-settings
+// subwallet-asset-setting:asset-settings
+```
+
+## Reactive Patterns
+
+### React Hook Integration
+
+```typescript
+import { useEffect, useState } from 'react';
+import { CurrentAccountStore } from '@subwallet/extension-base/stores';
+
+function useCurrentAccount() {
+  const [account, setAccount] = useState<CurrentAccountInfo | null>(null);
+  
+  useEffect(() => {
+    const store = new CurrentAccountStore();
+    const subscription = store.getSubject().subscribe(setAccount);
+    
+    // Load initial value
+    store.get('current', setAccount);
+    
+    return () => subscription.unsubscribe();
+  }, []);
+  
+  return account;
+}
+```
+
+### Observable Chains
+
+```typescript
+import { map, filter } from 'rxjs/operators';
+
+const store = new SettingsStore();
+
+store.getSubject().pipe(
+  filter(settings => settings.theme !== undefined),
+  map(settings => settings.theme)
+).subscribe(theme => {
+  console.log('Theme changed:', theme);
+});
+```
+
+## Best Practices
+
+1. **Use SubscribableStore for reactive data**: Prefer `SubscribableStore` when you need to react to changes across the extension
+
+2. **Cleanup subscriptions**: Always unsubscribe from RxJS Subjects to prevent memory leaks
+
+```typescript
+const subscription = store.getSubject().subscribe(...);
+// Later:
+subscription.unsubscribe();
+```
+
+3. **Namespace your keys**: Use consistent key naming conventions
+
+```typescript
+// Good
+store.set('user-settings', data);
+store.set('network-config', data);
+
+// Bad
+store.set('settings', data);
+store.set('config', data);
+```
+
+4. **Use asyncGet for cleaner code**: Prefer `asyncGet` over callback-based `get` when possible
+
+```typescript
+// Async/await
+const value = await store.asyncGet('key');
+
+// vs callback
+store.get('key', (value) => {
+  // nested callback hell
+});
+```
+
+5. **Handle storage errors**: Chrome storage can fail; always handle errors
+
+```typescript
+try {
+  const value = await store.asyncGet('key');
+} catch (error) {
+  console.error('Storage error:', error);
+}
+```
+
+## Storage Limits
+
+Chrome extension storage has limits:
+
+- **Local storage**: 5MB limit (can request unlimited storage permission)
+- **Sync storage**: 100KB limit with 8KB per item
+- **Session storage**: 10MB limit
+
+SubWallet uses `chrome.storage.local` for most data.

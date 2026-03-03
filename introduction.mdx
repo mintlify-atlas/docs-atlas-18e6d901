@@ -1,0 +1,159 @@
+---
+title: Introduction to SubWallet
+description: SubWallet is a comprehensive non-custodial Web3 wallet for Polkadot, Substrate, and Ethereum ecosystems
+---
+
+# Welcome to SubWallet Extension
+
+SubWallet is a **comprehensive Web3 wallet solution** designed for the Polkadot, Substrate, and Ethereum ecosystems. Built as a browser extension, SubWallet provides a secure, non-custodial way to manage your digital assets, interact with decentralized applications (dApps), and participate in the multi-chain Web3 ecosystem.
+
+## What is SubWallet?
+
+SubWallet Extension is forked from polkadot-js/extension and enhanced with powerful features while maintaining compatibility with the original codebase. As a non-custodial wallet, you maintain complete control over your private keys and assets at all times.
+
+<Note>
+SubWallet Extension v{process.env.VERSION || '1.3.74'} - Built and maintained by Koni Studio
+</Note>
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Multi-Chain Support" icon="link" href="#supported-ecosystems">
+    Support for Polkadot, Substrate, and Ethereum-based networks with seamless cross-chain interactions
+  </Card>
+  
+  <Card title="Asset Management" icon="wallet">
+    Manage tokens, NFTs, and track your portfolio across multiple chains in one unified interface
+  </Card>
+  
+  <Card title="Staking & Earning" icon="coins">
+    Participate in staking, liquid staking, and earning opportunities with built-in APY tracking
+  </Card>
+  
+  <Card title="dApp Integration" icon="globe" href="/quickstart">
+    Seamlessly connect to decentralized applications with injected wallet support
+  </Card>
+  
+  <Card title="Cross-Chain Transfers" icon="arrow-right-arrow-left">
+    Transfer assets between different chains with built-in bridge support
+  </Card>
+  
+  <Card title="Advanced Features" icon="shield">
+    Support for multisig accounts, proxy accounts, OpenGov participation, and more
+  </Card>
+</CardGroup>
+
+## Supported Ecosystems
+
+SubWallet provides comprehensive support for multiple blockchain ecosystems:
+
+### Polkadot Ecosystem
+- **Polkadot** - Main relay chain
+- **Kusama** - Canary network
+- **Parachains** - All major Polkadot and Kusama parachains
+- **Asset Hub** (formerly Statemint/Statemine)
+
+### Substrate Chains
+- Native support for Substrate-based blockchains
+- Custom chain definitions and metadata
+
+### Ethereum & EVM Chains
+- Ethereum mainnet
+- EVM-compatible chains (Polygon, BSC, Arbitrum, Optimism, and more)
+- Full ERC-20 and ERC-721 token support
+
+<Info>
+SubWallet uses the `@subwallet/chain-list` package to maintain an up-to-date list of supported networks.
+</Info>
+
+## How SubWallet Works
+
+SubWallet Extension follows a secure architecture pattern:
+
+```
+┌─────────────────┐
+│  Browser Tab    │
+│  (dApp)         │
+└────────┬────────┘
+         │ Inject Script
+         ▼
+┌─────────────────┐
+│  Extension UI   │
+│  (Popup/Panel)  │
+└────────┬────────┘
+         │ Message Passing
+         ▼
+┌─────────────────┐
+│  Background     │
+│  (Core Logic)   │
+└─────────────────┘
+```
+
+**Background Environment** - Handles all secure operations, API calls, state management, and data persistence
+
+**Extension UI** - Provides the user interface through popup and side panel views
+
+**Inject Scripts** - Safely injects wallet objects into web pages for dApp interaction
+
+<Tip>
+All sensitive operations and private key management happen in the secure background environment, isolated from web pages.
+</Tip>
+
+## Recent Updates
+
+SubWallet is actively developed with regular feature updates:
+
+- **Multisig Account Support** (Phase 1)
+- **Proxy Account Support** 
+- **OpenGov Integration** (Phase 1)
+- **Import from Trust Wallet**
+- **Locked Balance Display**
+- **Advanced phishing detection**
+- **Cross-chain swap improvements**
+
+## Why Choose SubWallet?
+
+**Non-Custodial & Secure** - You control your keys and assets
+
+**Multi-Chain Native** - Built from the ground up for cross-chain interactions
+
+**Open Source** - Transparent, auditable code licensed under Apache-2.0
+
+**Active Development** - Regular updates and new features
+
+**Community Driven** - Built by Koni Studio with community feedback
+
+## Get Started
+
+Ready to begin your Web3 journey with SubWallet?
+
+<CardGroup cols={2}>
+  <Card title="Install Extension" icon="download" href="/installation">
+    Download and install SubWallet for your browser
+  </Card>
+  
+  <Card title="Quick Start Guide" icon="rocket" href="/quickstart">
+    Create your first wallet and start using SubWallet
+  </Card>
+</CardGroup>
+
+## Browser Compatibility
+
+SubWallet Extension supports:
+- Chrome (v111+)
+- Brave
+- Edge
+- Firefox
+- Other Chromium-based browsers
+
+## Need Help?
+
+Join the SubWallet community:
+
+- Website: [https://subwallet.app](https://subwallet.app)
+- GitHub: [https://github.com/Koniverse/Subwallet-V2](https://github.com/Koniverse/Subwallet-V2)
+- Report Issues: [https://github.com/Koniverse/Subwallet-V2/issues](https://github.com/Koniverse/Subwallet-V2/issues)
+
+<Warning>
+Always keep your seed phrase secure and never share it with anyone. SubWallet will never ask for your seed phrase.
+</Warning>

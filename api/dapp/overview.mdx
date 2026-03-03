@@ -1,0 +1,154 @@
+---
+title: 'DApp Integration Overview'
+description: 'Learn how to integrate your decentralized application with SubWallet Extension'
+---
+
+## Introduction
+
+The SubWallet Extension provides a comprehensive JavaScript API that allows decentralized applications (dApps) to interact with user accounts and request transaction signatures. This API is based on the Polkadot.js extension interface with SubWallet-specific enhancements.
+
+## Package Information
+
+The DApp integration API is provided through the `@subwallet/extension-dapp` package.
+
+```bash
+npm install @subwallet/extension-dapp
+```
+
+or
+
+```bash
+yarn add @subwallet/extension-dapp
+```
+
+## Core Concepts
+
+### Extension Injection
+
+SubWallet injects itself into the browser's `window.injectedWeb3` object, making it available to all dApps. The extension must be enabled before any other operations can be performed.
+
+### Account Types
+
+SubWallet supports multiple account types:
+
+- **Substrate accounts**: Standard Polkadot/Kusama accounts
+- **Ethereum accounts**: EVM-compatible accounts
+- **Bitcoin accounts**: Available through `window.SubWalletBitcoin`
+- **Cardano accounts**: Available through `window.cardano.subwallet`
+
+### Authentication Options
+
+When enabling the extension, you can specify which account types your dApp requires:
+
+- `substrate`: Only Substrate accounts
+- `evm`: Only EVM accounts
+- `both`: Both Substrate and EVM accounts
+
+## Quick Start
+
+Here's a minimal example to get started:
+
+```javascript
+import { web3Enable, web3Accounts } from '@subwallet/extension-dapp';
+
+// Enable the extension
+const extensions = await web3Enable('My DApp Name');
+
+if (extensions.length === 0) {
+  // No extension installed
+  console.error('No extension found');
+  return;
+}
+
+// Get all accounts
+const accounts = await web3Accounts();
+console.log('Available accounts:', accounts);
+```
+
+## API Overview
+
+The SubWallet DApp API provides the following main functions:
+
+### Initialization
+
+- [`web3Enable()`](/api/dapp/web3-enable) - Enable extension access for your dApp
+- `isWeb3Injected` - Check if any extension is injected
+
+### Account Management
+
+- [`web3Accounts()`](/api/dapp/accounts#web3accounts) - Get all available accounts
+- [`web3AccountsSubscribe()`](/api/dapp/accounts#web3accountssubscribe) - Subscribe to account changes
+- [`web3FromAddress()`](/api/dapp/accounts#web3fromaddress) - Get extension instance for a specific address
+- [`web3FromSource()`](/api/dapp/accounts#web3fromsource) - Get extension instance for a specific source
+
+### Signing Operations
+
+- Transaction signing via the `signer` interface
+- Message signing via `signRaw()`
+
+See the [Signing](/api/dapp/signing) documentation for details.
+
+### Events & Subscriptions
+
+- Account change subscriptions
+- Extension initialization events
+
+See the [Events](/api/dapp/events) documentation for details.
+
+## TypeScript Support
+
+The package includes full TypeScript definitions. Key types include:
+
+```typescript
+import type {
+  InjectedExtension,
+  InjectedAccount,
+  InjectedAccountWithMeta,
+  Web3AccountsOptions
+} from '@subwallet/extension-dapp';
+```
+
+## Error Handling
+
+All API functions may throw errors. Always wrap calls in try-catch blocks:
+
+```javascript
+try {
+  const accounts = await web3Accounts();
+  // Process accounts
+} catch (error) {
+  console.error('Failed to get accounts:', error.message);
+}
+```
+
+## Common Errors
+
+- **"web3Enable(originName) needs to be called before..."** - You must call `web3Enable()` before using other API functions
+- **"Unable to find injected..."** - The requested account or extension source was not found
+- **"No extension found"** - No wallet extension is installed in the browser
+
+## Browser Compatibility
+
+SubWallet Extension is compatible with:
+
+- Chrome/Chromium-based browsers
+- Firefox
+- Brave
+- Edge
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Enable Extension" icon="power-off" href="/api/dapp/web3-enable">
+    Learn how to enable SubWallet in your dApp
+  </Card>
+  <Card title="Manage Accounts" icon="users" href="/api/dapp/accounts">
+    Retrieve and manage user accounts
+  </Card>
+  <Card title="Sign Transactions" icon="pen-to-square" href="/api/dapp/signing">
+    Request transaction signatures from users
+  </Card>
+  <Card title="Handle Events" icon="bell" href="/api/dapp/events">
+    Subscribe to account and extension events
+  </Card>
+</CardGroup>

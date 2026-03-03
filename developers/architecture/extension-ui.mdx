@@ -1,0 +1,530 @@
+---
+title: Extension UI
+description: Understanding SubWallet Extension's React-based UI architecture, context providers, and state management
+---
+
+## Overview
+
+The SubWallet Extension UI is built with React 18, TypeScript, and Redux Toolkit. It runs in the extension popup and communicates with the background service through Chrome runtime messaging.
+
+## Architecture
+
+```
+Popup (Extension UI)
+├── Context Providers
+│   ├── DataContextProvider (Redux + Subscriptions)
+│   ├── ThemeProvider
+│   ├── ModalContextProvider
+│   ├── ScannerContextProvider
+│   └── InjectContextProvider
+├── React Router
+│   ├── /home
+│   ├── /settings
+│   ├── /accounts
+│   └── ...
+└── Components
+```
+
+## Entry Point
+
+**Location**: `packages/extension-koni-ui/src/Popup/index.tsx`
+
+```typescript
+import { setupApiSDK } from '@subwallet/extension-base/utils';
+import { DataContextProvider } from '@subwallet/extension-koni-ui/contexts/DataContext';
+import { ThemeProvider } from '@subwallet/extension-koni-ui/contexts/ThemeContext';
+import { ModalContextProvider } from '@subwallet/react-ui';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import React from 'react';
+import { RouterProvider } from 'react-router';
+
+// Setup API SDK before app init
+setupApiSDK();
+const queryClient = new QueryClient();
+
+export default function Popup(): React.ReactElement {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <DataContextProvider>
+        <ThemeProvider>
+          <ModalContextProvider>
+            <ScannerContextProvider>
+              <NotificationProvider>
+                <InjectContextProvider>
+                  <RouterProvider
+                    fallbackElement={<LoadingScreen className='root-loading' />}
+                    router={router}
+                  />
+                </InjectContextProvider>
+              </NotificationProvider>
+            </ScannerContextProvider>
+          </ModalContextProvider>
+        </ThemeProvider>
+      </DataContextProvider>
+    </QueryClientProvider>
+  );
+}
+```
+
+Source: `packages/extension-koni-ui/src/Popup/index.tsx:22-43`
+
+## Context Providers
+
+### DataContextProvider
+
+Manages Redux store and background service subscriptions.
+
+**Location**: `packages/extension-koni-ui/src/contexts/DataContext.tsx`
+
+```typescript
+export interface DataContextType {
+  handlerMap: Record<string, DataHandler>;
+  storeDependencies: Partial<Record<StoreName, string[]>>;
+  readyStoreMap: DataMap;
+  
+  addHandler: (item: DataHandler) => () => void;
+  removeHandler: (name: string) => void;
+  awaitStores: (storeNames: StoreName[], renew?: boolean) => Promise<boolean>;
+}
+
+export interface DataHandler {
+  name: string;
+  unsub?: () => void;
+  isSubscription?: boolean;
+  start: () => void;
+  isStarted?: boolean;
+  isStartImmediately?: boolean;
+  promise?: Promise<any>;
+  relatedStores: StoreName[];
+}
+
+const DataContext: DataContextType = {
+  handlerMap: {},
+  storeDependencies: {},
+  awaitRequestsCache: {},
+  readyStoreMap: Object.keys(store.getState()).reduce((map, key) => {
+    map[key as StoreName] = false;
+    return map;
+  }, {} as DataMap),
+  
+  addHandler: function(item: DataHandler) {
+    const { name } = item;
+    item.isSubscription = !!item.unsub;
+    
+    if (!this.handlerMap[name]) {
+      this.handlerMap[name] = item;
+      item.relatedStores.forEach((storeName) => {
+        if (!this.storeDependencies[storeName]) {
+          this.storeDependencies[storeName] = [];
+        }
+        this.storeDependencies[storeName]?.push(name);
+      });
+      
+      if (item.isStartImmediately) {
+        item.start();
+        item.isStarted = true;
+      }
+    }
+    
+    return () => {
+      this.removeHandler(name);
+    };
+  }
+};
+```
+
+Source: `packages/extension-koni-ui/src/contexts/DataContext.tsx:29-79`
+
+**Key Features**:
+- Manages background service subscriptions
+- Tracks store readiness states
+- Lazy-loads data handlers on demand
+- Provides `awaitStores()` to wait for data availability
+
+### ThemeProvider
+
+Manages dark/light theme switching and persistence.
+
+### ModalContextProvider
+
+Central modal management for dialogs and overlays.
+
+### ScannerContextProvider
+
+Handles QR code scanning functionality.
+
+## State Management
+
+### Redux Store Structure
+
+**Location**: `packages/extension-koni-ui/src/stores/index.ts`
+
+```typescript
+const rootReducers = combineReducers({
+  // Feature stores
+  transactionHistory: TransactionHistoryReducer,
+  crowdloan: CrowdloanReducer,
+  nft: NftReducer,
+  staking: StakingReducer,
+  price: PriceReducer,
+  balance: BalanceReducer,
+  bonding: BondingReducer,
+  mantaPay: MantaPayReducer,
+  campaign: CampaignReducer,
+  buyService: BuyServiceReducer,
+  earning: EarningReducer,
+  swap: SwapReducer,
+  
+  // Common stores
+  chainStore: ChainStoreReducer,
+  assetRegistry: AssetRegistryReducer,
+  
+  // Base stores
+  requestState: RequestStateReducer,
+  settings: SettingsReducer,
+  accountState: AccountStateReducer,
+  uiViewState: UIViewStateReducer,
+  staticContent: StaticContentReducer,
+  
+  // Additional stores
+  walletConnect: WalletConnectReducer,
+  missionPool: MissionPoolReducer,
+  notification: NotificationReducer,
+  openGov: GovernanceReducer,
+  multisig: MultisigReducer
+});
+```
+
+Source: `packages/extension-koni-ui/src/stores/index.ts:49-89`
+
+### Persisted Stores
+
+The following stores are persisted to local storage:
+
+```typescript
+const persistConfig = {
+  key: 'root',
+  version: 1,
+  storage: storage,
+  whitelist: [
+    'settings',
+    'uiViewState',
+    'staking',
+    'campaign',
+    'buyService',
+    'staticContent',
+    'price',
+    'earning'
+  ]
+};
+```
+
+Source: `packages/extension-koni-ui/src/stores/index.ts:33-47`
+
+## Messaging Layer
+
+### Message Client
+
+**Location**: `packages/extension-koni-ui/src/messaging/base.ts`
+
+```typescript
+let port: chrome.runtime.Port;
+
+function onConnectPort() {
+  // Connect to background service
+  port = chrome.runtime.connect({ name: PORT_EXTENSION });
+  
+  // Setup message listener
+  port.onMessage.addListener((data: Message['data']): void => {
+    const handler = handlers[data.id];
+    
+    if (!handler) {
+      console.error(`Unknown response: ${JSON.stringify(data)}.`);
+      return;
+    }
+    
+    if (!handler.subscriber) {
+      delete handlers[data.id];
+    }
+    
+    if (data.subscription) {
+      handler.subscriber(data.subscription);
+    } else if (data.error) {
+      handler.reject(new Error(data.error));
+    } else {
+      handler.resolve(data.response);
+    }
+  });
+  
+  port.onDisconnect.addListener(onDisconnectPort);
+}
+
+export function sendMessage<TMessageType extends MessageTypes>(
+  message: TMessageType,
+  request?: RequestTypes[TMessageType],
+  subscriber?: (data: unknown) => void
+): Promise<ResponseTypes[TMessageType]> {
+  return new Promise((resolve, reject): void => {
+    const id = getId();
+    handlers[id] = { reject, resolve, subscriber };
+    
+    port.postMessage({ id, message, request: request || {} });
+  });
+}
+```
+
+Source: `packages/extension-koni-ui/src/messaging/base.ts:22-105`
+
+### Message Types
+
+Messages follow the pattern `<scope>(<feature>.<action>)`:
+
+- `pri()`: Private messages (from UI to background)
+- `pub()`: Public messages (from dApps to background)
+
+**Examples**:
+```typescript
+// Account operations
+await sendMessage('pri(accounts.list)', null);
+await sendMessage('pri(accounts.create)', { name, password });
+
+// Transaction operations
+await sendMessage('pri(transactions.getOne)', { id });
+await sendMessage('pri(transaction.history.subscribe)', { address, chain }, callback);
+
+// Settings
+await sendMessage('pri(settings.update)', newSettings);
+```
+
+### Subscription Pattern
+
+```typescript
+// Subscribe to balance updates
+export async function subscribeBalance(
+  callback: (data: BalanceItem[]) => void
+): Promise<boolean> {
+  return sendMessage('pri(balance.subscribe)', null, callback);
+}
+
+// Usage in component
+useEffect(() => {
+  const { unsub } = subscribeMessage(
+    'pri(balance.subscribe)',
+    null,
+    (result) => setBalances(result),
+    (updates) => setBalances(updates)
+  );
+  
+  return () => unsub();
+}, []);
+```
+
+## Custom Hooks
+
+The UI provides extensive custom hooks for common operations.
+
+### Data Hooks
+
+**Location**: `packages/extension-koni-ui/src/hooks/`
+
+```typescript
+// Account hooks
+import { useSelector } from './common/useSelector';
+import { useGetAccountByAddress } from './screen/common/useGetAccountInfoByAddress';
+
+// Chain hooks
+import { useChainInfo } from './chain/useChainInfo';
+import { useChainConnection } from './chain/useChainConnection';
+
+// Balance hooks
+import { useAccountBalance } from './screen/home/useAccountBalance';
+
+// Transaction hooks
+import { useHandleSubmitTransaction } from './transaction/useHandleSubmitTransaction';
+import { useWatchTransaction } from './transaction/useWatchTransaction';
+```
+
+### Example: useSelector Hook
+
+```typescript
+import { useSelector as useReduxSelector } from 'react-redux';
+import { RootState } from '@subwallet/extension-koni-ui/stores';
+
+export function useSelector<T>(
+  selector: (state: RootState) => T
+): T {
+  return useReduxSelector(selector);
+}
+
+// Usage
+const accounts = useSelector((state) => state.accountState.accounts);
+const currentAccount = useSelector((state) => state.accountState.currentAccount);
+```
+
+### Example: useChainInfo Hook
+
+```typescript
+export function useChainInfo(chainSlug?: string) {
+  return useSelector((state) => {
+    if (!chainSlug) return undefined;
+    return state.chainStore.chainInfoMap[chainSlug];
+  });
+}
+
+// Usage
+const chainInfo = useChainInfo('polkadot');
+```
+
+## Component Patterns
+
+### Awaiting Store Data
+
+```typescript
+import { DataContext } from '@subwallet/extension-koni-ui/contexts/DataContext';
+
+function MyComponent() {
+  const dataContext = useContext(DataContext);
+  const [isReady, setIsReady] = useState(false);
+  
+  useEffect(() => {
+    // Wait for required stores to be ready
+    dataContext.awaitStores(['chainStore', 'assetRegistry'])
+      .then(() => setIsReady(true));
+  }, []);
+  
+  if (!isReady) {
+    return <LoadingScreen />;
+  }
+  
+  return <MyContent />;
+}
+```
+
+### Handling Transactions
+
+```typescript
+import { useHandleSubmitTransaction } from '@subwallet/extension-koni-ui/hooks';
+
+function TransferForm() {
+  const { onError, onSuccess } = useHandleSubmitTransaction();
+  
+  const handleSubmit = useCallback(async () => {
+    try {
+      const result = await sendMessage('pri(transfer.submit)', {
+        from,
+        to,
+        value,
+        chain
+      });
+      
+      onSuccess(result);
+    } catch (error) {
+      onError(error);
+    }
+  }, [from, to, value, chain]);
+  
+  return (
+    <Form onSubmit={handleSubmit}>
+      {/* Form fields */}
+    </Form>
+  );
+}
+```
+
+## File Structure
+
+```
+packages/extension-koni-ui/src/
+├── Popup/
+│   ├── index.tsx                 # Main entry point
+│   ├── router.tsx                # Route configuration
+│   ├── Home/                     # Home screens
+│   ├── Settings/                 # Settings screens
+│   ├── Account/                  # Account management
+│   ├── Transaction/              # Transaction flows
+│   └── Confirmations/            # Confirmation dialogs
+├── components/                   # Reusable components
+│   ├── Account/
+│   ├── Modal/
+│   ├── Field/
+│   └── ...
+├── contexts/                     # React contexts
+│   ├── DataContext.tsx
+│   ├── ThemeContext.tsx
+│   └── ...
+├── hooks/                        # Custom hooks
+│   ├── common/
+│   ├── chain/
+│   ├── transaction/
+│   └── screen/
+├── messaging/                    # Background messaging
+│   ├── base.ts                   # Message client
+│   ├── accounts.ts               # Account messages
+│   ├── transaction/              # Transaction messages
+│   └── settings/                 # Settings messages
+├── stores/                       # Redux stores
+│   ├── index.ts
+│   ├── base/
+│   └── feature/
+└── utils/                        # Utility functions
+```
+
+## Performance Optimization
+
+### Lazy Loading
+
+```typescript
+// Use lazy message sending for deferred execution
+import { lazySubscribeMessage } from '@subwallet/extension-koni-ui/messaging/base';
+
+const handler = lazySubscribeMessage(
+  'pri(balance.subscribe)',
+  null,
+  (result) => setBalances(result),
+  (updates) => setBalances(updates)
+);
+
+// Start when needed
+handler.start();
+
+// Cleanup
+handler.unsub();
+```
+
+### Data Handler Pattern
+
+```typescript
+// Register data handlers that load on demand
+const addHandler = useContext(DataContext).addHandler;
+
+useEffect(() => {
+  const removeHandler = addHandler({
+    name: 'myDataHandler',
+    relatedStores: ['chainStore'],
+    isStartImmediately: false,  // Lazy load
+    start: () => {
+      // Load data when needed
+    },
+    unsub: () => {
+      // Cleanup
+    }
+  });
+  
+  return removeHandler;
+}, []);
+```
+
+## Best Practices
+
+1. **Use Hooks**: Leverage custom hooks for common operations
+2. **Await Stores**: Always wait for required stores before rendering
+3. **Cleanup Subscriptions**: Unsubscribe in useEffect cleanup
+4. **Error Handling**: Use try-catch and error boundaries
+5. **Type Safety**: Use TypeScript types from background
+6. **Memoization**: Use useMemo/useCallback for expensive operations
+
+## Related Documentation
+
+- [Message Passing](./message-passing.mdx) - Communication between UI and background
+- [State Management](./state-management.mdx) - Redux store architecture
+- [Content Scripts](./content-scripts.mdx) - dApp integration layer

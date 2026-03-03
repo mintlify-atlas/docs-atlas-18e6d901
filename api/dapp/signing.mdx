@@ -1,0 +1,504 @@
+---
+title: 'Transaction Signing'
+description: 'Sign transactions and messages using SubWallet Extension'
+---
+
+## Overview
+
+SubWallet Extension provides signing capabilities through the injected `signer` interface. This allows dApps to request users to sign transactions and raw messages securely without exposing private keys.
+
+<Info>
+  The signer interface is obtained from the `InjectedExtension` returned by `web3FromAddress()` or `web3FromSource()`.
+</Info>
+
+## Getting a Signer
+
+Before you can sign transactions, you need to obtain a signer instance:
+
+```javascript
+import { web3Enable, web3FromAddress } from '@subwallet/extension-dapp';
+
+// Enable extension
+await web3Enable('My DApp');
+
+// Get injected extension for a specific address
+const injected = await web3FromAddress(userAddress);
+
+// Access the signer
+const signer = injected.signer;
+```
+
+## InjectedSigner Interface
+
+The `InjectedSigner` interface is provided by Polkadot.js and includes the following methods:
+
+### signPayload
+
+Sign a transaction payload.
+
+```typescript
+signPayload?: (
+  payload: SignerPayloadJSON
+) => Promise<SignerResult>
+```
+
+### signRaw
+
+Sign a raw message (arbitrary bytes).
+
+```typescript
+signRaw?: (
+  raw: SignerPayloadRaw
+) => Promise<SignerResult>
+```
+
+### update
+
+Update runtime version or genesis hash (optional).
+
+```typescript
+update?: (
+  id: number,
+  status: Hash | ISubmittableResult
+) => void
+```
+
+## Transaction Signing
+
+### Basic Transaction Signing
+
+The most common use case is signing and sending transactions using Polkadot.js API:
+
+```javascript
+import { ApiPromise, WsProvider } from '@polkadot/api';
+import { web3Enable, web3FromAddress } from '@subwallet/extension-dapp';
+
+async function transferTokens(fromAddress, toAddress, amount) {
+  // 1. Enable extension
+  await web3Enable('My DApp');
+  
+  // 2. Get signer for the sender address
+  const injected = await web3FromAddress(fromAddress);
+  
+  // 3. Connect to the blockchain
+  const api = await ApiPromise.create({
+    provider: new WsProvider('wss://rpc.polkadot.io')
+  });
+  
+  // 4. Create transaction
+  const transfer = api.tx.balances.transfer(toAddress, amount);
+  
+  // 5. Sign and send with the injected signer
+  const hash = await transfer.signAndSend(
+    fromAddress,
+    { signer: injected.signer },
+    ({ status, events }) => {
+      if (status.isInBlock) {
+        console.log(`Transaction included in block hash: ${status.asInBlock}`);
+      } else if (status.isFinalized) {
+        console.log(`Transaction finalized in block hash: ${status.asFinalized}`);
+        
+        // Process events
+        events.forEach(({ event }) => {
+          if (api.events.system.ExtrinsicSuccess.is(event)) {
+            console.log('Transaction succeeded');
+          } else if (api.events.system.ExtrinsicFailed.is(event)) {
+            console.log('Transaction failed');
+          }
+        });
+      }
+    }
+  );
+  
+  return hash;
+}
+
+// Usage
+await transferTokens(
+  '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
+  '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty',
+  1000000000000 // 1 DOT (10 decimals)
+);
+```
+
+### Advanced Transaction with Status Tracking
+
+```javascript
+import { web3FromAddress } from '@subwallet/extension-dapp';
+import { ApiPromise, WsProvider } from '@polkadot/api';
+
+async function sendTransactionWithTracking(fromAddress, transaction) {
+  const injected = await web3FromAddress(fromAddress);
+  const api = await ApiPromise.create({
+    provider: new WsProvider('wss://rpc.polkadot.io')
+  });
+  
+  return new Promise(async (resolve, reject) => {
+    try {
+      const unsub = await transaction.signAndSend(
+        fromAddress,
+        { signer: injected.signer },
+        ({ status, events, dispatchError }) => {
+          console.log(`Transaction status: ${status.type}`);
+          
+          if (status.isInBlock) {
+            console.log(`Included in block: ${status.asInBlock.toHex()}`);
+          }
+          
+          if (status.isFinalized) {
+            console.log(`Finalized in block: ${status.asFinalized.toHex()}`);
+            
+            // Check for errors
+            if (dispatchError) {
+              if (dispatchError.isModule) {
+                // Decode module error
+                const decoded = api.registry.findMetaError(dispatchError.asModule);
+                const { docs, name, section } = decoded;
+                reject(new Error(`${section}.${name}: ${docs.join(' ')}`));
+              } else {
+                reject(new Error(dispatchError.toString()));
+              }
+            } else {
+              // Success
+              resolve({
+                blockHash: status.asFinalized.toHex(),
+                events: events.map(({ event }) => event.toHuman())
+              });
+            }
+            
+            unsub();
+          }
+        }
+      );
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
+// Usage
+try {
+  const result = await sendTransactionWithTracking(
+    senderAddress,
+    api.tx.balances.transfer(recipient, amount)
+  );
+  console.log('Transaction successful:', result);
+} catch (error) {
+  console.error('Transaction failed:', error.message);
+}
+```
+
+### Batch Transactions
+
+```javascript
+import { web3FromAddress } from '@subwallet/extension-dapp';
+import { ApiPromise, WsProvider } from '@polkadot/api';
+
+async function sendBatchTransaction(fromAddress, recipients) {
+  const injected = await web3FromAddress(fromAddress);
+  const api = await ApiPromise.create({
+    provider: new WsProvider('wss://rpc.polkadot.io')
+  });
+  
+  // Create multiple transfers
+  const transfers = recipients.map(({ address, amount }) =>
+    api.tx.balances.transfer(address, amount)
+  );
+  
+  // Batch them together
+  const batchTx = api.tx.utility.batch(transfers);
+  
+  // Sign and send
+  await batchTx.signAndSend(
+    fromAddress,
+    { signer: injected.signer },
+    ({ status }) => {
+      if (status.isFinalized) {
+        console.log('Batch transaction finalized');
+      }
+    }
+  );
+}
+
+// Usage
+await sendBatchTransaction(senderAddress, [
+  { address: 'recipient1...', amount: 1000000000000 },
+  { address: 'recipient2...', amount: 2000000000000 },
+  { address: 'recipient3...', amount: 3000000000000 }
+]);
+```
+
+## Raw Message Signing
+
+For signing arbitrary messages (not transactions), use the `signRaw` method:
+
+```javascript
+import { web3FromAddress } from '@subwallet/extension-dapp';
+import { stringToHex } from '@polkadot/util';
+
+async function signMessage(address, message) {
+  const injected = await web3FromAddress(address);
+  
+  // Convert message to hex
+  const hexMessage = stringToHex(message);
+  
+  // Sign the message
+  const { signature } = await injected.signer.signRaw({
+    address: address,
+    data: hexMessage,
+    type: 'bytes'
+  });
+  
+  return signature;
+}
+
+// Usage
+const signature = await signMessage(
+  userAddress,
+  'Please sign this message to authenticate'
+);
+
+console.log('Signature:', signature);
+```
+
+### Verify Signed Message
+
+```javascript
+import { signatureVerify } from '@polkadot/util-crypto';
+import { stringToHex } from '@polkadot/util';
+
+function verifySignature(message, signature, address) {
+  const hexMessage = stringToHex(message);
+  
+  const { isValid } = signatureVerify(
+    hexMessage,
+    signature,
+    address
+  );
+  
+  return isValid;
+}
+
+// Usage
+const isValid = verifySignature(
+  'Please sign this message to authenticate',
+  signature,
+  userAddress
+);
+
+console.log('Signature valid:', isValid);
+```
+
+## React Hooks for Signing
+
+### Custom Hook for Transactions
+
+```javascript
+import { useState } from 'react';
+import { web3FromAddress } from '@subwallet/extension-dapp';
+
+function useTransaction() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  
+  const signAndSend = async (fromAddress, transaction) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const injected = await web3FromAddress(fromAddress);
+      
+      return new Promise((resolve, reject) => {
+        transaction.signAndSend(
+          fromAddress,
+          { signer: injected.signer },
+          ({ status, dispatchError }) => {
+            if (status.isFinalized) {
+              if (dispatchError) {
+                reject(dispatchError);
+              } else {
+                resolve(status.asFinalized);
+              }
+              setLoading(false);
+            }
+          }
+        ).catch(err => {
+          reject(err);
+          setLoading(false);
+        });
+      });
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+      throw err;
+    }
+  };
+  
+  return { signAndSend, loading, error };
+}
+
+// Usage in component
+function TransferButton({ api, from, to, amount }) {
+  const { signAndSend, loading, error } = useTransaction();
+  
+  const handleTransfer = async () => {
+    try {
+      const tx = api.tx.balances.transfer(to, amount);
+      const blockHash = await signAndSend(from, tx);
+      console.log('Transaction finalized in block:', blockHash.toHex());
+    } catch (err) {
+      console.error('Transaction failed:', err);
+    }
+  };
+  
+  return (
+    <div>
+      <button onClick={handleTransfer} disabled={loading}>
+        {loading ? 'Sending...' : 'Send Transaction'}
+      </button>
+      {error && <div className="error">{error}</div>}
+    </div>
+  );
+}
+```
+
+## EVM Transaction Signing
+
+For Ethereum/EVM transactions, use the EVM provider:
+
+```javascript
+// Access SubWallet's EVM provider
+const provider = window.SubWallet || window.ethereum;
+
+if (!provider || !provider.isSubWallet) {
+  throw new Error('SubWallet not detected');
+}
+
+// Request account access
+const accounts = await provider.request({ 
+  method: 'eth_requestAccounts' 
+});
+
+const fromAddress = accounts[0];
+
+// Send EVM transaction
+const txHash = await provider.request({
+  method: 'eth_sendTransaction',
+  params: [{
+    from: fromAddress,
+    to: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
+    value: '0xde0b6b3a7640000', // 1 ETH in wei (hex)
+    gas: '0x5208', // 21000 gas
+  }]
+});
+
+console.log('Transaction hash:', txHash);
+```
+
+See the [EVM Provider documentation](https://docs.subwallet.app/main/extension-user-guide/evm-dapp) for more details.
+
+## Error Handling
+
+### Common Errors
+
+```javascript
+import { web3FromAddress } from '@subwallet/extension-dapp';
+
+async function safeSignAndSend(address, transaction) {
+  try {
+    const injected = await web3FromAddress(address);
+    
+    const hash = await transaction.signAndSend(
+      address,
+      { signer: injected.signer }
+    );
+    
+    return hash;
+  } catch (error) {
+    if (error.message.includes('Cancelled')) {
+      // User cancelled the signature request
+      console.log('User cancelled transaction');
+    } else if (error.message.includes('Unable to find injected')) {
+      // Address not found in wallet
+      console.error('Address not managed by wallet');
+    } else if (error.message.includes('1010: Invalid Transaction')) {
+      // Insufficient balance
+      console.error('Insufficient balance for transaction');
+    } else {
+      // Other errors
+      console.error('Transaction error:', error.message);
+    }
+    throw error;
+  }
+}
+```
+
+## Best Practices
+
+<Tip>
+  **Always Show Transaction Details**: Before requesting a signature, clearly show users what they're signing, including recipient address, amount, and fees.
+</Tip>
+
+<Warning>
+  **Handle User Rejection**: Users can reject signature requests at any time. Always handle the rejection gracefully and provide clear feedback.
+</Warning>
+
+<Tip>
+  **Estimate Fees First**: Use `paymentInfo()` to estimate transaction fees before signing:
+  
+  ```javascript
+  const info = await transaction.paymentInfo(senderAddress);
+  console.log(`Estimated fee: ${info.partialFee.toHuman()}`);
+  ```
+</Tip>
+
+<Info>
+  **Wait for Finalization**: For critical transactions, wait for `status.isFinalized` instead of just `status.isInBlock` to ensure the transaction won't be reverted.
+</Info>
+
+## Type Definitions
+
+### SignerPayloadJSON
+
+```typescript
+interface SignerPayloadJSON {
+  address: string;
+  blockHash: string;
+  blockNumber: string;
+  era: string;
+  genesisHash: string;
+  method: string;
+  nonce: string;
+  signedExtensions: string[];
+  tip: string;
+  transactionVersion: string;
+  specVersion: string;
+  version: number;
+}
+```
+
+### SignerPayloadRaw
+
+```typescript
+interface SignerPayloadRaw {
+  address: string;
+  data: string;
+  type: 'bytes' | 'payload';
+}
+```
+
+### SignerResult
+
+```typescript
+interface SignerResult {
+  id: number;
+  signature: string;
+}
+```
+
+## See Also
+
+- [web3FromAddress](/api/dapp/accounts#web3fromaddress) - Get signer for an address
+- [Account Management](/api/dapp/accounts) - Manage user accounts
+- [Polkadot.js API Documentation](https://polkadot.js.org/docs/api) - Full API reference
+- [SubWallet EVM Guide](https://docs.subwallet.app/main/extension-user-guide/evm-dapp) - EVM transaction signing

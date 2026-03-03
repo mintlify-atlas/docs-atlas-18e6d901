@@ -1,0 +1,312 @@
+---
+title: NFT Support
+description: View, manage, and transfer your NFTs across multiple blockchain networks
+---
+
+SubWallet Extension provides comprehensive NFT support across multiple blockchain networks. View your entire NFT collection, explore details, and transfer NFTs - all from your wallet.
+
+## Viewing Your NFTs
+
+### NFT Gallery
+
+Your NFT collection is displayed in an easy-to-browse gallery:
+
+- **Visual Display**: See NFT images and artwork
+- **Multi-Network Support**: View NFTs from all enabled networks in one place
+- **Collection Grouping**: NFTs are organized by collection
+- **Metadata Display**: View names, descriptions, and attributes
+
+### Supported NFT Standards
+
+SubWallet supports NFTs across multiple blockchain standards:
+
+<CardGroup cols={2}>
+  <Card title="ERC-721" icon="ethereum">
+    Standard Ethereum NFTs - the most common NFT format on Ethereum and EVM chains.
+  </Card>
+  <Card title="Substrate NFTs" icon="cubes">
+    Native NFTs on Polkadot and Kusama parachains including Asset Hub, Quartz, and Unique Network.
+  </Card>
+  <Card title="RMRK" icon="gem">
+    Advanced NFT standard for Kusama and Polkadot with nested and multi-resource NFTs.
+  </Card>
+  <Card title="Bitcoin Ordinals" icon="bitcoin-sign">
+    Bitcoin-based NFTs and inscriptions on the Bitcoin blockchain.
+  </Card>
+</CardGroup>
+
+## NFT Networks
+
+SubWallet detects and displays NFTs from multiple networks:
+
+### EVM Networks
+- Ethereum Mainnet
+- Polygon
+- BSC (Binance Smart Chain)
+- Moonbeam and Moonriver
+- Arbitrum and Optimism
+- Other EVM-compatible chains
+
+### Substrate Networks
+- Polkadot Asset Hub (formerly Statemint)
+- Kusama Asset Hub (formerly Statemine)
+- Unique Network and Quartz
+- Acala and Karura
+- Bit.Country
+- Ternoa
+- Other parachain NFT platforms
+
+### Other Networks
+- Bitcoin (Ordinals and BRC-20)
+
+<Note>
+NFT detection is automatic for enabled networks. Simply enable a network and your NFTs will appear in your gallery.
+</Note>
+
+## NFT Details
+
+View comprehensive information about each NFT:
+
+### Metadata
+
+<AccordionGroup>
+  <Accordion title="Collection Information">
+    - Collection name and symbol
+    - Collection contract address
+    - Total items in collection
+    - Official collection links
+  </Accordion>
+  <Accordion title="NFT Properties">
+    - Token ID
+    - Token name and description
+    - Attributes and traits
+    - Rarity information (when available)
+  </Accordion>
+  <Accordion title="Media and Files">
+    - Image or video preview
+    - IPFS content links
+    - Original file format
+    - Animation URLs (for dynamic NFTs)
+  </Accordion>
+  <Accordion title="Ownership Data">
+    - Current owner address
+    - Original minter
+    - Transfer history
+    - Acquisition date
+  </Accordion>
+</AccordionGroup>
+
+### IPFS Support
+
+Many NFTs store content on IPFS (InterPlanetary File System):
+
+- Automatic IPFS URL parsing
+- Content fetching from IPFS gateways
+- Display of IPFS-hosted images and metadata
+- Fallback to alternative gateways if primary fails
+
+## Transferring NFTs
+
+Send your NFTs to other addresses securely.
+
+<Steps>
+  <Step title="Select NFT">
+    Choose the NFT you want to transfer from your gallery.
+  </Step>
+  <Step title="Enter recipient address">
+    Input the destination address or scan a QR code. SubWallet validates the address format.
+  </Step>
+  <Step title="Review transfer details">
+    Confirm the NFT details, recipient address, and network fee.
+  </Step>
+  <Step title="Sign and send">
+    Approve the transaction with your password or hardware wallet.
+  </Step>
+</Steps>
+
+<Warning>
+NFT transfers are irreversible. Always verify the recipient address before confirming. Sending to the wrong address or incompatible network will result in lost NFTs.
+</Warning>
+
+### Transfer Requirements
+
+Before transferring an NFT:
+
+- **Network Fee**: Ensure you have enough native tokens to pay the transaction fee
+- **Network Match**: Recipient must support the same network as the NFT
+- **Ownership Verification**: You can only transfer NFTs you own
+
+## NFT Collections
+
+### Collection View
+
+Browse NFTs organized by collection:
+
+- See all items from a specific collection
+- View collection floor price (when available)
+- Filter and sort within collections
+- Collection-level metadata and links
+
+### Multi-Collection Management
+
+If you own NFTs from multiple collections:
+
+- Switch between collection views
+- See collection distribution in your portfolio
+- Filter by network or collection
+- Search across all collections
+
+## Advanced NFT Features
+
+### Nested and Multi-Resource NFTs
+
+For advanced standards like RMRK:
+
+- **Nested NFTs**: NFTs that can own other NFTs
+- **Multiple Resources**: NFTs with different visual representations
+- **Conditional Rendering**: NFTs that change based on state
+- **Equipped Items**: NFTs with attachable components
+
+### Dynamic NFTs
+
+Some NFTs change over time or based on conditions:
+
+- Animation and video support
+- On-chain SVG rendering
+- Metadata that updates based on events
+- Interactive elements (when supported by the standard)
+
+## NFT Discovery
+
+### Automatic Detection
+
+SubWallet automatically discovers your NFTs:
+
+1. Scans all enabled networks for your addresses
+2. Detects NFTs using supported standards
+3. Fetches metadata from contracts and IPFS
+4. Updates your gallery in real-time
+
+<Note>
+Initial NFT loading may take a few moments, especially if you have many NFTs across multiple networks.
+</Note>
+
+### Manual Refresh
+
+If an NFT doesn't appear immediately:
+
+- Use the refresh button to re-scan your addresses
+- Ensure the network is enabled
+- Verify the NFT uses a supported standard
+- Check that metadata is properly configured in the contract
+
+## NFT Standards by Network
+
+### Ethereum and EVM Chains
+
+<Tabs>
+  <Tab title="ERC-721">
+    The original and most common NFT standard. Each token is unique with its own token ID.
+  </Tab>
+  <Tab title="ERC-1155">
+    Multi-token standard that can represent both fungible and non-fungible tokens in a single contract.
+  </Tab>
+</Tabs>
+
+### Substrate Parachains
+
+<Tabs>
+  <Tab title="Uniques (Asset Hub)">
+    Native NFT pallet on Polkadot and Kusama Asset Hubs. Simple, efficient NFT standard.
+  </Tab>
+  <Tab title="RMRK">
+    Advanced NFT standard with support for nested NFTs, multiple resources, and on-chain logic.
+  </Tab>
+  <Tab title="Unique Network">
+    Specialized parachain with extensive NFT features and customization options.
+  </Tab>
+</Tabs>
+
+### Bitcoin
+
+<Tabs>
+  <Tab title="Ordinals">
+    NFTs created by inscribing data onto individual satoshis on the Bitcoin blockchain.
+  </Tab>
+  <Tab title="BRC-20">
+    Experimental token standard on Bitcoin using ordinal inscriptions.
+  </Tab>
+</Tabs>
+
+## Viewing NFTs on Block Explorers
+
+For each NFT, you can:
+
+- View on the native block explorer
+- See full transaction history
+- Verify authenticity and ownership
+- Check contract details
+- View collection statistics
+
+Simply click the explorer link from any NFT detail page.
+
+## NFT Security
+
+### Verifying NFT Authenticity
+
+<Steps>
+  <Step title="Check contract address">
+    Verify the NFT's contract address matches the official collection address.
+  </Step>
+  <Step title="Validate on explorer">
+    Use a block explorer to confirm the NFT's legitimacy and ownership history.
+  </Step>
+  <Step title="Research the collection">
+    Visit the official collection website or marketplace listing to verify authenticity.
+  </Step>
+</Steps>
+
+### Scam Prevention
+
+<Warning>
+Be cautious of:
+- NFTs airdropped to your wallet unexpectedly (may be spam or phishing attempts)
+- Collections with similar names to popular projects
+- NFTs requesting signatures or approvals outside of your wallet
+- Offers that seem too good to be true
+</Warning>
+
+### NFT Approvals
+
+When interacting with NFT marketplaces:
+
+- **Collection Approvals**: Allow marketplaces to list your NFTs
+- **Single NFT Approvals**: Grant permission for specific NFT transfers
+- **Revoke Access**: Remove marketplace approvals when not actively listing
+
+<Tip>
+Regularly audit which platforms have approval to move your NFTs. Revoke approvals from marketplaces you no longer use.
+</Tip>
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Verify Before Transfer">
+    Always double-check recipient addresses before sending NFTs. Unlike tokens, you can't send partial amounts - it's all or nothing.
+  </Accordion>
+  <Accordion title="Keep Network Fees Ready">
+    Maintain sufficient native tokens in accounts holding NFTs to pay for transfer fees when needed.
+  </Accordion>
+  <Accordion title="Back Up Important NFTs">
+    For NFTs with significant value, consider documenting ownership with screenshots, transaction hashes, and official verification.
+  </Accordion>
+  <Accordion title="Research Unknown NFTs">
+    If you receive an NFT you didn't purchase, research it thoroughly before interacting. It may be spam or a scam.
+  </Accordion>
+  <Accordion title="Use Marketplaces Wisely">
+    Only grant NFT approvals to reputable marketplaces, and revoke approvals when you're done listing.
+  </Accordion>
+  <Accordion title="Understand IPFS">
+    Know that IPFS content can become unavailable if not properly pinned. Valuable NFTs should have reliable IPFS hosting.
+  </Accordion>
+</AccordionGroup>

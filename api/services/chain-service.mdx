@@ -1,0 +1,656 @@
+---
+title: Chain Service
+description: Service for managing blockchain network connections and configurations
+---
+
+## Overview
+
+The `ChainService` is the core service responsible for managing blockchain network connections, chain metadata, asset registries, and API instances across all supported networks. It provides a unified interface for interacting with Substrate, EVM, Ton, Cardano, and Bitcoin chains.
+
+## Key Features
+
+- Multi-chain connection management
+- Chain and asset metadata storage
+- Dynamic provider switching
+- API instance management (Substrate, EVM, Ton, Cardano, Bitcoin)
+- Chain health monitoring
+- Custom chain and token support
+- Cross-chain asset references (XCM)
+
+## Class: ChainService
+
+### Constructor
+
+```typescript
+constructor(
+  dbService: DatabaseService,
+  eventService: EventService
+)
+```
+
+<ParamField path="dbService" type="DatabaseService" required>
+  Database service for persisting chain data
+</ParamField>
+
+<ParamField path="eventService" type="EventService" required>
+  Event service for chain state changes
+</ParamField>
+
+## Initialization Methods
+
+### init()
+
+Initializes the chain service, loads chain data, and connects to active chains.
+
+```typescript
+async init(): Promise<void>
+```
+
+**Usage:**
+
+```typescript
+const chainService = new ChainService(dbService, eventService);
+await chainService.init();
+```
+
+## Chain Information Methods
+
+### getChainInfoMap()
+
+Retrieves all chain information.
+
+```typescript
+getChainInfoMap(): Record<string, _ChainInfo>
+```
+
+**Returns:**
+
+<ResponseField name="Record<string, _ChainInfo>" type="object">
+  Map of chain slugs to chain information
+</ResponseField>
+
+### getChainInfoByKey()
+
+Retrieves chain information by slug.
+
+```typescript
+getChainInfoByKey(key: string): _ChainInfo
+```
+
+<ParamField path="key" type="string" required>
+  Chain slug (e.g., 'polkadot', 'ethereum', 'kusama')
+</ParamField>
+
+**Returns:**
+
+<ResponseField name="_ChainInfo" type="object">
+  Chain information object
+  
+  <ResponseField name="slug" type="string">
+    Unique chain identifier
+  </ResponseField>
+  
+  <ResponseField name="name" type="string">
+    Human-readable chain name
+  </ResponseField>
+  
+  <ResponseField name="chainStatus" type="_ChainStatus">
+    Chain status (ACTIVE, INACTIVE, STOPPED)
+  </ResponseField>
+  
+  <ResponseField name="providers" type="Record<string, string>">
+    Available RPC providers
+  </ResponseField>
+  
+  <ResponseField name="substrateInfo" type="_SubstrateInfo | null">
+    Substrate-specific information
+  </ResponseField>
+  
+  <ResponseField name="evmInfo" type="_EvmInfo | null">
+    EVM-specific information
+  </ResponseField>
+  
+  <ResponseField name="tonInfo" type="_TonInfo | null">
+    TON-specific information
+  </ResponseField>
+  
+  <ResponseField name="cardanoInfo" type="_CardanoInfo | null">
+    Cardano-specific information
+  </ResponseField>
+  
+  <ResponseField name="bitcoinInfo" type="_BitcoinInfo | null">
+    Bitcoin-specific information
+  </ResponseField>
+  
+  <ResponseField name="isTestnet" type="boolean">
+    Whether this is a testnet
+  </ResponseField>
+</ResponseField>
+
+**Usage:**
+
+```typescript
+const polkadot = chainService.getChainInfoByKey('polkadot');
+console.log(polkadot.name); // "Polkadot"
+console.log(polkadot.chainStatus); // "ACTIVE"
+```
+
+### getActiveChains()
+
+Retrieves all active chain slugs.
+
+```typescript
+getActiveChains(): string[]
+```
+
+**Returns:**
+
+<ResponseField name="string[]" type="array">
+  Array of active chain slugs
+</ResponseField>
+
+### getActiveChainInfoMap()
+
+Retrieves information for all active chains.
+
+```typescript
+getActiveChainInfoMap(): Record<string, _ChainInfo>
+```
+
+## Chain State Methods
+
+### getChainStateByKey()
+
+Retrieves chain state (active status, current provider).
+
+```typescript
+getChainStateByKey(key: string): _ChainState
+```
+
+<ParamField path="key" type="string" required>
+  Chain slug
+</ParamField>
+
+**Returns:**
+
+<ResponseField name="_ChainState" type="object">
+  Chain state object
+  
+  <ResponseField name="slug" type="string">
+    Chain identifier
+  </ResponseField>
+  
+  <ResponseField name="active" type="boolean">
+    Whether chain is currently active
+  </ResponseField>
+  
+  <ResponseField name="currentProvider" type="string">
+    Currently selected provider key
+  </ResponseField>
+  
+  <ResponseField name="manualTurnOff" type="boolean">
+    Whether user manually disabled the chain
+  </ResponseField>
+</ResponseField>
+
+### enableChain()
+
+Enables a chain and connects to it.
+
+```typescript
+async enableChain(chainSlug: string): Promise<boolean>
+```
+
+<ParamField path="chainSlug" type="string" required>
+  Chain to enable
+</ParamField>
+
+**Returns:**
+
+<ResponseField name="boolean" type="boolean">
+  `true` if chain was enabled successfully
+</ResponseField>
+
+**Usage:**
+
+```typescript
+const success = await chainService.enableChain('moonbeam');
+if (success) {
+  console.log('Moonbeam enabled and connected');
+}
+```
+
+### disableChain()
+
+Disables a chain and disconnects from it.
+
+```typescript
+disableChain(chainSlug: string, preventManualTurnOff?: boolean): boolean
+```
+
+<ParamField path="chainSlug" type="string" required>
+  Chain to disable
+</ParamField>
+
+<ParamField path="preventManualTurnOff" type="boolean" default="false">
+  If true, doesn't mark as manually turned off
+</ParamField>
+
+### enableChains()
+
+Enables multiple chains at once.
+
+```typescript
+async enableChains(chainSlugs: string[]): Promise<boolean>
+```
+
+<ParamField path="chainSlugs" type="string[]" required>
+  Array of chain slugs to enable
+</ParamField>
+
+## API Access Methods
+
+### getSubstrateApi()
+
+Retrieves Substrate API instance for a chain.
+
+```typescript
+getSubstrateApi(slug: string): _SubstrateApi | undefined
+```
+
+<ParamField path="slug" type="string" required>
+  Chain slug
+</ParamField>
+
+**Returns:**
+
+<ResponseField name="_SubstrateApi" type="object">
+  Substrate API wrapper
+  
+  <ResponseField name="api" type="ApiPromise">
+    Polkadot.js API instance
+  </ResponseField>
+  
+  <ResponseField name="isReady" type="Promise<_SubstrateApi>">
+    Promise resolving when API is ready
+  </ResponseField>
+  
+  <ResponseField name="isApiConnected" type="boolean">
+    Connection status
+  </ResponseField>
+</ResponseField>
+
+**Usage:**
+
+```typescript
+const api = chainService.getSubstrateApi('polkadot');
+
+if (api) {
+  await api.isReady;
+  const chainName = await api.api.rpc.system.chain();
+  console.log('Chain name:', chainName.toString());
+}
+```
+
+### getEvmApi()
+
+Retrieves EVM API instance (Web3) for a chain.
+
+```typescript
+getEvmApi(slug: string): _EvmApi | undefined
+```
+
+**Returns:**
+
+<ResponseField name="_EvmApi" type="object">
+  EVM API wrapper
+  
+  <ResponseField name="api" type="Web3">
+    Web3.js instance
+  </ResponseField>
+  
+  <ResponseField name="isApiConnected" type="boolean">
+    Connection status
+  </ResponseField>
+</ResponseField>
+
+**Usage:**
+
+```typescript
+const evmApi = chainService.getEvmApi('ethereum');
+
+if (evmApi) {
+  const blockNumber = await evmApi.api.eth.getBlockNumber();
+  console.log('Block number:', blockNumber);
+}
+```
+
+### getTonApi()
+
+Retrieves TON API instance.
+
+```typescript
+getTonApi(slug: string): _TonApi | undefined
+```
+
+### getCardanoApi()
+
+Retrieves Cardano API instance.
+
+```typescript
+getCardanoApi(slug: string): _CardanoApi | undefined
+```
+
+### getBitcoinApi()
+
+Retrieves Bitcoin API instance.
+
+```typescript
+getBitcoinApi(slug: string): _BitcoinApi | undefined
+```
+
+## Asset Registry Methods
+
+### getAssetRegistry()
+
+Retrieves all registered assets.
+
+```typescript
+getAssetRegistry(): Record<string, _ChainAsset>
+```
+
+**Returns:**
+
+<ResponseField name="Record<string, _ChainAsset>" type="object">
+  Map of asset slugs to asset information
+</ResponseField>
+
+### getAssetBySlug()
+
+Retrieves asset information by slug.
+
+```typescript
+getAssetBySlug(slug: string): _ChainAsset
+```
+
+<ParamField path="slug" type="string" required>
+  Asset slug (e.g., 'polkadot-NATIVE-DOT', 'ethereum-ERC20-USDT')
+</ParamField>
+
+**Returns:**
+
+<ResponseField name="_ChainAsset" type="object">
+  Asset information
+  
+  <ResponseField name="slug" type="string">
+    Unique asset identifier
+  </ResponseField>
+  
+  <ResponseField name="originChain" type="string">
+    Chain where asset originates
+  </ResponseField>
+  
+  <ResponseField name="symbol" type="string">
+    Asset symbol (e.g., DOT, USDT)
+  </ResponseField>
+  
+  <ResponseField name="decimals" type="number">
+    Number of decimal places
+  </ResponseField>
+  
+  <ResponseField name="assetType" type="_AssetType">
+    Asset type (NATIVE, ERC20, PSP22, etc.)
+  </ResponseField>
+  
+  <ResponseField name="metadata" type="any">
+    Asset-specific metadata (contract address, etc.)
+  </ResponseField>
+  
+  <ResponseField name="priceId" type="string | null">
+    Price API identifier
+  </ResponseField>
+</ResponseField>
+
+**Usage:**
+
+```typescript
+const dot = chainService.getAssetBySlug('polkadot-NATIVE-DOT');
+console.log(`${dot.symbol}: ${dot.decimals} decimals`);
+```
+
+### getNativeTokenInfo()
+
+Retrieves the native token for a chain.
+
+```typescript
+getNativeTokenInfo(chainSlug: string): _ChainAsset
+```
+
+**Usage:**
+
+```typescript
+const nativeToken = chainService.getNativeTokenInfo('polkadot');
+console.log('Native token:', nativeToken.symbol); // "DOT"
+```
+
+### getFungibleTokensByChain()
+
+Retrieves all fungible tokens for a specific chain.
+
+```typescript
+getFungibleTokensByChain(
+  chainSlug: string,
+  checkActive?: boolean
+): Record<string, _ChainAsset>
+```
+
+<ParamField path="chainSlug" type="string" required>
+  Chain slug
+</ParamField>
+
+<ParamField path="checkActive" type="boolean" default="false">
+  Only return visible/active assets
+</ParamField>
+
+## Asset Settings Methods
+
+### getAssetSettings()
+
+Retrieves asset visibility settings.
+
+```typescript
+async getAssetSettings(): Promise<Record<string, AssetSetting>>
+```
+
+**Returns:**
+
+<ResponseField name="Record<string, AssetSetting>" type="object">
+  Map of asset slugs to settings
+  
+  <ResponseField name="visible" type="boolean">
+    Whether asset is visible in UI
+  </ResponseField>
+</ResponseField>
+
+### setAssetSettings()
+
+Updates asset settings.
+
+```typescript
+setAssetSettings(settings: Record<string, AssetSetting>): void
+```
+
+### subscribeAssetSettings()
+
+Subscribes to asset settings changes.
+
+```typescript
+subscribeAssetSettings(): BehaviorSubject<Record<string, AssetSetting>>
+```
+
+## Custom Chain Methods
+
+### upsertCustomToken()
+
+Adds or updates a custom token.
+
+```typescript
+upsertCustomToken(token: _ChainAsset): string
+```
+
+<ParamField path="token" type="_ChainAsset" required>
+  Custom token information
+</ParamField>
+
+**Returns:**
+
+<ResponseField name="string" type="string">
+  Generated token slug
+</ResponseField>
+
+**Usage:**
+
+```typescript
+const tokenSlug = chainService.upsertCustomToken({
+  slug: '', // Auto-generated if empty
+  originChain: 'ethereum',
+  symbol: 'CUSTOM',
+  decimals: 18,
+  assetType: _AssetType.ERC20,
+  metadata: {
+    contractAddress: '0x...'
+  },
+  name: 'Custom Token',
+  priceId: null,
+  multiChainAsset: null,
+  hasValue: true,
+  icon: ''
+});
+
+console.log('Token slug:', tokenSlug);
+```
+
+### deleteCustomAssets()
+
+Deletes custom tokens.
+
+```typescript
+deleteCustomAssets(tokenSlugs: string[]): void
+```
+
+### removeCustomChain()
+
+Removes a custom chain.
+
+```typescript
+removeCustomChain(slug: string): boolean
+```
+
+## Connection Status Methods
+
+### getChainStatusMap()
+
+Retrieves connection status for all chains.
+
+```typescript
+getChainStatusMap(): Record<string, _ChainApiStatus>
+```
+
+**Returns:**
+
+<ResponseField name="Record<string, _ChainApiStatus>" type="object">
+  Map of chain slugs to status
+  
+  <ResponseField name="connectionStatus" type="_ChainConnectionStatus">
+    CONNECTED, DISCONNECTED, CONNECTING, or UNSTABLE
+  </ResponseField>
+  
+  <ResponseField name="lastUpdated" type="number">
+    Timestamp of last status update
+  </ResponseField>
+</ResponseField>
+
+### subscribeChainStatusMap()
+
+Subscribes to chain connection status updates.
+
+```typescript
+subscribeChainStatusMap(): BehaviorSubject<Record<string, _ChainApiStatus>>
+```
+
+**Usage:**
+
+```typescript
+chainService.subscribeChainStatusMap().subscribe((statusMap) => {
+  Object.entries(statusMap).forEach(([chain, status]) => {
+    console.log(`${chain}: ${status.connectionStatus}`);
+  });
+});
+```
+
+## XCM Reference Methods
+
+### subscribeXcmRefMap()
+
+Subscribes to XCM asset reference map.
+
+```typescript
+subscribeXcmRefMap(): Subject<Record<string, _AssetRef>>
+```
+
+**Returns:**
+
+<ResponseField name="Subject" type="Subject">
+  Observable emitting XCM asset references for cross-chain transfers
+</ResponseField>
+
+## Example: Complete Chain Management
+
+```typescript
+import { ChainService } from '@subwallet/extension-base';
+
+// Initialize
+const chainService = new ChainService(dbService, eventService);
+await chainService.init();
+
+// Get all active chains
+const activeChains = chainService.getActiveChains();
+console.log('Active chains:', activeChains);
+
+// Enable a new chain
+await chainService.enableChain('moonbeam');
+
+// Get chain info
+const polkadot = chainService.getChainInfoByKey('polkadot');
+console.log('Polkadot providers:', Object.keys(polkadot.providers));
+
+// Access API
+const api = chainService.getSubstrateApi('polkadot');
+if (api) {
+  await api.isReady;
+  const blockHash = await api.api.rpc.chain.getBlockHash();
+  console.log('Latest block:', blockHash.toHex());
+}
+
+// Get assets for a chain
+const polkadotAssets = chainService.getFungibleTokensByChain('polkadot', true);
+console.log('Polkadot assets:', Object.keys(polkadotAssets));
+
+// Monitor connection status
+chainService.subscribeChainStatusMap().subscribe((status) => {
+  if (status['polkadot']?.connectionStatus === 'DISCONNECTED') {
+    console.warn('Polkadot disconnected!');
+  }
+});
+```
+
+## Connection Status Types
+
+```typescript
+enum _ChainConnectionStatus {
+  CONNECTED = 'CONNECTED',
+  DISCONNECTED = 'DISCONNECTED',
+  UNSTABLE = 'UNSTABLE',
+  CONNECTING = 'CONNECTING'
+}
+```

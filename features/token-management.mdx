@@ -1,0 +1,262 @@
+---
+title: Token Management
+description: View, send, receive, and organize your tokens across all supported networks
+---
+
+SubWallet Extension makes it easy to manage all your digital assets in one place. View balances, send and receive tokens, and organize your portfolio across multiple blockchain networks.
+
+## Viewing Your Tokens
+
+### Token List
+
+Your home screen displays all tokens across enabled networks:
+
+- **Native Tokens**: Network-specific currencies (DOT, KSM, ETH, etc.)
+- **Custom Tokens**: ERC-20, PSP-22, and other token standards
+- **Asset Balances**: Real-time balance updates for each token
+- **Fiat Values**: See your token values in your preferred currency
+
+### Balance Types
+
+SubWallet shows different balance categories:
+
+<CardGroup cols={2}>
+  <Card title="Total Balance" icon="coins">
+    The complete amount of tokens in your account, including locked and reserved amounts.
+  </Card>
+  <Card title="Transferable Balance" icon="paper-plane">
+    The amount available to send or use in transactions, excluding existential deposits and locked amounts.
+  </Card>
+  <Card title="Locked Balance" icon="lock">
+    Tokens locked for staking, governance, vesting, or other on-chain activities.
+  </Card>
+  <Card title="Reserved Balance" icon="ban">
+    Amounts reserved by the network for specific purposes like storage deposits or account data.
+  </Card>
+</CardGroup>
+
+<Note>
+Substrate chains require a minimum balance (existential deposit) to keep accounts active. This amount cannot be transferred or it would delete your account.
+</Note>
+
+## Sending Tokens
+
+Transfer tokens to other addresses quickly and securely.
+
+<Steps>
+  <Step title="Select token">
+    Choose which token you want to send from your asset list.
+  </Step>
+  <Step title="Enter recipient">
+    Paste the recipient's address or scan their QR code. SubWallet validates addresses to prevent errors.
+  </Step>
+  <Step title="Enter amount">
+    Type the amount to send or use the "Max" button to send your entire transferable balance.
+  </Step>
+  <Step title="Review and confirm">
+    Check the transaction details including network fees, then confirm with your password or hardware wallet.
+  </Step>
+</Steps>
+
+### Address Validation
+
+SubWallet automatically validates recipient addresses:
+
+- **Format Check**: Ensures the address format matches the selected network
+- **Network Compatibility**: Warns if an address isn't compatible with the selected token
+- **Address Book**: Save frequently used addresses for quick access
+
+<Warning>
+Always verify the recipient address before sending. Blockchain transactions are irreversible and funds sent to the wrong address cannot be recovered.
+</Warning>
+
+### Transaction Fees
+
+Every token transfer requires a network fee:
+
+- **Fee Display**: See estimated fees before confirming transactions
+- **Fee Token**: Fees are paid in the network's native token (e.g., DOT for Polkadot, ETH for Ethereum)
+- **Fee Options**: Some networks offer multiple fee tiers (slow, medium, fast)
+
+<Tip>
+Keep some native tokens in your account to pay for transaction fees. Without enough for fees, you won't be able to send other tokens.
+</Tip>
+
+## Receiving Tokens
+
+Get your address to receive tokens from others.
+
+### Your Receive Address
+
+<Steps>
+  <Step title="Select account and network">
+    Choose the account and network where you want to receive tokens.
+  </Step>
+  <Step title="Copy address or show QR code">
+    Copy your address to share it, or display a QR code for easy scanning.
+  </Step>
+  <Step title="Share with sender">
+    Provide your address to the person or service sending you tokens.
+  </Step>
+</Steps>
+
+### Important Receiving Tips
+
+<AccordionGroup>
+  <Accordion title="Network Compatibility">
+    Make sure the sender is using the same network. For example, don't share your Ethereum address if someone wants to send you Polkadot tokens.
+  </Accordion>
+  <Accordion title="Address Formats">
+    Some networks support multiple address formats. SubWallet displays the correct format for each network automatically.
+  </Accordion>
+  <Accordion title="First-Time Receives">
+    For Substrate chains, the first transaction to your account must meet the existential deposit minimum to activate the account.
+  </Accordion>
+</AccordionGroup>
+
+## Adding Custom Tokens
+
+Import tokens that aren't automatically detected by SubWallet.
+
+### ERC-20 Tokens (Ethereum/EVM)
+
+<Steps>
+  <Step title="Get contract address">
+    Find the token's contract address from a block explorer or the project's official website.
+  </Step>
+  <Step title="Add token">
+    Enter the contract address in SubWallet. Token details (name, symbol, decimals) are fetched automatically.
+  </Step>
+  <Step title="Verify and save">
+    Confirm the token information is correct and add it to your token list.
+  </Step>
+</Steps>
+
+### PSP-22 and Substrate Tokens
+
+For Substrate-based tokens:
+
+1. Select the network where the token exists
+2. Enter the asset ID or token details
+3. Configure token metadata if not auto-detected
+4. Add to your portfolio
+
+<Warning>
+Only add tokens from trusted sources. Malicious tokens can display misleading information or attempt to exploit vulnerabilities. Always verify contract addresses on official sources.
+</Warning>
+
+## Managing Your Token List
+
+### Organizing Tokens
+
+Keep your token list clean and organized:
+
+- **Hide Small Balances**: Filter out tokens with very small or zero balances
+- **Search Tokens**: Quickly find specific tokens by name or symbol  
+- **Sort Options**: Order by balance value, token name, or network
+- **Remove Tokens**: Hide tokens you no longer want to see (doesn't affect blockchain balances)
+
+### Token Details
+
+View detailed information about any token:
+
+- **Origin Network**: Which blockchain the token comes from
+- **Contract Address**: Smart contract address for custom tokens
+- **Decimals**: Precision of the token (usually 18 for ERC-20)
+- **Price Data**: Current market price and 24-hour change (when available)
+
+## Multi-Account Token View
+
+When viewing "All Accounts":
+
+- See combined balances across all your accounts
+- Identify which accounts hold specific tokens
+- Total portfolio value across all accounts and networks
+
+## Token Security
+
+### Verifying Tokens
+
+Before interacting with any token:
+
+<Steps>
+  <Step title="Check official sources">
+    Verify the token contract address on the project's official website or documentation.
+  </Step>
+  <Step title="Use block explorers">
+    Look up the token on a reputable block explorer (Etherscan, Subscan, etc.) to see its transaction history and holder count.
+  </Step>
+  <Step title="Research the project">
+    Understand what the token represents and the team behind it before acquiring it.
+  </Step>
+</Steps>
+
+### Token Approvals
+
+When using dApps, you may need to approve token spending:
+
+- **Approval Amount**: Controls how much a smart contract can spend
+- **Unlimited Approvals**: Some dApps request unlimited approval - consider limiting this
+- **Revoke Approvals**: You can revoke token approvals at any time through token approval managers
+
+<Tip>
+Regularly review and revoke unused token approvals to minimize security risks from compromised dApps.
+</Tip>
+
+## Portfolio Tracking
+
+### Total Portfolio Value
+
+SubWallet calculates your total portfolio value:
+
+- Aggregates all token balances across networks
+- Converts to your preferred fiat currency
+- Updates in real-time with market prices
+
+### Price Charts and Data
+
+For supported tokens, view:
+
+- Current market price
+- 24-hour price change percentage
+- Historical price charts (when available)
+- Market cap and trading volume
+
+## Transaction History
+
+View your complete token transaction history:
+
+- **Incoming Transfers**: Tokens received
+- **Outgoing Transfers**: Tokens sent  
+- **Token Swaps**: Exchange transactions
+- **Other Interactions**: Staking, governance, smart contract calls
+
+Each transaction shows:
+- Date and time
+- Amount and token type
+- Transaction status (pending, confirmed, failed)
+- Network fees paid
+- Link to block explorer for full details
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Maintain Sufficient Native Tokens">
+    Always keep enough native tokens (ETH, DOT, etc.) in your account to pay for transaction fees.
+  </Accordion>
+  <Accordion title="Understand Existential Deposits">
+    On Substrate chains, respect the existential deposit. Removing it will delete your account and any remaining dust amounts.
+  </Accordion>
+  <Accordion title="Verify Before Sending">
+    Double-check recipient addresses and amounts before confirming transactions. Use small test transactions for new recipients.
+  </Accordion>
+  <Accordion title="Keep Token List Clean">
+    Hide or remove tokens you don't use to reduce clutter. This doesn't affect your actual holdings, just the display.
+  </Accordion>
+  <Accordion title="Monitor Approvals">
+    Regularly review which dApps have approval to spend your tokens and revoke unnecessary approvals.
+  </Accordion>
+  <Accordion title="Research Unknown Tokens">
+    Before interacting with any token you receive unexpectedly, research it thoroughly. Scammers often airdrop malicious tokens.
+  </Accordion>
+</AccordionGroup>

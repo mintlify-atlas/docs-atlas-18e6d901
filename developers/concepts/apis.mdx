@@ -1,0 +1,637 @@
+---
+title: APIs
+description: Understanding and implementing APIs for external data integration in SubWallet Extension
+---
+
+## What are APIs?
+
+APIs in SubWallet Extension are organized modules that handle external data fetching and processing. They abstract away the complexity of interacting with blockchain nodes, price feeds, NFT metadata services, and other external data sources.
+
+APIs provide:
+- **Abstraction** over complex blockchain interactions
+- **Reusability** across different services and components
+- **Type safety** with TypeScript interfaces
+- **Error handling** and retry logic
+- **Caching** to minimize external calls
+
+## API Organization
+
+APIs are located in `packages/extension-base/src/koni/api/` with the following structure:
+
+```
+api/
+  coingecko.ts           # Price data from CoinGecko
+  donate.ts              # Donation addresses
+  dotsama/               # Polkadot/Kusama specific
+    crowdloan.ts
+    domain.ts
+    parseTransaction.ts
+  nft/                   # NFT metadata and collections
+    acala_nft/
+    bit_country/
+    unique_nft/
+  staking/               # Staking data
+    astar/
+    moonbeam/
+  contract-handler/      # Smart contract interactions
+    evm/
+    wasm/
+```
+
+## API Types
+
+### 1. Function-Based APIs
+
+Simple APIs are defined as standalone functions:
+
+```typescript
+// api/donate.ts
+import { DonateInfo } from '@subwallet/extension-base/background/KoniTypes';
+
+const DONATEINFOS: Record<string, DonateInfo> = {
+  ukraine: {
+    key: '1x8aa2N2Ar9SQweJv9vsuZn3WYDHu7gMQu1RePjZuBe33Hv',
+    name: 'Ukraine / Україна',
+    value: '5D1qSEmJAPafzsw8MH6vjkjdBtYZbbZYGvAXGMQP1pA7rMXk',
+    icon: 'ukraine',
+    link: 'https://twitter.com/Ukraine/status/1498547710697345027'
+  }
+};
+
+export default DONATEINFOS;
+```
+
+### 2. Class-Based APIs
+
+Complex APIs are organized as classes or objects:
+
+```typescript
+// api/contract-handler/evm/web3.ts
+import Web3 from 'web3';
+import { Contract } from 'web3-eth-contract';
+
+export class EvmContractHandler {
+  private web3: Web3;
+
+  constructor(provider: string) {
+    this.web3 = new Web3(provider);
+  }
+
+  public async getContract(address: string, abi: any): Promise<Contract> {
+    return new this.web3.eth.Contract(abi, address);
+  }
+
+  public async callMethod(contract: Contract, method: string, params: any[]): Promise<any> {
+    return await contract.methods[method](...params).call();
+  }
+}
+```
+
+### 3. Service-Integrated APIs
+
+APIs that are part of a service's internal logic:
+
+```typescript
+// services/price-service/coingecko.ts
+import axios from 'axios';
+
+interface GeckoItem {
+  id: string;
+  current_price: number;
+  price_change_24h: number;
+}
+
+export const getPriceMap = async (
+  priceIds: Set<string>,
+  currency: string = 'USD'
+): Promise<Record<string, number>> => {
+  const idStr = Array.from(priceIds).join(',');
+  const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=${currency}&ids=${idStr}`;
+  
+  const response = await axios.get<GeckoItem[]>(url);
+  
+  return response.data.reduce((map, item) => {
+    map[item.id] = item.current_price;
+    return map;
+  }, {} as Record<string, number>);
+};
+```
+
+## Real-World Example: CoinGecko Price API
+
+Here's how the CoinGecko price fetching API is implemented:
+
+```typescript
+// koni/api/coingecko.ts
+import { CurrencyJson, CurrencyType, ExchangeRateJSON, PriceJson } from '@subwallet/extension-base/background/KoniTypes';
+import { staticData, StaticKey } from '@subwallet/extension-base/utils/staticData';
+import axios, { AxiosResponse } from 'axios';
+
+interface GeckoItem {
+  id: string;
+  name: string;
+  current_price: number;
+  price_change_24h: number;
+  symbol: string;
+}
+
+interface ExchangeRateItem {
+  result: string;
+  base_code: string;
+  conversion_rates: Record<string, number>;
+}
+
+let useBackupApi = false;
+
+export const getTokenPrice = async (
+  priceIds: Set<string>,
+  currencyCode: CurrencyType = 'USD'
+): Promise<PriceJson> => {
+  try {
+    const idStr = Array.from(priceIds).join(',');
+
+    // Fetch price data with fallback
+    const getPriceMap = async () => {
+      let rs: AxiosResponse<any, any> | undefined;
+
+      if (!useBackupApi) {
+        try {
+          rs = await axios.get(
+            `https://api.coingecko.com/api/v3/coins/markets?vs_currency=${currencyCode.toLowerCase()}&per_page=250&ids=${idStr}`
+          );
+        } catch (err) {
+          useBackupApi = true;
+        }
+      }
+
+      if (useBackupApi || rs?.status !== 200) {
+        useBackupApi = true;
+        rs = await axios.get(`https://chain-data.subwallet.app/api/price/get?ids=${idStr}`);
+      }
+
+      return rs;
+    };
+
+    const getExchangeRate = async () => {
+      return await axios.get('https://api-cache.subwallet.app/exchange-rate');
+    };
+
+    // Fetch both in parallel
+    const [priceResponse, exchangeResponse] = await Promise.all([
+      getPriceMap(),
+      getExchangeRate()
+    ]);
+
+    const responseDataPrice = priceResponse?.data as Array<GeckoItem> || [];
+    const responseDataExchangeRate = exchangeResponse?.data as ExchangeRateItem || {};
+    
+    const priceMap: Record<string, number> = {};
+    const price24hMap: Record<string, number> = {};
+    
+    // Process exchange rates
+    const exchangeRateMap: Record<CurrencyType, ExchangeRateJSON> = 
+      Object.keys(responseDataExchangeRate.conversion_rates)
+        .reduce((map, exchangeKey) => {
+          if (!staticData[StaticKey.CURRENCY_SYMBOL][exchangeKey]) {
+            return map;
+          }
+
+          map[exchangeKey as CurrencyType] = {
+            exchange: responseDataExchangeRate.conversion_rates[exchangeKey],
+            label: (staticData[StaticKey.CURRENCY_SYMBOL][exchangeKey] as CurrencyJson).label
+          };
+
+          return map;
+        }, {} as Record<CurrencyType, ExchangeRateJSON>);
+
+    // Process prices
+    responseDataPrice.forEach((val) => {
+      const currentPrice = val.current_price || 0;
+      const price24h = currentPrice - (val.price_change_24h || 0);
+      const exchangeRate = exchangeRateMap[currencyCode] || 1;
+
+      priceMap[val.id] = currentPrice * exchangeRate.exchange;
+      price24hMap[val.id] = price24h * exchangeRate.exchange;
+    });
+
+    return {
+      currency: currencyCode,
+      currencyData: staticData[StaticKey.CURRENCY_SYMBOL][currencyCode],
+      exchangeRateMap,
+      priceMap,
+      price24hMap
+    } as PriceJson;
+  } catch (err) {
+    console.error(err);
+    throw err;
+  }
+};
+```
+
+## Creating a New API
+
+### Step 1: Define Types
+
+Create TypeScript interfaces for your API:
+
+```typescript
+// types.ts
+export interface TokenMetadata {
+  symbol: string;
+  decimals: number;
+  name: string;
+  totalSupply: string;
+}
+
+export interface TokenBalance {
+  address: string;
+  balance: string;
+  metadata: TokenMetadata;
+}
+```
+
+### Step 2: Implement API Functions
+
+Create the API implementation:
+
+```typescript
+// api/token-metadata.ts
+import axios from 'axios';
+import { TokenMetadata, TokenBalance } from './types';
+
+const API_BASE = 'https://api.example.com';
+const CACHE_DURATION = 60000; // 1 minute
+const metadataCache = new Map<string, { data: TokenMetadata, timestamp: number }>();
+
+/**
+ * Fetch token metadata with caching
+ */
+export const getTokenMetadata = async (tokenAddress: string): Promise<TokenMetadata> => {
+  // Check cache
+  const cached = metadataCache.get(tokenAddress);
+  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    return cached.data;
+  }
+
+  try {
+    const response = await axios.get<TokenMetadata>(
+      `${API_BASE}/tokens/${tokenAddress}/metadata`
+    );
+
+    // Update cache
+    metadataCache.set(tokenAddress, {
+      data: response.data,
+      timestamp: Date.now()
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error(`Failed to fetch metadata for ${tokenAddress}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Fetch token balance for an address
+ */
+export const getTokenBalance = async (
+  tokenAddress: string,
+  holderAddress: string
+): Promise<TokenBalance> => {
+  const [metadata, balanceResponse] = await Promise.all([
+    getTokenMetadata(tokenAddress),
+    axios.get(`${API_BASE}/tokens/${tokenAddress}/balance/${holderAddress}`)
+  ]);
+
+  return {
+    address: holderAddress,
+    balance: balanceResponse.data.balance,
+    metadata
+  };
+};
+
+/**
+ * Batch fetch balances for multiple tokens
+ */
+export const getBatchTokenBalances = async (
+  tokens: string[],
+  holderAddress: string
+): Promise<TokenBalance[]> => {
+  return await Promise.all(
+    tokens.map(token => getTokenBalance(token, holderAddress))
+  );
+};
+```
+
+### Step 3: Use API in a Service
+
+Integrate your API with a service:
+
+```typescript
+// services/token-service/index.ts
+import { getTokenMetadata, getBatchTokenBalances } from '@subwallet/extension-base/koni/api/token-metadata';
+import { BehaviorSubject } from 'rxjs';
+
+export class TokenService {
+  private tokenDataSubject = new BehaviorSubject<Map<string, TokenBalance>>(new Map());
+
+  public async refreshTokens (address: string, tokenAddresses: string[]) {
+    try {
+      const balances = await getBatchTokenBalances(tokenAddresses, address);
+      
+      const balanceMap = new Map(
+        balances.map(b => [b.metadata.symbol, b])
+      );
+      
+      this.tokenDataSubject.next(balanceMap);
+    } catch (error) {
+      console.error('Failed to refresh tokens:', error);
+    }
+  }
+
+  public getTokenDataSubject () {
+    return this.tokenDataSubject;
+  }
+}
+```
+
+## API Best Practices
+
+### 1. Error Handling
+
+```typescript
+// Good: Comprehensive error handling
+export const fetchData = async (id: string): Promise<Data> => {
+  try {
+    const response = await axios.get(`/api/data/${id}`);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      if (error.response?.status === 404) {
+        throw new Error(`Data not found: ${id}`);
+      }
+      if (error.response?.status === 429) {
+        throw new Error('Rate limit exceeded');
+      }
+    }
+    throw new Error(`Failed to fetch data: ${error.message}`);
+  }
+};
+
+// Bad: Silent failures
+export const fetchData = async (id: string) => {
+  try {
+    return await axios.get(`/api/data/${id}`);
+  } catch (e) {
+    return null; // Loses error information
+  }
+};
+```
+
+### 2. Retry Logic
+
+```typescript
+import { retry } from '@subwallet/extension-base/utils';
+
+export const fetchWithRetry = async (url: string, maxRetries = 3): Promise<any> => {
+  return await retry(
+    async () => {
+      const response = await axios.get(url);
+      if (response.status !== 200) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      return response.data;
+    },
+    { retries: maxRetries, delay: 1000 }
+  );
+};
+```
+
+### 3. Rate Limiting
+
+```typescript
+class RateLimiter {
+  private lastCall = 0;
+  private minInterval: number;
+
+  constructor(callsPerSecond: number) {
+    this.minInterval = 1000 / callsPerSecond;
+  }
+
+  async throttle<T>(fn: () => Promise<T>): Promise<T> {
+    const now = Date.now();
+    const timeSinceLastCall = now - this.lastCall;
+    
+    if (timeSinceLastCall < this.minInterval) {
+      await new Promise(resolve => 
+        setTimeout(resolve, this.minInterval - timeSinceLastCall)
+      );
+    }
+    
+    this.lastCall = Date.now();
+    return await fn();
+  }
+}
+
+const limiter = new RateLimiter(5); // 5 calls per second
+
+export const fetchWithRateLimit = async (url: string) => {
+  return await limiter.throttle(() => axios.get(url));
+};
+```
+
+### 4. Caching Strategy
+
+```typescript
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+  expiresAt: number;
+}
+
+class APICache<T> {
+  private cache = new Map<string, CacheEntry<T>>();
+  private ttl: number;
+
+  constructor(ttlMs: number) {
+    this.ttl = ttlMs;
+  }
+
+  get(key: string): T | null {
+    const entry = this.cache.get(key);
+    
+    if (!entry) {
+      return null;
+    }
+    
+    if (Date.now() > entry.expiresAt) {
+      this.cache.delete(key);
+      return null;
+    }
+    
+    return entry.data;
+  }
+
+  set(key: string, data: T): void {
+    this.cache.set(key, {
+      data,
+      timestamp: Date.now(),
+      expiresAt: Date.now() + this.ttl
+    });
+  }
+
+  clear(): void {
+    this.cache.clear();
+  }
+}
+
+const priceCache = new APICache<PriceData>(60000); // 1 minute TTL
+
+export const getPrice = async (tokenId: string): Promise<PriceData> => {
+  const cached = priceCache.get(tokenId);
+  if (cached) {
+    return cached;
+  }
+  
+  const price = await fetchPriceFromAPI(tokenId);
+  priceCache.set(tokenId, price);
+  return price;
+};
+```
+
+### 5. Parallel Requests
+
+```typescript
+// Good: Parallel requests
+export const fetchMultipleChains = async (chainIds: string[]) => {
+  return await Promise.all(
+    chainIds.map(id => fetchChainData(id))
+  );
+};
+
+// Better: Parallel with error handling
+export const fetchMultipleChainsWithFallback = async (chainIds: string[]) => {
+  const results = await Promise.allSettled(
+    chainIds.map(id => fetchChainData(id))
+  );
+  
+  return results.map((result, index) => {
+    if (result.status === 'fulfilled') {
+      return result.value;
+    }
+    console.error(`Failed to fetch chain ${chainIds[index]}:`, result.reason);
+    return null;
+  }).filter(Boolean);
+};
+```
+
+### 6. API Fallbacks
+
+```typescript
+const PRIMARY_API = 'https://api.primary.com';
+const BACKUP_API = 'https://api.backup.com';
+
+export const fetchWithFallback = async (endpoint: string) => {
+  try {
+    return await axios.get(`${PRIMARY_API}${endpoint}`);
+  } catch (error) {
+    console.warn('Primary API failed, trying backup:', error);
+    
+    try {
+      return await axios.get(`${BACKUP_API}${endpoint}`);
+    } catch (backupError) {
+      console.error('Both APIs failed:', backupError);
+      throw new Error('All API endpoints failed');
+    }
+  }
+};
+```
+
+## API Testing
+
+```typescript
+import { getTokenMetadata } from './token-metadata';
+import axios from 'axios';
+import MockAdapter from 'axios-mock-adapter';
+
+describe('Token Metadata API', () => {
+  let mock: MockAdapter;
+
+  beforeEach(() => {
+    mock = new MockAdapter(axios);
+  });
+
+  afterEach(() => {
+    mock.restore();
+  });
+
+  it('should fetch token metadata', async () => {
+    const tokenAddress = '0x123';
+    const mockData = {
+      symbol: 'TEST',
+      decimals: 18,
+      name: 'Test Token',
+      totalSupply: '1000000'
+    };
+
+    mock.onGet(`/api/tokens/${tokenAddress}/metadata`).reply(200, mockData);
+
+    const result = await getTokenMetadata(tokenAddress);
+    expect(result).toEqual(mockData);
+  });
+
+  it('should handle errors gracefully', async () => {
+    mock.onGet(/.*/).networkError();
+
+    await expect(getTokenMetadata('0x123')).rejects.toThrow();
+  });
+});
+```
+
+## Common API Patterns
+
+### Blockchain Node APIs
+```typescript
+// Substrate/Polkadot
+import { ApiPromise, WsProvider } from '@polkadot/api';
+
+export const connectToChain = async (endpoint: string): Promise<ApiPromise> => {
+  const provider = new WsProvider(endpoint);
+  return await ApiPromise.create({ provider });
+};
+```
+
+### EVM Contract APIs
+```typescript
+import Web3 from 'web3';
+
+export const callContractMethod = async (
+  web3: Web3,
+  contractAddress: string,
+  abi: any,
+  method: string,
+  params: any[]
+) => {
+  const contract = new web3.eth.Contract(abi, contractAddress);
+  return await contract.methods[method](...params).call();
+};
+```
+
+### REST APIs
+```typescript
+import axios from 'axios';
+
+export const createAPIClient = (baseURL: string) => {
+  return axios.create({
+    baseURL,
+    timeout: 10000,
+    headers: { 'Content-Type': 'application/json' }
+  });
+};
+```
+
+## Related Concepts
+
+- [Services](/developers/concepts/services) - Services use APIs to fetch data
+- [Stores](/developers/concepts/stores) - Cache API responses in stores
+- [Cron Jobs](/developers/concepts/cron-jobs) - Schedule periodic API calls

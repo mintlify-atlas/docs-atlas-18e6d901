@@ -1,0 +1,391 @@
+---
+title: Cross-Chain Transfers
+description: Send tokens between different blockchain networks seamlessly
+---
+
+SubWallet Extension enables cross-chain transfers, allowing you to move tokens between different blockchain networks. Whether transferring between Polkadot parachains or bridging to Ethereum, SubWallet handles the complexity for you.
+
+## What are Cross-Chain Transfers?
+
+Cross-chain transfers move tokens from one blockchain network to another. For example:
+
+- Sending DOT from Polkadot to Moonbeam
+- Moving USDT from Ethereum to Polygon
+- Transferring KSM from Kusama to Asset Hub
+
+These transfers use various bridging technologies to enable communication between different blockchains.
+
+## Types of Cross-Chain Transfers
+
+SubWallet supports multiple cross-chain transfer methods.
+
+### XCM Transfers (Cross-Consensus Messaging)
+
+Native cross-chain transfers within Polkadot and Kusama ecosystems:
+
+<CardGroup cols={2}>
+  <Card title="Relay to Parachain" icon="arrow-down">
+    Send tokens from Polkadot/Kusama relay chains to their parachains.
+  </Card>
+  <Card title="Parachain to Relay" icon="arrow-up">
+    Transfer tokens from parachains back to the relay chain.
+  </Card>
+  <Card title="Parachain to Parachain" icon="arrows-left-right">
+    Direct transfers between parachains in the same ecosystem.
+  </Card>
+  <Card title="Asset Hub Routing" icon="route">
+    Transfers through Asset Hub as an intermediary between parachains.
+  </Card>
+</CardGroup>
+
+<Note>
+XCM transfers within the Polkadot/Kusama ecosystem are typically fast (1-2 minutes) and have low fees compared to other bridging methods.
+</Note>
+
+### Cross-Ecosystem Bridges
+
+Bridge between different blockchain ecosystems:
+
+<Tabs>
+  <Tab title="Snowbridge">
+    Connects Polkadot and Ethereum ecosystems. Bridge DOT, ETH, and other assets between networks.
+    
+    **Transfer Time**: 30-60 minutes  
+    **Fee**: ~$5-70 depending on direction  
+    **Status**: Beta (use with caution)
+  </Tab>
+  <Tab title="Polygon Bridge">
+    Transfer between Ethereum and Polygon networks for lower fees and faster transactions.
+    
+    **Transfer Time**: 3-40 minutes depending on direction  
+    **Fee**: Variable based on Ethereum gas prices
+  </Tab>
+  <Tab title="Avail Bridge">
+    Connect Ethereum/EVM chains with Avail network.
+    
+    **Transfer Time**: Up to 90 minutes  
+    **Manual Claim**: May require claiming funds on destination network
+  </Tab>
+  <Tab title="Chainflip">
+    Native cross-chain swaps between Bitcoin, Ethereum, Polkadot, and other major chains.
+    
+    **Transfer Time**: 10-30 minutes  
+    **Method**: Atomic swaps (no wrapped tokens)
+  </Tab>
+</Tabs>
+
+## Initiating Cross-Chain Transfers
+
+<Steps>
+  <Step title="Select source network">
+    Choose the blockchain network where your tokens currently exist.
+  </Step>
+  <Step title="Select destination network">
+    Pick the network where you want to receive the tokens. SubWallet shows only compatible destinations.
+  </Step>
+  <Step title="Choose token and amount">
+    Select which token to transfer and how much to send.
+  </Step>
+  <Step title="Enter destination address">
+    Provide the receiving address on the destination network (often auto-filled if using the same account).
+  </Step>
+  <Step title="Review and confirm">
+    Check transfer details, fees, and estimated time. Confirm the transaction.
+  </Step>
+</Steps>
+
+## Transfer Warnings and Confirmations
+
+SubWallet provides warnings for complex or risky transfers:
+
+### Beta Features
+
+<Warning>
+Some cross-chain routes are in beta:
+- **Asset Hub Bridges**: High fees and beta status
+- **Snowbridge**: $5-70 fees, 30-60 minute transfers
+- **New Routes**: Recently launched transfer paths
+
+Always start with small test amounts on beta routes.
+</Warning>
+
+### Long Transfer Times
+
+Some routes require extended processing:
+
+- **Polygon Exit**: Up to 3 hours + manual claim
+- **Avail Bridge**: Up to 90 minutes
+- **Ethereum Finality**: 12-15 minutes for sufficient confirmations
+
+SubWallet warns you before initiating transfers with long wait times.
+
+### Manual Claiming
+
+Certain bridges require you to claim tokens on the destination:
+
+1. Complete the transfer transaction on the source chain
+2. Wait for bridge processing
+3. Manually claim tokens on the destination chain
+4. Pay destination chain fees for the claim transaction
+
+<Tip>
+For bridges requiring manual claims, SubWallet provides transaction tracking and notifications when claims become available.
+</Tip>
+
+## Cross-Chain Transfer Fees
+
+### Source Chain Fees
+
+Transaction fees on the origin network:
+
+- **Substrate Chains**: Usually very low (0.01-0.1 DOT/KSM)
+- **Ethereum**: Can be high during congestion ($5-100+)
+- **Layer 2s**: Lower than Ethereum mainnet ($0.10-5)
+
+### Destination Chain Fees
+
+Some transfers have destination fees:
+
+- **Asset Reception**: Automatic, included in source fee
+- **Manual Claims**: Separate transaction fee on destination
+- **Bridge Fees**: Fixed or percentage-based bridge service fees
+
+### Total Cost Example
+
+<CodeGroup>
+```text Polkadot to Asset Hub
+Source Fee: 0.02 DOT (~$0.15)
+Bridge Fee: None
+Destination Fee: Automatic
+Total: ~$0.15
+Time: 1-2 minutes
+```
+
+```text Ethereum to Polkadot (Snowbridge)
+Source Fee: 50 Gwei gas (~$5-15)
+Bridge Fee: ~$70
+Destination Fee: Automatic
+Total: ~$75-85
+Time: 30-60 minutes
+```
+
+```text Polkadot to Kusama (via Chainflip)
+Source Fee: 0.01 DOT
+Swap Fee: 0.1-0.3%
+Destination Fee: Automatic
+Total: 0.01 DOT + 0.1-0.3% of amount
+Time: 10-30 minutes
+```
+</CodeGroup>
+
+## Supported Transfer Routes
+
+### Within Polkadot Ecosystem
+
+**From Polkadot Relay Chain:**
+- All Polkadot parachains (Moonbeam, Acala, Astar, Parallel, etc.)
+- Polkadot Asset Hub
+
+**From Polkadot Asset Hub:**
+- Polkadot relay chain
+- All Polkadot parachains
+- Ethereum (via Snowbridge)
+
+**Between Polkadot Parachains:**
+- Direct transfers (where supported)
+- Via Asset Hub routing
+
+### Within Kusama Ecosystem
+
+**From Kusama Relay Chain:**
+- All Kusama parachains
+- Kusama Asset Hub
+
+**From Kusama Asset Hub:**
+- Kusama relay chain  
+- All Kusama parachains
+
+**Between Kusama Parachains:**
+- Direct or routed via Asset Hub
+
+### Cross-Ecosystem Routes
+
+**Polkadot ↔ Ethereum:**
+- Via Snowbridge (beta)
+- Via Chainflip (as a swap)
+
+**Ethereum ↔ Polygon:**
+- Polygon PoS Bridge
+- Ethereum L2 bridges
+
+**Bitcoin ↔ Other Chains:**
+- Via Chainflip swaps
+
+## Transfer Status and Tracking
+
+Monitor your cross-chain transfers:
+
+<CardGroup cols={4}>
+  <Card title="Initiated" icon="play">
+    Transfer transaction submitted on source chain
+  </Card>
+  <Card title="Processing" icon="spinner">
+    Bridge or relay system processing the transfer
+  </Card>
+  <Card title="Claiming" icon="hand-holding-dollar">
+    Ready to claim on destination (manual bridges only)
+  </Card>
+  <Card title="Completed" icon="check">
+    Tokens received on destination chain
+  </Card>
+</CardGroup>
+
+### Transaction History
+
+View all cross-chain transfers:
+
+- Source and destination chains
+- Token type and amount
+- Transfer status
+- Transaction hashes for both chains
+- Timestamps and duration
+- Fees paid
+
+## Same-Account Transfers
+
+When transferring within the same account (unified account):
+
+- Destination address auto-fills
+- No need to copy/paste addresses
+- Reduced error risk
+- Seamless cross-chain portfolio management
+
+<Tip>
+Unified accounts make cross-chain transfers incredibly easy - just select source network, destination network, and amount. Your addresses are handled automatically.
+</Tip>
+
+## Different-Account Transfers
+
+Sending to a different account or person:
+
+1. **Verify Network Compatibility**: Ensure recipient has an account on the destination chain
+2. **Get Correct Address**: Obtain the recipient's address for the destination network
+3. **Validate Address**: SubWallet checks address format matches the destination
+4. **Test First**: Consider a small test transfer for large amounts
+
+<Warning>
+Always verify the destination address supports the token on that specific network. Sending to incompatible addresses can result in permanent loss of funds.
+</Warning>
+
+## Existential Deposits
+
+Substrate chains require minimum balances:
+
+- **Existential Deposit**: Minimum balance to keep account active
+- **Transfer Limits**: Can't transfer below ED or account is deleted
+- **First Transfer**: First incoming transfer must meet ED to create account
+
+**Common Existential Deposits:**
+- Polkadot: 1 DOT
+- Kusama: 0.0033 KSM  
+- Asset Hub: 0.1 DOT/KSM
+- Most parachains: 0.01-0.1 of native token
+
+SubWallet warns you if transfers would violate ED requirements.
+
+## Troubleshooting Cross-Chain Transfers
+
+### Transfer Taking Too Long
+
+<AccordionGroup>
+  <Accordion title="Check Transaction Status">
+    Verify the source transaction confirmed on the blockchain. Use block explorer links from SubWallet.
+  </Accordion>
+  <Accordion title="Verify Expected Duration">
+    Some routes (Polygon exit, Snowbridge) take 30-90 minutes normally.
+  </Accordion>
+  <Accordion title="Check for Manual Claims">
+    Some bridges require you to claim tokens on the destination. Check SubWallet notifications.
+  </Accordion>
+  <Accordion title="Network Congestion">
+    High traffic on source or destination chains can delay processing.
+  </Accordion>
+</AccordionGroup>
+
+### Transfer Failed
+
+<AccordionGroup>
+  <Accordion title="Insufficient Fees">
+    Ensure you have enough native tokens for transaction fees on the source chain.
+  </Accordion>
+  <Accordion title="Below Minimum Amount">
+    Transfer amount may be below the minimum for that route. Increase the amount.
+  </Accordion>
+  <Accordion title="Incompatible Route">
+    Verify the token is supported on the destination chain.
+  </Accordion>
+  <Accordion title="ED Violation">
+    Transfer may violate existential deposit requirements. Adjust amount.
+  </Accordion>
+</AccordionGroup>
+
+### Tokens Not Received
+
+1. **Verify Transaction**: Check if source transaction succeeded
+2. **Check Claim Status**: Does it require manual claiming?
+3. **Verify Address**: Was the correct destination address used?
+4. **Contact Support**: For bridge issues, check bridge provider status
+
+## Advanced: Understanding XCM
+
+XCM (Cross-Consensus Messaging) is Polkadot's native interoperability protocol:
+
+### How XCM Works
+
+<Steps>
+  <Step title="Message creation">
+    Source chain creates an XCM message describing the transfer.
+  </Step>
+  <Step title="Relay chain routing">
+    Message passes through relay chain for verification and routing.
+  </Step>
+  <Step title="Destination execution">
+    Destination chain receives and executes the message, minting/transferring tokens.
+  </Step>
+</Steps>
+
+### XCM Benefits
+
+- **Trust-minimized**: No external bridges or validators needed
+- **Fast**: Usually completes in 1-2 minutes
+- **Low cost**: Minimal fees compared to external bridges
+- **Secure**: Protected by relay chain and parachain security
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Test with Small Amounts">
+    Always test a new cross-chain route with a small amount first, especially for beta features or unfamiliar bridges.
+  </Accordion>
+  <Accordion title="Verify Destination Address">
+    Triple-check destination addresses when sending to external accounts. Cross-chain transfers are irreversible.
+  </Accordion>
+  <Accordion title="Understand Transfer Times">
+    Be aware of expected durations. Don't panic if transfers take the stated time to complete.
+  </Accordion>
+  <Accordion title="Keep Native Tokens for Fees">
+    Maintain sufficient native tokens on both source and destination chains for fees and claims.
+  </Accordion>
+  <Accordion title="Check Beta Warnings">
+    Read and understand any warnings SubWallet displays. Beta features may have higher risks or costs.
+  </Accordion>
+  <Accordion title="Monitor Transfer Status">
+    Track transfers using SubWallet's status indicators and transaction history. Save transaction hashes.
+  </Accordion>
+  <Accordion title="Account for ED Requirements">
+    Ensure first-time receives meet existential deposit minimums, and don't transfer below ED from active accounts.
+  </Accordion>
+  <Accordion title="Research Bridge Providers">
+    For external bridges, understand the provider's security model, track record, and fee structure.
+  </Accordion>
+</AccordionGroup>

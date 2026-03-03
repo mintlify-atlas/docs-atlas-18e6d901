@@ -1,0 +1,178 @@
+---
+title: Account Management
+description: Create, import, and manage your blockchain accounts across multiple networks
+---
+
+SubWallet Extension provides flexible account management that supports multiple blockchain networks and account types. Manage all your accounts from a single, secure interface.
+
+## Creating Accounts
+
+SubWallet offers multiple ways to create and import accounts to suit your needs.
+
+### Create with Seed Phrase
+
+Generate a new account using a secure seed phrase (also called a mnemonic or recovery phrase).
+
+<Steps>
+  <Step title="Generate seed phrase">
+    Create a new seed phrase with 12, 15, 18, 21, or 24 words. SubWallet supports both standard and TON-specific seed phrases.
+  </Step>
+  <Step title="Select account types">
+    Choose which blockchain account types to create from your seed phrase:
+    - Substrate accounts (Polkadot, Kusama, and parachains)
+    - Ethereum and EVM-compatible accounts
+    - TON accounts
+    - Cardano accounts
+    - Bitcoin accounts
+  </Step>
+  <Step title="Set account name and password">
+    Give your account a memorable name and set a master password to secure your wallet.
+  </Step>
+</Steps>
+
+<Note>
+All accounts created from the same seed phrase are linked together in a unified account group, making it easy to manage multiple blockchain addresses.
+</Note>
+
+### Import Existing Account
+
+Bring your existing blockchain accounts into SubWallet.
+
+<Tabs>
+  <Tab title="Seed Phrase">
+    Import accounts by entering your existing 12-24 word seed phrase. SubWallet automatically detects the phrase type and shows you which account types can be created.
+  </Tab>
+  <Tab title="JSON File">
+    Import Polkadot/Substrate accounts using a JSON backup file. Simply upload the file and enter the password used when exporting it.
+  </Tab>
+  <Tab title="Private Key">
+    Import Ethereum and EVM accounts directly using your private key.
+  </Tab>
+  <Tab title="QR Code">
+    Import accounts by scanning a QR code from another wallet or device.
+  </Tab>
+</Tabs>
+
+### Connect Hardware Wallets
+
+Connect your Ledger hardware wallet for maximum security.
+
+<Steps>
+  <Step title="Connect device">
+    Plug in your Ledger device and unlock it with your PIN.
+  </Step>
+  <Step title="Select accounts">
+    Choose which accounts to import from your Ledger. You can import multiple accounts at once.
+  </Step>
+  <Step title="Confirm import">
+    SubWallet creates read-only accounts that require your Ledger device to sign transactions.
+  </Step>
+</Steps>
+
+<Warning>
+Ledger accounts require the physical device to be connected when signing transactions. Keep your Ledger firmware updated for the best compatibility.
+</Warning>
+
+## Managing Accounts
+
+### Account Groups (Unified Accounts)
+
+When you create multiple account types from the same seed phrase, they're automatically grouped together. This makes it easy to:
+
+- Switch between different blockchain networks while staying in the same account
+- View all your assets across networks in one place
+- Manage related accounts as a single unit
+
+### Switching Accounts
+
+Quickly switch between your accounts or view all accounts together:
+
+- **Individual Account**: View and manage a specific account
+- **All Accounts**: See combined balances and assets across all your accounts
+- **Account Groups**: Switch between unified multi-chain account groups
+
+### Renaming Accounts
+
+Give your accounts descriptive names to stay organized:
+
+1. Select the account you want to rename
+2. Click the edit icon or settings
+3. Enter a new name
+4. Save your changes
+
+### Exporting Accounts
+
+Back up your accounts for safekeeping:
+
+<CardGroup cols={2}>
+  <Card title="Export Seed Phrase" icon="key">
+    Export your seed phrase to import the account into another wallet. Requires your password.
+  </Card>
+  <Card title="Export JSON" icon="file-export">
+    Export Substrate accounts as encrypted JSON files. Set a password when exporting.
+  </Card>
+  <Card title="Export Private Key" icon="lock">
+    Export the private key for Ethereum/EVM accounts. Requires your password.
+  </Card>
+  <Card title="Export QR Code" icon="qrcode">
+    Generate a QR code to import the account on another device.
+  </Card>
+</CardGroup>
+
+<Warning>
+Never share your seed phrase, private keys, or JSON file passwords. Anyone with access to these can control your accounts and assets.
+</Warning>
+
+## Security Features
+
+### Master Password
+
+Your master password encrypts all accounts stored in SubWallet. You'll need it to:
+
+- Create or import new accounts
+- Export account credentials
+- Sign transactions
+- Access the wallet after locking
+
+<Tip>
+Choose a strong master password and store it securely. If you forget it, you'll need your seed phrase or private keys to recover access.
+</Tip>
+
+### Account Authorization
+
+Control which websites can access your accounts:
+
+- Grant access to trusted dApps
+- Revoke access at any time
+- See which sites are connected to each account
+
+### Account Locking
+
+Lock your wallet when not in use for added security. The extension automatically locks after a period of inactivity, which you can configure in settings.
+
+## Deriving Accounts
+
+Create multiple accounts from a single seed phrase using derivation paths. This is useful for:
+
+- Creating separate accounts for different purposes
+- Generating additional addresses without a new seed phrase
+- Organizing accounts by use case (personal, business, testing)
+
+Each derived account has a unique address but shares the same underlying seed phrase.
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Secure Your Seed Phrase">
+    Write down your seed phrase and store it in a safe place offline. Never store it digitally or share it with anyone. This is the master key to all accounts derived from it.
+  </Accordion>
+  <Accordion title="Use Descriptive Names">
+    Name your accounts clearly (e.g., "Main Wallet", "Trading Account", "DeFi Activities") to avoid confusion when managing multiple accounts.
+  </Accordion>
+  <Accordion title="Regular Backups">
+    Periodically verify that you still have access to your seed phrase and backup files. Test your backups by importing them in a separate browser profile.
+  </Accordion>
+  <Accordion title="Hardware Wallet for Large Amounts">
+    For significant holdings, consider using a Ledger hardware wallet for an extra layer of security.
+  </Accordion>
+</AccordionGroup>

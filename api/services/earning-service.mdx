@@ -1,0 +1,505 @@
+---
+title: Earning Service
+description: Service for managing staking, yield pools, and earning opportunities
+---
+
+## Overview
+
+The `EarningService` manages all earning-related functionality including native staking, liquid staking, nomination pools, and lending across multiple blockchain networks. It provides a unified interface for yield generation activities.
+
+## Key Features
+
+- Native staking (relay chains, parachains)
+- Liquid staking pools (Bifrost, Acala, Parallel)
+- Nomination pools
+- Lending protocols
+- Staking reward tracking
+- Validator selection and management
+- Unstaking and withdrawal management
+
+## Class: EarningService
+
+### Constructor
+
+```typescript
+constructor(state: KoniState)
+```
+
+<ParamField path="state" type="KoniState" required>
+  The global state object of the extension
+</ParamField>
+
+## Lifecycle Methods
+
+### init()
+
+Initializes the earning service and loads data.
+
+```typescript
+async init(): Promise<void>
+```
+
+### start()
+
+Starts the earning service and begins tracking positions.
+
+```typescript
+async start(): Promise<void>
+```
+
+### stop()
+
+Stops the earning service.
+
+```typescript
+async stop(): Promise<void>
+```
+
+## Pool Information Methods
+
+### getYieldPoolInfo()
+
+Retrieves all available yield pools.
+
+```typescript
+async getYieldPoolInfo(): Promise<YieldPoolInfo[]>
+```
+
+**Returns:**
+
+<ResponseField name="YieldPoolInfo[]" type="array">
+  Array of available yield pools with metadata and statistics
+</ResponseField>
+
+**Usage:**
+
+```typescript
+const pools = await earningService.getYieldPoolInfo();
+pools.forEach(pool => {
+  console.log(`${pool.name}: APY ${pool.statistic?.assetEarning[0]?.apy}%`);
+});
+```
+
+### getYieldPool()
+
+Retrieves a specific yield pool by slug.
+
+```typescript
+async getYieldPool(slug: string): Promise<YieldPoolInfo | undefined>
+```
+
+<ParamField path="slug" type="string" required>
+  Pool identifier (e.g., 'DOT___native_staking___polkadot')
+</ParamField>
+
+### subscribeYieldPoolInfo()
+
+Subscribes to yield pool updates.
+
+```typescript
+subscribeYieldPoolInfo(): BehaviorSubject<Record<string, YieldPoolInfo>>
+```
+
+**Returns:**
+
+<ResponseField name="BehaviorSubject" type="BehaviorSubject">
+  Observable that emits pool information updates
+</ResponseField>
+
+## Position Management Methods
+
+### getYieldPositionInfo()
+
+Retrieves all staking positions for the current account.
+
+```typescript
+async getYieldPositionInfo(): Promise<YieldPositionInfo[]>
+```
+
+**Returns:**
+
+<ResponseField name="YieldPositionInfo[]" type="array">
+  Array of staking positions with balances and status
+</ResponseField>
+
+### getYieldPosition()
+
+Retrieves a specific position for an address and pool.
+
+```typescript
+async getYieldPosition(
+  address: string,
+  slug: string
+): Promise<YieldPositionInfo | undefined>
+```
+
+<ParamField path="address" type="string" required>
+  Wallet address
+</ParamField>
+
+<ParamField path="slug" type="string" required>
+  Pool slug
+</ParamField>
+
+### subscribeYieldPosition()
+
+Subscribes to position updates.
+
+```typescript
+subscribeYieldPosition(): BehaviorSubject<YieldPositionInfo[]>
+```
+
+## Reward Methods
+
+### subscribeEarningReward()
+
+Subscribes to staking reward updates.
+
+```typescript
+subscribeEarningReward(): BehaviorSubject<EarningRewardJson>
+```
+
+**Returns:**
+
+<ResponseField name="BehaviorSubject" type="BehaviorSubject">
+  Observable emitting current claimable rewards
+</ResponseField>
+
+**Usage:**
+
+```typescript
+earningService.subscribeEarningReward().subscribe((rewards) => {
+  Object.values(rewards.data).forEach(reward => {
+    console.log(`Unclaimed: ${reward.unclaimedReward} ${reward.slug}`);
+  });
+});
+```
+
+### subscribeEarningRewardHistory()
+
+Subscribes to historical earning rewards.
+
+```typescript
+subscribeEarningRewardHistory(): BehaviorSubject<Record<string, EarningRewardHistoryItem>>
+```
+
+## Pool Target Methods
+
+### getPoolTargets()
+
+Retrieves available validators/targets for a pool.
+
+```typescript
+async getPoolTargets(slug: string): Promise<YieldPoolTarget[]>
+```
+
+<ParamField path="slug" type="string" required>
+  Pool slug
+</ParamField>
+
+**Returns:**
+
+<ResponseField name="YieldPoolTarget[]" type="array">
+  Array of available validators with metadata
+  
+  <ResponseField name="address" type="string">
+    Validator address
+  </ResponseField>
+  
+  <ResponseField name="identity" type="string">
+    Validator identity/name
+  </ResponseField>
+  
+  <ResponseField name="totalStake" type="string">
+    Total stake on validator
+  </ResponseField>
+  
+  <ResponseField name="commission" type="number">
+    Validator commission rate
+  </ResponseField>
+  
+  <ResponseField name="expectedReturn" type="number">
+    Expected APY
+  </ResponseField>
+</ResponseField>
+
+**Usage:**
+
+```typescript
+const validators = await earningService.getPoolTargets('DOT___native_staking___polkadot');
+validators.forEach(v => {
+  console.log(`${v.identity}: ${v.expectedReturn}% APY, ${v.commission}% commission`);
+});
+```
+
+## Staking Action Methods
+
+### earlyValidateJoin()
+
+Validates joining a pool before creating the transaction.
+
+```typescript
+async earlyValidateJoin(
+  request: RequestEarlyValidateYield
+): Promise<ResponseEarlyValidateYield>
+```
+
+<ParamField path="request" type="RequestEarlyValidateYield" required>
+  Validation request parameters
+  
+  <ParamField path="slug" type="string" required>
+    Pool slug
+  </ParamField>
+  
+  <ParamField path="address" type="string" required>
+    Staker address
+  </ParamField>
+  
+  <ParamField path="amount" type="string" required>
+    Amount to stake
+  </ParamField>
+</ParamField>
+
+**Returns:**
+
+<ResponseField name="ResponseEarlyValidateYield" type="object">
+  Validation response with errors or warnings
+</ResponseField>
+
+### handleYieldJoin()
+
+Handles the staking join process.
+
+```typescript
+async handleYieldJoin(
+  params: HandleYieldStepParams
+): Promise<HandleYieldStepData>
+```
+
+<ParamField path="params" type="HandleYieldStepParams" required>
+  Join parameters including pool, amount, and validators
+</ParamField>
+
+**Returns:**
+
+<ResponseField name="HandleYieldStepData" type="object">
+  Transaction data for the staking operation
+</ResponseField>
+
+### handleYieldLeave()
+
+Handles unstaking from a pool.
+
+```typescript
+async handleYieldLeave(
+  params: RequestYieldLeave
+): Promise<[ExtrinsicType, TransactionData]>
+```
+
+<ParamField path="params" type="RequestYieldLeave" required>
+  Unstaking parameters
+  
+  <ParamField path="slug" type="string" required>
+    Pool slug
+  </ParamField>
+  
+  <ParamField path="address" type="string" required>
+    Staker address
+  </ParamField>
+  
+  <ParamField path="amount" type="string" required>
+    Amount to unstake
+  </ParamField>
+  
+  <ParamField path="fastLeave" type="boolean">
+    Whether to use fast unstake if available
+  </ParamField>
+</ParamField>
+
+### handleYieldWithdraw()
+
+Withdraws unstaked funds after the unbonding period.
+
+```typescript
+async handleYieldWithdraw(
+  params: RequestYieldWithdrawal
+): Promise<TransactionData>
+```
+
+### handleYieldClaimReward()
+
+Claims accumulated staking rewards.
+
+```typescript
+async handleYieldClaimReward(
+  params: RequestStakeClaimReward
+): Promise<TransactionData>
+```
+
+<ParamField path="params" type="RequestStakeClaimReward" required>
+  Claim parameters
+  
+  <ParamField path="slug" type="string" required>
+    Pool slug
+  </ParamField>
+  
+  <ParamField path="address" type="string" required>
+    Staker address
+  </ParamField>
+  
+  <ParamField path="bondReward" type="boolean">
+    Whether to bond rewards instead of claiming
+  </ParamField>
+</ParamField>
+
+## Data Types
+
+### YieldPoolInfo
+
+```typescript
+interface YieldPoolInfo {
+  slug: string;
+  name: string;
+  chain: string;
+  type: YieldPoolType;
+  group: string;
+  metadata: {
+    description: string;
+    shortName: string;
+    logo?: string;
+    inputAsset: string;
+    derivativeAssets?: string[];
+    availableMethod: {
+      join: boolean;
+      defaultUnstake: boolean;
+      fastUnstake: boolean;
+      cancelUnstake: boolean;
+      withdraw: boolean;
+      claimReward: boolean;
+    };
+  };
+  statistic?: {
+    assetEarning: Array<{
+      slug: string;
+      apy: number;
+    }>;
+    tvl: string;
+    totalApy: number;
+  };
+}
+```
+
+### YieldPositionInfo
+
+```typescript
+interface YieldPositionInfo {
+  slug: string;
+  chain: string;
+  address: string;
+  balanceToken: string;
+  activeStake: string;
+  unstaking: string;
+  status: EarningStatus;
+  nominations: Array<{
+    validatorAddress: string;
+    validatorIdentity?: string;
+    activeStake: string;
+  }>;
+}
+```
+
+### YieldPoolType
+
+```typescript
+enum YieldPoolType {
+  NATIVE_STAKING = 'NATIVE_STAKING',
+  NOMINATION_POOL = 'NOMINATION_POOL',
+  LIQUID_STAKING = 'LIQUID_STAKING',
+  LENDING = 'LENDING'
+}
+```
+
+## Example: Complete Staking Flow
+
+```typescript
+import EarningService from '@subwallet/extension-base/services/earning-service';
+
+// Initialize
+const earningService = new EarningService(state);
+await earningService.init();
+await earningService.start();
+
+// 1. Get available pools
+const pools = await earningService.getYieldPoolInfo();
+const polkadotPool = pools.find(p => p.chain === 'polkadot' && p.type === YieldPoolType.NATIVE_STAKING);
+
+// 2. Get validators
+const validators = await earningService.getPoolTargets(polkadotPool.slug);
+const topValidators = validators.slice(0, 16); // Select top 16
+
+// 3. Validate before staking
+const validation = await earningService.earlyValidateJoin({
+  slug: polkadotPool.slug,
+  address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
+  amount: '10000000000' // 1 DOT (10 decimals)
+});
+
+if (validation.passed) {
+  // 4. Create staking transaction
+  const result = await earningService.handleYieldJoin({
+    data: {
+      slug: polkadotPool.slug,
+      address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
+      amount: '10000000000',
+      selectedValidators: topValidators.map(v => v.address)
+    },
+    path: {}, // Optimal path
+    currentStep: 0
+  });
+  
+  console.log('Staking transaction ready:', result);
+}
+
+// 5. Monitor position
+earningService.subscribeYieldPosition().subscribe((positions) => {
+  const myPosition = positions.find(p => 
+    p.address === '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'
+  );
+  
+  if (myPosition) {
+    console.log('Active stake:', myPosition.activeStake);
+    console.log('Nominations:', myPosition.nominations.length);
+  }
+});
+
+// 6. Monitor rewards
+earningService.subscribeEarningReward().subscribe((rewards) => {
+  const myReward = Object.values(rewards.data).find(r => 
+    r.address === '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'
+  );
+  
+  if (myReward && parseFloat(myReward.unclaimedReward) > 0) {
+    console.log('Claimable rewards:', myReward.unclaimedReward);
+  }
+});
+```
+
+## Supported Protocols
+
+### Native Staking
+- Polkadot, Kusama (Relay chains)
+- Astar, Moonbeam (Parachains)
+- Bittensor (TAO)
+
+### Nomination Pools
+- Polkadot, Kusama
+- Asset Hub (Statemint/Statemine)
+
+### Liquid Staking
+- Bifrost (vDOT, vKSM)
+- Acala (LDOT)
+- Parallel (sDOT)
+- StellaSwap
+
+### Lending
+- Interlay (iBTC)

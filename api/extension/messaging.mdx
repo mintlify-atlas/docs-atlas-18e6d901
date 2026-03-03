@@ -1,0 +1,362 @@
+---
+title: Messaging System
+description: Internal message passing API between extension background and UI
+---
+
+## Overview
+
+The messaging system enables communication between the extension's UI layer and background service. It uses Chrome's runtime messaging API with a port-based connection that supports both one-time requests and long-lived subscriptions.
+
+## Core Architecture
+
+### Message Types
+
+Messages are strongly typed using TypeScript discriminated unions:
+
+```typescript
+export type MessageTypes = keyof RequestSignatures;
+
+export type MessageTypesWithSubscriptions = keyof SubscriptionMessageTypes;
+export type MessageTypesWithNoSubscriptions = Exclude<MessageTypes, keyof SubscriptionMessageTypes>;
+export type MessageTypesWithNullRequest = NullKeys<RequestTypes>;
+```
+
+### Message Structure
+
+<ParamField path="id" type="string" required>
+  Unique identifier generated for each message
+</ParamField>
+
+<ParamField path="message" type="MessageType" required>
+  The message type identifier (e.g., `'pri(accounts.create.suriV2)'`)
+</ParamField>
+
+<ParamField path="request" type="RequestTypes[TMessageType]" required>
+  The request payload specific to the message type
+</ParamField>
+
+<ParamField path="origin" type="'page' | 'extension' | string" required>
+  Origin of the message sender
+</ParamField>
+
+## Core Functions
+
+### sendMessage
+
+Send a message to the background service and receive a response.
+
+```typescript
+export function sendMessage<TMessageType extends MessageTypes>(
+  message: TMessageType,
+  request?: RequestTypes[TMessageType],
+  subscriber?: (data: unknown) => void
+): Promise<ResponseTypes[TMessageType]>
+```
+
+<ParamField path="message" type="MessageType" required>
+  The message type identifier
+</ParamField>
+
+<ParamField path="request" type="RequestTypes[TMessageType]">
+  Request payload (optional for null-request messages)
+</ParamField>
+
+<ParamField path="subscriber" type="function">
+  Callback function for subscription-based messages
+</ParamField>
+
+**Returns:** `Promise<ResponseTypes[TMessageType]>`
+
+#### Example: Simple Request
+
+```typescript
+import { sendMessage } from '@subwallet/extension-koni-ui/messaging/base';
+
+// Ping the background service
+const response = await sendMessage('pri(ping)', null);
+```
+
+#### Example: Request with Payload
+
+```typescript
+// Create account with seed phrase
+const result = await sendMessage('pri(accounts.create.suriV2)', {
+  name: 'My Account',
+  password: 'secure-password',
+  suri: 'seed phrase words...',
+  types: ['sr25519']
+});
+```
+
+#### Example: Subscription
+
+```typescript
+// Subscribe to notifications
+await sendMessage(
+  'pri(notifications.subscribe)',
+  null,
+  (notifications) => {
+    console.log('Received notifications:', notifications);
+  }
+);
+```
+
+### subscribeMessage
+
+Create a subscription that starts immediately and returns an unsubscribe function.
+
+```typescript
+export function subscribeMessage<TMessageType extends MessageTypesWithSubscriptions>(
+  message: TMessageType,
+  request: RequestTypes[TMessageType],
+  callback: (data: ResponseTypes[TMessageType]) => void,
+  subscriber: (data: SubscriptionMessageTypes[TMessageType]) => void
+): {
+  promise: Promise<ResponseTypes[TMessageType]>,
+  unsub: () => void
+}
+```
+
+<ParamField path="message" type="MessageType" required>
+  The subscription message type
+</ParamField>
+
+<ParamField path="request" type="RequestTypes[TMessageType]" required>
+  Request payload
+</ParamField>
+
+<ParamField path="callback" type="function" required>
+  Called once when subscription is established
+</ParamField>
+
+<ParamField path="subscriber" type="function" required>
+  Called for each subscription update
+</ParamField>
+
+**Returns:** Object with `promise` and `unsub` function
+
+#### Example
+
+```typescript
+import { subscribeMessage } from '@subwallet/extension-koni-ui/messaging/base';
+
+const { promise, unsub } = subscribeMessage(
+  'pri(transaction.history.subscribe)',
+  { address: '0x...', chain: 'polkadot' },
+  (initial) => console.log('Initial data:', initial),
+  (update) => console.log('Update:', update)
+);
+
+// Later, unsubscribe
+unsub();
+```
+
+### lazySubscribeMessage
+
+Create a subscription that can be started manually.
+
+```typescript
+export function lazySubscribeMessage<TMessageType extends MessageTypesWithSubscriptions>(
+  message: TMessageType,
+  request: RequestTypes[TMessageType],
+  callback: (data: ResponseTypes[TMessageType]) => void,
+  subscriber: (data: SubscriptionMessageTypes[TMessageType]) => void
+): {
+  promise: Promise<ResponseTypes[TMessageType]>,
+  start: () => void,
+  unsub: () => void
+}
+```
+
+**Returns:** Object with `promise`, `start`, and `unsub` functions
+
+#### Example
+
+```typescript
+const { promise, start, unsub } = lazySubscribeMessage(
+  'pri(price.subscribeCurrentTokenPrice)',
+  'bitcoin-price-id',
+  (initial) => console.log('Initial price:', initial),
+  (update) => console.log('Price update:', update)
+);
+
+// Start subscription when needed
+start();
+
+// Stop when done
+unsub();
+```
+
+## Message Categories
+
+### Account Messages
+
+```typescript
+// Create account from seed/private key
+await sendMessage('pri(accounts.create.suriV2)', request);
+
+// Export account as JSON
+await sendMessage('pri(accounts.export.json)', { address, password });
+
+// Save current account
+await sendMessage('pri(accounts.saveCurrentProxy)', { address });
+```
+
+### Settings Messages
+
+```typescript
+// Subscribe to settings changes
+await sendMessage('pri(settings.subscribe)', data, callback);
+
+// Save theme preference
+await sendMessage('pri(settings.saveTheme)', 'dark');
+
+// Toggle balance visibility
+await sendMessage('pri(settings.changeBalancesVisibility)', null);
+```
+
+### Transaction Messages
+
+```typescript
+// Get transaction details
+await sendMessage('pri(transactions.getOne)', { hash, chain });
+
+// Subscribe to transaction history
+await sendMessage(
+  'pri(transaction.history.subscribe)',
+  { address, chain },
+  callback
+);
+```
+
+### Price & Chart Messages
+
+```typescript
+// Subscribe to current token price
+await sendMessage('pri(price.subscribeCurrentTokenPrice)', priceId, callback);
+
+// Get historical price data
+await sendMessage('pri(price.getHistory)', { priceId, timeframe });
+
+// Check if chart is available
+await sendMessage('pri(price.checkCoinGeckoPriceSupport)', priceId);
+```
+
+## Port Connection
+
+The messaging system maintains a persistent connection to the background service:
+
+```typescript
+const PORT_EXTENSION = 'subwallet-extension';
+
+let port: chrome.runtime.Port;
+port = chrome.runtime.connect({ name: PORT_EXTENSION });
+```
+
+### Auto-Reconnection
+
+The port automatically reconnects if the connection is lost:
+
+```typescript
+port.onDisconnect.addListener(() => {
+  const err = chrome.runtime.lastError;
+  if (err) {
+    console.warn(`${err.message}, Reconnecting to the port.`);
+    setTimeout(onConnectPort, 1000);
+  }
+});
+```
+
+## Message Handler
+
+Internal handler structure for managing pending requests:
+
+```typescript
+interface Handler {
+  resolve: (data: any) => void;
+  reject: (error: Error) => void;
+  subscriber?: (data: any) => void;
+}
+
+type Handlers = Record<string, Handler>;
+```
+
+Handlers are stored by message ID and automatically cleaned up after one-time requests.
+
+## Error Handling
+
+```typescript
+port.onMessage.addListener((data) => {
+  const handler = handlers[data.id];
+  
+  if (!handler) {
+    console.error(`Unknown response: ${JSON.stringify(data)}`);
+    return;
+  }
+  
+  if (data.error) {
+    handler.reject(new Error(data.error));
+  } else {
+    handler.resolve(data.response);
+  }
+});
+```
+
+## Best Practices
+
+1. **Use typed messages**: Always use the predefined message type constants to ensure type safety
+
+2. **Handle errors**: Wrap `sendMessage` calls in try-catch blocks
+
+```typescript
+try {
+  const result = await sendMessage('pri(accounts.create.suriV2)', request);
+} catch (error) {
+  console.error('Account creation failed:', error);
+}
+```
+
+3. **Cleanup subscriptions**: Always call `unsub()` when subscriptions are no longer needed
+
+```typescript
+useEffect(() => {
+  const { unsub } = subscribeMessage(...);
+  return () => unsub();
+}, []);
+```
+
+4. **Batch related operations**: Combine related requests to reduce message overhead
+
+## Common Patterns
+
+### Request-Response Pattern
+
+```typescript
+// One-time request
+const data = await sendMessage('pri(someMessage)', request);
+```
+
+### Subscribe-Update Pattern
+
+```typescript
+// Long-lived subscription
+const { unsub } = subscribeMessage(
+  'pri(someMessage.subscribe)',
+  request,
+  (initial) => setState(initial),
+  (update) => setState(update)
+);
+```
+
+### Lazy Initialization Pattern
+
+```typescript
+// Create subscription but start later
+const { start, unsub } = lazySubscribeMessage(...);
+
+// Start when component mounts
+useEffect(() => {
+  start();
+  return () => unsub();
+}, []);
+```

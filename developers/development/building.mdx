@@ -1,0 +1,213 @@
+---
+title: Building
+description: Learn how to build SubWallet Extension from source
+---
+
+This guide covers the build process for SubWallet Extension, including available build scripts, output locations, and production builds.
+
+## Prerequisites
+
+Before building the extension, ensure you have:
+
+- Node.js (v14 or later)
+- Yarn 3.0.1 or later
+- All dependencies installed via `yarn install`
+
+## Build Process
+
+SubWallet Extension uses a multi-step build process that compiles TypeScript, bundles assets, and creates distribution packages.
+
+### Development Build
+
+<Steps>
+  <Step title="Build TypeScript">
+    The first step compiles all TypeScript files in the monorepo:
+
+    ```bash
+    yarn koni-dev-build-ts
+    ```
+
+    This script processes all packages referenced in `tsconfig.json`:
+    - extension-base
+    - extension-chains
+    - extension-compat-metamask
+    - extension-dapp
+    - extension-inject
+    - extension-mocks
+    - extension-koni
+    - extension-koni-ui
+    - extension-web-ui
+  </Step>
+
+  <Step title="Run Full Build">
+    To build the entire extension with all assets:
+
+    ```bash
+    yarn build
+    ```
+
+    This command runs:
+    1. TypeScript compilation (`koni-dev-build-ts`)
+    2. ZIP packaging (`build:zip`)
+    3. Rollup bundling (`build:rollup`)
+  </Step>
+
+  <Step title="Build UI Only">
+    To rebuild only the UI components:
+
+    ```bash
+    yarn build:ui
+    ```
+
+    This uses webpack in production mode to bundle the extension UI from `packages/extension-koni`.
+  </Step>
+</Steps>
+
+### Watch Mode for Development
+
+For active development, use watch mode to automatically rebuild on file changes:
+
+<CodeGroup>
+```bash Chrome Development
+yarn watch
+# or
+yarn dev
+```
+
+```bash Chrome with Source Maps
+yarn watch-dev
+```
+
+```bash Firefox Development
+yarn dev:firefox
+```
+</CodeGroup>
+
+**Watch mode features:**
+- Automatically recompiles on file changes
+- Uses webpack in development mode
+- `watch-dev` includes inline source maps for easier debugging
+- `dev:firefox` builds Firefox-specific version
+
+## Build Scripts Reference
+
+### Main Build Commands
+
+| Command | Description |
+|---------|-------------|
+| `yarn build` | Complete build: TS compilation + ZIP + Rollup |
+| `yarn build:extra` | Build i18n and UI components |
+| `yarn build:ui` | Build extension UI with webpack (production) |
+| `yarn build:rollup` | Bundle with Rollup |
+| `yarn clean` | Remove all build artifacts |
+
+### Specialized Builds
+
+| Command | Description |
+|---------|-------------|
+| `yarn build:koni-dev` | Development build |
+| `yarn build:release` | Production release build (GitHub Actions) |
+| `yarn build:i18n` | Build internationalization files |
+
+### Packaging Commands
+
+| Command | Description |
+|---------|-------------|
+| `yarn build:zip` | Create all ZIP packages |
+| `yarn build:zip:dst` | Package Chrome build to `master-build.zip` |
+| `yarn build:zip:dst-ff` | Package Firefox build to `master-build-firefox.zip` |
+| `yarn build:zip:src` | Package source code to `master-src.zip` |
+
+## Build Output
+
+After building, you'll find the output in these locations:
+
+### Extension Builds
+
+- **Chrome/Edge build**: `packages/extension-koni/build/`
+- **Firefox build**: `packages/extension-koni/build-firefox/`
+
+### ZIP Packages
+
+In the root directory:
+- `master-build.zip` - Chrome/Edge extension package
+- `master-build-firefox.zip` - Firefox extension package
+- `master-src.zip` - Source code archive
+
+## Production Build
+
+For production releases:
+
+<Steps>
+  <Step title="Clean Previous Builds">
+    ```bash
+    yarn clean
+    ```
+  </Step>
+
+  <Step title="Run Release Build">
+    ```bash
+    yarn build:release
+    ```
+
+    This script is optimized for CI/CD and includes all necessary steps for a production build.
+  </Step>
+
+  <Step title="Verify Output">
+    Check that the following files exist:
+    - `master-build.zip` (Chrome)
+    - `master-build-firefox.zip` (Firefox)
+    - All builds in `packages/extension-koni/build/`
+  </Step>
+</Steps>
+
+## Web Runner Build
+
+SubWallet also includes a web-based version:
+
+```bash
+# Build web runner
+yarn web-runner:build
+
+# Build and create ZIP
+yarn web-runner:build-zip
+
+# Development server
+yarn web-runner:dev
+```
+
+## Troubleshooting
+
+### Build Fails After Dependency Update
+
+Run the postinstall script manually:
+
+```bash
+yarn postinstall
+```
+
+This applies necessary patches via `patch-package`.
+
+### TypeScript Errors
+
+Ensure all packages are properly referenced in `tsconfig.json`. The extension uses TypeScript project references for the monorepo structure.
+
+### Out of Memory
+
+For large builds, increase Node.js memory:
+
+```bash
+export NODE_OPTIONS="--max-old-space-size=4096"
+yarn build
+```
+
+### Clean Build
+
+If you encounter persistent issues, perform a clean build:
+
+```bash
+yarn clean
+rm -rf node_modules
+yarn install
+yarn build
+```

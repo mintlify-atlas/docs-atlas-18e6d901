@@ -1,0 +1,304 @@
+---
+title: "WalletConnect"
+description: "Connect SubWallet to dApps using the WalletConnect protocol"
+---
+
+## What is WalletConnect?
+
+WalletConnect is an open-source protocol that enables secure communication between wallets and decentralized applications (dApps). It allows you to connect SubWallet to dApps without exposing your private keys, using a QR code or deep link for pairing.
+
+<Info>
+WalletConnect provides a secure bridge between your wallet and dApps, whether they're web applications, mobile apps, or desktop applications.
+</Info>
+
+## Why use WalletConnect?
+
+- **Universal compatibility**: Connect to thousands of dApps across multiple ecosystems
+- **Enhanced security**: Your keys never leave SubWallet
+- **Multi-chain support**: Use both EVM and Substrate chains through a single connection
+- **Mobile flexibility**: Connect your mobile wallet to desktop dApps and vice versa
+- **Transparent requests**: Review and approve every action before it executes
+
+## Supported networks
+
+SubWallet's WalletConnect integration supports:
+
+### EVM chains (EIP155)
+- Ethereum
+- Polygon
+- Binance Smart Chain
+- Avalanche C-Chain
+- Arbitrum, Optimism, and other L2s
+- All other EVM-compatible networks in SubWallet
+
+### Substrate chains (Polkadot)
+- Polkadot
+- Kusama
+- Parachains
+- Other Substrate-based networks
+
+<Note>
+The dApp determines which networks are available. Make sure the dApp supports the network you want to use.
+</Note>
+
+## Connecting to a dApp
+
+### Using a QR code
+
+1. Open the dApp you want to connect to
+2. Look for **Connect Wallet** or **WalletConnect** button
+3. Select **WalletConnect** from the wallet options
+4. A QR code will be displayed
+5. In SubWallet:
+   - Click the **WalletConnect** icon or menu option
+   - Click **Scan QR code**
+   - Point your camera at the QR code (or upload the QR image)
+6. Review the connection request:
+   - dApp name and URL
+   - Requested networks
+   - Requested permissions
+7. Select the account(s) you want to connect
+8. Click **Approve** to establish the connection
+
+### Using a deep link
+
+1. Click a WalletConnect link from the dApp
+2. Choose to open with SubWallet
+3. Review and approve the connection as above
+
+<Tip>
+You can connect the same dApp to multiple accounts or connect multiple dApps to the same account.
+</Tip>
+
+## Managing connections
+
+### Viewing active sessions
+
+1. Open SubWallet
+2. Navigate to **WalletConnect** section
+3. View all active connections showing:
+   - dApp name and icon
+   - Connected accounts
+   - Active networks
+   - Connection time
+
+### Disconnecting from a dApp
+
+1. Go to **WalletConnect** section
+2. Find the dApp connection you want to remove
+3. Click **Disconnect**
+4. Confirm the disconnection
+
+<Info>
+You can also disconnect from within the dApp itself. Most dApps have a "Disconnect Wallet" option in their settings.
+</Info>
+
+## Interacting with dApps
+
+Once connected, you can interact with the dApp. SubWallet will prompt you to approve various requests:
+
+### Transaction requests
+
+When a dApp wants to execute a transaction:
+
+1. SubWallet displays a confirmation popup showing:
+   - Transaction type (transfer, contract interaction, etc.)
+   - Destination address or contract
+   - Amount (for transfers)
+   - Gas/fee estimate
+   - Network
+   - Complete transaction data
+2. Review all details carefully
+3. Click **Approve** to sign and broadcast, or **Reject** to cancel
+
+<Warning>
+Always verify transaction details before approving. Check:
+- The amounts and addresses are correct
+- You trust the dApp and action
+- The network and fees are acceptable
+</Warning>
+
+### Signature requests
+
+dApps may request your signature for:
+
+- Message signing (authentication)
+- Typed data signing (structured messages)
+- Personal signatures
+
+These don't cost gas but prove you control the account:
+
+1. Review the message or data being signed
+2. Verify the requesting dApp is legitimate
+3. Approve or reject the signature request
+
+<Info>
+Signature requests are commonly used for login or proving account ownership. They won't move funds but can authorize actions.
+</Info>
+
+### Network switching
+
+Some dApps may request to switch your active network:
+
+1. Review the network switch request
+2. Approve to change networks in SubWallet
+3. The dApp will now interact with the new network
+
+## Supported methods
+
+SubWallet implements the following WalletConnect methods:
+
+### EVM (EIP155) methods
+
+- `eth_sendTransaction`: Execute transactions
+- `personal_sign`: Sign messages
+- `eth_sign`: Sign raw data
+- `eth_signTypedData`: Sign structured data (v1, v3, v4)
+
+### Polkadot methods
+
+- `polkadot_signTransaction`: Sign Substrate transactions
+- `polkadot_signMessage`: Sign Substrate messages
+
+<Note>
+Some advanced or chain-specific methods may not be supported. If a dApp request fails, it may be using an unsupported method.
+</Note>
+
+## Security best practices
+
+<CardGroup cols={1}>
+  <Card title="Verify the dApp" icon="shield-check">
+    Before connecting:
+    - Check the dApp URL is correct (watch for phishing)
+    - Ensure you trust the application
+    - Research the dApp if you're unfamiliar with it
+  </Card>
+  
+  <Card title="Review every request" icon="magnifying-glass">
+    Never blindly approve requests:
+    - Read transaction details completely
+    - Verify amounts and addresses
+    - Understand what you're signing
+  </Card>
+  
+  <Card title="Use dedicated accounts" icon="user-shield">
+    Consider:
+    - Using separate accounts for different dApps
+    - Not connecting your main treasury account
+    - Creating activity-specific accounts
+  </Card>
+  
+  <Card title="Disconnect when done" icon="plug-circle-xmark">
+    Maintain good hygiene:
+    - Disconnect from dApps you no longer use
+    - Review active connections regularly
+    - Remove suspicious connections immediately
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="QR code won't scan">
+    Try:
+    - Ensuring good lighting
+    - Moving camera closer/farther from screen
+    - Taking a screenshot and uploading the QR code image
+    - Copying and pasting the WalletConnect URI manually
+    - Refreshing the QR code on the dApp
+  </Accordion>
+  
+  <Accordion title="Connection request timed out">
+    WalletConnect sessions have a timeout period:
+    - Generate a new QR code on the dApp
+    - Scan and approve more quickly
+    - Check your internet connection
+    - Ensure SubWallet is not blocked by firewall
+  </Accordion>
+  
+  <Accordion title="dApp shows 'wallet not connected' after pairing">
+    This can happen if:
+    - The wrong network is selected (switch to the dApp's network)
+    - The connected account doesn't have the required network
+    - The session expired (reconnect)
+    - Try disconnecting and reconnecting
+  </Accordion>
+  
+  <Accordion title="Transaction requests not appearing">
+    Check:
+    - SubWallet is unlocked
+    - You have popup permissions enabled
+    - No browser extensions are blocking popups
+    - Try refreshing both SubWallet and the dApp
+  </Accordion>
+  
+  <Accordion title="Wrong network or account showing">
+    To fix:
+    - Disconnect from the dApp
+    - Switch to the desired account/network in SubWallet
+    - Reconnect to the dApp
+    - Some dApps require specific networks to be selected first
+  </Accordion>
+</AccordionGroup>
+
+## Advanced usage
+
+### Connecting multiple accounts
+
+You can connect multiple accounts to a single dApp:
+
+1. During the initial connection, select multiple accounts
+2. Or reconnect later to add more accounts
+3. The dApp may allow switching between connected accounts
+
+### Multi-chain connections
+
+Some dApps support multiple chains simultaneously:
+
+1. The dApp will request permission for multiple networks
+2. Ensure you have accounts for each requested network
+3. Approve the multi-chain connection
+4. The dApp can now interact with you on any approved network
+
+### Session management
+
+WalletConnect sessions:
+
+- Persist until you disconnect or the dApp expires them
+- Survive SubWallet restarts
+- Are stored locally and never shared
+- Can be managed in bulk (disconnect all)
+
+## Common issues and solutions
+
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| Can't connect to dApp | Network mismatch | Enable the network the dApp requires |
+| High gas fees | Network congestion | Wait for lower traffic or increase gas limit |
+| Transaction fails | Insufficient balance | Ensure you have enough tokens for amount + gas |
+| Signature rejected by dApp | Wrong message format | Report to dApp support - may be compatibility issue |
+| Session keeps disconnecting | Connection instability | Check internet connection, try different network |
+
+## Privacy considerations
+
+When using WalletConnect:
+
+- **Your IP address** may be visible to the dApp
+- **Connected accounts** are visible to the dApp
+- **Transaction history** on-chain is public
+- **Private keys** never leave your wallet
+
+<Tip>
+For maximum privacy, consider using different accounts for different dApps and avoid connecting your main identity to unknown applications.
+</Tip>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="MetaMask Compatibility" icon="ethereum" href="/advanced/metamask-compatibility">
+    Use SubWallet with dApps that expect MetaMask
+  </Card>
+  <Card title="Multisig Accounts" icon="users" href="/advanced/multisig-accounts">
+    Connect multisig accounts to dApps via WalletConnect
+  </Card>
+</CardGroup>

@@ -1,0 +1,268 @@
+---
+title: "Proxy Accounts"
+description: "Delegate transaction permissions to other accounts while maintaining control"
+---
+
+## What are proxy accounts?
+
+Proxy accounts allow you to delegate specific transaction permissions to other accounts (proxies) without giving them full access to your funds. This enables secure delegation of operations while you retain ultimate control over your assets.
+
+<Info>
+Think of proxy accounts like giving someone power of attorney for specific tasks - they can act on your behalf within defined limits, but you maintain ownership.
+</Info>
+
+## Why use proxy accounts?
+
+Proxy accounts are valuable for several scenarios:
+
+- **Security**: Keep your main account in cold storage while using a proxy for daily operations
+- **Hot wallet operations**: Use a hot wallet proxy for staking while keeping funds in a Ledger
+- **Team delegation**: Allow team members to perform specific actions without accessing the main treasury
+- **Governance participation**: Create a dedicated proxy for voting without exposing your main account
+- **Automation**: Enable automated systems to perform limited operations
+
+## Proxy types
+
+SubWallet supports multiple proxy types, each with different permission levels:
+
+<CardGroup cols={2}>
+  <Card title="Any" icon="circle-check">
+    **Full permissions** - Can perform any transaction type
+    
+    Use for: Complete delegation, backup access
+  </Card>
+  
+  <Card title="NonTransfer" icon="ban">
+    **All except transfers** - Can stake, vote, and perform operations except sending funds
+    
+    Use for: Staking operations, governance participation
+  </Card>
+  
+  <Card title="Staking" icon="coins">
+    **Staking operations only** - Bond, unbond, nominate validators, claim rewards
+    
+    Use for: Dedicated staking management
+  </Card>
+  
+  <Card title="Governance" icon="landmark">
+    **Governance only** - Vote on proposals, unlock votes
+    
+    Use for: DAO participation, proposal voting
+  </Card>
+</CardGroup>
+
+<Note>
+Available proxy types vary by network. Some chains may support additional proxy types or a different set of permissions.
+</Note>
+
+## Setting up a proxy account
+
+### Adding a proxy
+
+1. Open SubWallet Extension
+2. Select the account you want to add a proxy to (the **proxied account**)
+3. Navigate to account settings
+4. Click **Manage proxy accounts**
+5. Select **Add proxy account**
+6. Configure the proxy:
+   - **Proxy address**: Enter the account that will act as proxy
+   - **Proxy type**: Choose the permission level
+   - **Delay**: Set time delay for proxy actions (usually 0)
+7. Review the deposit amount required
+8. Confirm and sign the transaction
+
+<Warning>
+You'll need sufficient balance in your proxied account to cover:
+- Base deposit (returned when proxy is removed)
+- Per-proxy deposit (for each proxy added)
+- Transaction fee
+</Warning>
+
+### Using a proxy account
+
+When you have a proxy account set up:
+
+1. Select the **proxy account** in SubWallet
+2. When initiating supported transactions, you'll see an option to **sign as proxy**
+3. Select the proxied account you want to act on behalf of
+4. Complete the transaction - it will execute using the proxied account's funds but signed with your proxy
+
+<Tip>
+SubWallet automatically detects when you can use a proxy and shows you the available proxied accounts.
+</Tip>
+
+## Managing proxy accounts
+
+### Viewing your proxies
+
+To see all proxy relationships:
+
+1. Go to account settings
+2. Select **Manage proxy accounts**
+3. View two lists:
+   - **Your proxies**: Accounts that can act on your behalf
+   - **You are proxy for**: Accounts you can act on behalf of
+
+### Removing a proxy
+
+1. Navigate to **Manage proxy accounts**
+2. Find the proxy you want to remove
+3. Click **Remove**
+4. Confirm the transaction
+5. Your deposit will be returned after removal
+
+<Info>
+You can remove individual proxies or all proxies at once. Removing all proxies can be more gas-efficient if you have multiple.
+</Info>
+
+## Supported transaction types by proxy
+
+Different proxy types can perform different operations:
+
+### Staking proxy
+
+- Bond additional funds
+- Unbond staked tokens
+- Rebond (cancel unstaking)
+- Nominate validators
+- Change nominations
+- Claim staking rewards
+- Join/leave nomination pools
+
+### Governance proxy
+
+- Vote on governance proposals
+- Remove votes
+- Unlock tokens after voting
+- Delegate voting power
+
+### NonTransfer proxy
+
+All of the above, plus:
+- Add/remove other proxies
+- Participate in governance
+- Stake and manage nominations
+- Interact with smart contracts (some chains)
+
+### Any proxy
+
+All transaction types, including:
+- Transfer tokens
+- Transfer NFTs
+- All staking operations
+- All governance operations
+- Account management
+
+## Important considerations
+
+### Security implications
+
+<CardGroup cols={1}>
+  <Card title="Choose proxy types carefully">
+    Grant the minimum permissions needed. An "Any" proxy has full control - use it only when necessary.
+  </Card>
+  
+  <Card title="Secure your proxy accounts">
+    While less sensitive than your main account, proxy accounts should still be secured with strong passwords and proper backup.
+  </Card>
+  
+  <Card title="Monitor proxy activity">
+    Regularly review transactions made through your proxies to ensure no unauthorized use.
+  </Card>
+  
+  <Card title="Emergency removal">
+    Keep your main account accessible so you can remove a proxy immediately if it's compromised.
+  </Card>
+</CardGroup>
+
+### Deposits and fees
+
+Proxy accounts require on-chain storage deposits:
+
+- **Base deposit**: One-time deposit for the first proxy (returned when all proxies removed)
+- **Proxy deposit**: Additional deposit per proxy (returned when that proxy is removed)
+- **Transaction fees**: Applied when adding or removing proxies
+
+The exact amounts vary by network but are typically small. Deposits are fully refundable.
+
+### Delay parameter
+
+Some networks support a delay parameter when creating proxies:
+
+- **0 blocks**: Proxy actions execute immediately (most common)
+- **N blocks**: Proxy actions have a time delay before execution
+
+Delayed proxies provide a safety window where you can cancel unwanted proxy actions. However, most users set this to 0 for immediate execution.
+
+### Network compatibility
+
+Proxy accounts are available on Substrate-based chains with the proxy pallet:
+
+- Polkadot
+- Kusama
+- Most parachains
+- Substrate-based independent chains
+
+<Warning>
+Proxy functionality is NOT available on Ethereum and most EVM-compatible chains. This is a Substrate-specific feature.
+</Warning>
+
+## Common use cases
+
+### Cold storage staking
+
+1. Keep main account with funds on a Ledger hardware wallet
+2. Create a staking proxy using a hot wallet account
+3. Use the hot wallet to manage staking (bond, nominate, claim)
+4. Funds never leave the Ledger, but you can stake without connecting it
+
+### DAO governance participation
+
+1. Hold governance tokens in your secure main account
+2. Create a governance proxy
+3. Use the proxy to vote on proposals
+4. Main account remains secure while actively participating
+
+### Team treasury management
+
+1. Multi-sig or organization holds main treasury
+2. Add NonTransfer proxies for team members
+3. Team can stake, participate in governance
+4. Team cannot transfer funds out
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Can't add a proxy">
+    Check that:
+    - The network supports proxy accounts
+    - You have enough balance for deposit + fees
+    - You haven't reached the maximum number of proxies (network-specific limit)
+    - The proxy account address is valid for this network
+  </Accordion>
+  
+  <Accordion title="Proxy option not showing during transactions">
+    This can happen if:
+    - The transaction type isn't supported by your proxy type
+    - The proxy relationship isn't synced (try refreshing)
+    - You're on a different network than the proxy was created on
+  </Accordion>
+  
+  <Accordion title="Can't remove a proxy">
+    Ensure:
+    - You're using the proxied account (not the proxy) to remove the relationship
+    - You have sufficient balance for the transaction fee
+    - The network is operational and not congested
+  </Accordion>
+</AccordionGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Multisig Accounts" icon="users" href="/advanced/multisig-accounts">
+    Combine proxies with multisig for team management
+  </Card>
+  <Card title="Ledger Integration" icon="microchip" href="/advanced/ledger-integration">
+    Use Ledger as your main account with hot wallet proxies
+  </Card>
+</CardGroup>

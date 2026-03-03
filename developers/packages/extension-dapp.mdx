@@ -1,0 +1,406 @@
+---
+title: "extension-dapp"
+description: "dApp integration utilities and helper functions"
+---
+
+## Overview
+
+The `@subwallet/extension-dapp` package provides a convenient API for dApp developers to interact with SubWallet Extension and other Polkadot-compatible wallets. It wraps the low-level `window.injectedWeb3` interface with easy-to-use functions for account access, signing, and provider management.
+
+## Purpose and Responsibilities
+
+- **Wallet Discovery**: Detect and enable installed wallet extensions
+- **Account Access**: Retrieve accounts from all enabled wallets
+- **Account Subscriptions**: Subscribe to account changes
+- **Provider Selection**: Find specific wallet providers by name or address
+- **RPC Providers**: List and use custom RPC providers
+- **Type Safety**: Provides TypeScript types for all interactions
+- **Utility Functions**: Byte wrapping/unwrapping for signing operations
+
+## Key Exports
+
+From `src/bundle.ts`:
+
+```typescript
+export { packageInfo } from './packageInfo';
+export { unwrapBytes, wrapBytes } from './wrapBytes';
+
+// Main API functions
+export function web3Enable(
+  originName: string,
+  compatInits?: (() => Promise<boolean>)[]
+): Promise<InjectedExtension[]>;
+
+export function web3Accounts(
+  options?: Web3AccountsOptions
+): Promise<InjectedAccountWithMeta[]>;
+
+export function web3AccountsSubscribe(
+  cb: (accounts: InjectedAccountWithMeta[]) => void | Promise<void>,
+  options?: Web3AccountsOptions
+): Promise<Unsubcall>;
+
+export function web3FromSource(
+  source: string
+): Promise<InjectedExtension>;
+
+export function web3FromAddress(
+  address: string
+): Promise<InjectedExtension>;
+
+export function web3ListRpcProviders(
+  source: string
+): Promise<ProviderList | null>;
+
+export function web3UseRpcProvider(
+  source: string,
+  key: string
+): Promise<InjectedProviderWithMeta>;
+
+// State exports
+export { isWeb3Injected, web3EnablePromise };
+```
+
+## Core Functions
+
+### web3Enable
+
+Enables all wallet extensions and returns available providers:
+
+```typescript
+const extensions = await web3Enable('My dApp Name');
+
+console.log(`Found ${extensions.length} wallet extensions`);
+extensions.forEach(({ name, version }) => {
+  console.log(`${name} v${version}`);
+});
+```
+
+**Parameters**:
+- `originName` (required): Your dApp's name, shown to users during authorization
+- `compatInits` (optional): Array of compatibility initialization functions
+
+**Returns**: Array of `InjectedExtension` objects, each containing:
+- `name`: Extension name (e.g., 'subwallet-js')
+- `version`: Extension version
+- `accounts`: Account access interface
+- `signer`: Transaction signing interface
+- `metadata`: Metadata management interface
+- `provider`: Optional RPC provider
+
+**Important**: Must be called before any other web3 functions.
+
+### web3Accounts
+
+Retrieves all accounts from all enabled wallets:
+
+```typescript
+const allAccounts = await web3Accounts();
+
+allAccounts.forEach(({ address, meta }) => {
+  console.log(`${meta.name}: ${address} (from ${meta.source})`);
+});
+```
+
+**Options**:
+```typescript
+interface Web3AccountsOptions {
+  ss58Format?: number;        // Encode addresses in specific format
+  accountType?: KeypairType[]; // Filter by account type
+}
+```
+
+**Examples**:
+```typescript
+// Get accounts in Polkadot format (ss58Format: 0)
+const polkadotAccounts = await web3Accounts({ ss58Format: 0 });
+
+// Get only Substrate accounts
+const substrateAccounts = await web3Accounts({
+  accountType: ['sr25519', 'ed25519', 'ecdsa']
+});
+
+// Get only EVM accounts
+const evmAccounts = await web3Accounts({
+  accountType: ['ethereum']
+});
+```
+
+### web3AccountsSubscribe
+
+Subscribes to account changes across all wallets:
+
+```typescript
+const unsubscribe = await web3AccountsSubscribe((accounts) => {
+  console.log(`Account list updated: ${accounts.length} accounts`);
+  updateUI(accounts);
+});
+
+// Later, when done
+unsubscribe();
+```
+
+**Use Cases**:
+- Real-time account list updates
+- Detecting when users add/remove accounts
+- Multi-wallet account synchronization
+
+### web3FromSource
+
+Retrieves a specific wallet extension by name:
+
+```typescript
+const subwallet = await web3FromSource('subwallet-js');
+
+const accounts = await subwallet.accounts.get();
+const signer = subwallet.signer;
+```
+
+**Common Sources**:
+- `'subwallet-js'`: SubWallet Extension
+- `'polkadot-js'`: Polkadot.js Extension
+- `'talisman'`: Talisman Wallet
+
+### web3FromAddress
+
+Finds the wallet extension that controls a specific address:
+
+```typescript
+const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+const extension = await web3FromAddress(address);
+
+console.log(`Address is from ${extension.name}`);
+```
+
+**Use Case**: When you have an address and need to find which wallet to use for signing.
+
+### web3ListRpcProviders
+
+Lists custom RPC providers exposed by a wallet:
+
+```typescript
+const providers = await web3ListRpcProviders('subwallet-js');
+
+if (providers) {
+  Object.entries(providers).forEach(([key, meta]) => {
+    console.log(`${key}: ${meta.network} (${meta.node})`);
+  });
+}
+```
+
+**Returns**: `ProviderList` object or `null` if not supported:
+```typescript
+type ProviderList = Record<string, ProviderMeta>;
+
+interface ProviderMeta {
+  network: string;      // e.g., 'polkadot'
+  node: 'full' | 'light';
+  source: string;       // Extension name
+  transport: string;    // e.g., 'WsProvider'
+}
+```
+
+### web3UseRpcProvider
+
+Starts using a specific RPC provider from a wallet:
+
+```typescript
+const { provider, meta } = await web3UseRpcProvider(
+  'subwallet-js',
+  'polkadot'
+);
+
+// Use provider with Polkadot.js API
+import { ApiPromise } from '@polkadot/api';
+const api = await ApiPromise.create({ provider });
+```
+
+## Utility Functions
+
+### wrapBytes & unwrapBytes
+
+From `src/wrapBytes.ts`:
+
+```typescript
+export function wrapBytes(bytes: Uint8Array): Uint8Array;
+export function unwrapBytes(bytes: Uint8Array): Uint8Array;
+```
+
+**Purpose**: Wraps/unwraps bytes for signing operations to distinguish between raw bytes and wrapped messages.
+
+**Usage**:
+```typescript
+import { wrapBytes, unwrapBytes } from '@subwallet/extension-dapp';
+
+const message = new TextEncoder().encode('Hello, world!');
+const wrapped = wrapBytes(message);
+
+// Sign the wrapped message
+const signature = await signer.signRaw({
+  address,
+  data: u8aToHex(wrapped),
+  type: 'bytes'
+});
+
+// Unwrap to verify original message
+const unwrapped = unwrapBytes(wrapped);
+```
+
+## State Variables
+
+### isWeb3Injected
+
+Boolean indicating if any wallet has been injected:
+
+```typescript
+import { isWeb3Injected } from '@subwallet/extension-dapp';
+
+if (!isWeb3Injected) {
+  console.log('No wallet extension detected');
+  showInstallPrompt();
+}
+```
+
+### web3EnablePromise
+
+The promise from the last `web3Enable()` call:
+
+```typescript
+import { web3EnablePromise } from '@subwallet/extension-dapp';
+
+if (web3EnablePromise) {
+  const extensions = await web3EnablePromise;
+  // Use cached result
+}
+```
+
+## Complete dApp Integration Example
+
+```typescript
+import {
+  web3Enable,
+  web3Accounts,
+  web3FromSource,
+  web3AccountsSubscribe
+} from '@subwallet/extension-dapp';
+import { ApiPromise, WsProvider } from '@polkadot/api';
+
+// 1. Enable wallets
+const extensions = await web3Enable('My Awesome dApp');
+
+if (extensions.length === 0) {
+  alert('Please install a wallet extension');
+  return;
+}
+
+// 2. Get all accounts
+const accounts = await web3Accounts();
+console.log(`Found ${accounts.length} accounts`);
+
+// 3. Subscribe to account changes
+const unsubscribe = await web3AccountsSubscribe((updatedAccounts) => {
+  console.log('Accounts updated:', updatedAccounts);
+});
+
+// 4. Connect to chain
+const provider = new WsProvider('wss://rpc.polkadot.io');
+const api = await ApiPromise.create({ provider });
+
+// 5. Prepare transaction
+const account = accounts[0];
+const transfer = api.tx.balances.transfer(
+  'RECIPIENT_ADDRESS',
+  1000000000000 // 1 DOT (10 decimals)
+);
+
+// 6. Get signer for the account's wallet
+const injector = await web3FromSource(account.meta.source);
+
+// 7. Sign and send
+const hash = await transfer.signAndSend(
+  account.address,
+  { signer: injector.signer },
+  ({ status }) => {
+    if (status.isInBlock) {
+      console.log(`Transaction included in block ${status.asInBlock}`);
+    }
+  }
+);
+
+// Cleanup when done
+unsubscribe();
+api.disconnect();
+```
+
+## Error Handling
+
+All functions throw errors with descriptive messages:
+
+```typescript
+try {
+  const extension = await web3FromSource('unknown-wallet');
+} catch (error) {
+  console.error(error.message);
+  // "web3FromSource: Unable to find an injected unknown-wallet"
+}
+
+try {
+  const accounts = await web3Accounts();
+} catch (error) {
+  console.error(error.message);
+  // "web3Accounts: web3Enable(originName) needs to be called before web3Accounts"
+}
+```
+
+## TypeScript Types
+
+All types are re-exported from `@subwallet/extension-inject/types`:
+
+```typescript
+import type {
+  InjectedExtension,
+  InjectedAccount,
+  InjectedAccountWithMeta,
+  Injected,
+  InjectedSigner,
+  ProviderList,
+  ProviderMeta,
+  Web3AccountsOptions,
+  Unsubcall
+} from '@subwallet/extension-dapp';
+```
+
+## Dependencies
+
+- **@polkadot/util**: Utility functions
+- **@polkadot/util-crypto**: Address encoding/decoding
+- **@subwallet/extension-inject**: Type definitions
+
+Peer dependencies:
+- **@polkadot/api**: For API usage examples
+- **@polkadot/util**: Utility functions
+- **@polkadot/util-crypto**: Cryptographic utilities
+
+## Browser Compatibility
+
+Works in all modern browsers that support:
+- ES6+ JavaScript
+- Promises
+- `window` object
+- Browser extensions
+
+## Best Practices
+
+1. **Always call `web3Enable()` first**: Before any other function
+2. **Use meaningful dApp names**: Users see this during authorization
+3. **Handle missing wallets**: Check if extensions array is empty
+4. **Subscribe to account changes**: Keep UI in sync with wallet changes
+5. **Cache extension references**: Avoid repeated `web3FromSource()` calls
+6. **Clean up subscriptions**: Call unsubscribe functions when done
+7. **Handle errors gracefully**: Wrap calls in try-catch blocks
+
+## Related Packages
+
+- [extension-inject](/developers/packages/extension-inject) - Underlying injection interfaces
+- [extension-base](/developers/packages/extension-base) - Extension implementation
+- [extension-koni-ui](/developers/packages/extension-koni-ui) - Extension UI

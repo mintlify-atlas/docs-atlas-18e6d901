@@ -1,80 +1,547 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quick Start Guide
+description: Get started with SubWallet Extension - create your wallet, set up accounts, and make your first transaction
 ---
 
-## Get started in three steps
+# Quick Start Guide
 
-Get your documentation site running locally and make your first customization.
-
-### Step 1: Set up your local environment
-
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
-
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
-
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 3: Go live
-
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
-
-## Next steps
-
-Now that you have your docs running, explore these key features:
-
-<CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
-</CardGroup>
+This guide will walk you through setting up SubWallet Extension, creating your first account, and connecting to a decentralized application (dApp).
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+Before starting, make sure you have [installed SubWallet Extension](/installation) in your browser.
 </Note>
+
+## Your First Steps with SubWallet
+
+<Steps>
+  <Step title="Launch SubWallet">
+    Click the SubWallet icon in your browser toolbar to open the extension.
+    
+    You'll see the welcome screen with options to create a new wallet or import an existing one.
+  </Step>
+  
+  <Step title="Choose Setup Method">
+    Select one of the following options:
+    
+    <CardGroup cols={2}>
+      <Card title="Create New Wallet" icon="plus">
+        Generate a brand new wallet with a fresh seed phrase
+      </Card>
+      
+      <Card title="Import Wallet" icon="file-import">
+        Restore from seed phrase, JSON file, or private key
+      </Card>
+    </CardGroup>
+    
+    For this guide, we'll create a new wallet.
+  </Step>
+  
+  <Step title="Create Master Password">
+    Set a strong master password to encrypt your wallet data.
+    
+    <Warning>
+    This password encrypts your wallet locally. Choose a strong password and store it securely. You'll need it every time you open SubWallet.
+    </Warning>
+    
+    **Password Requirements:**
+    - At least 8 characters
+    - Mix of letters, numbers, and symbols recommended
+    - Don't reuse passwords from other services
+  </Step>
+  
+  <Step title="Backup Your Seed Phrase">
+    SubWallet will generate a 12 or 24-word seed phrase.
+    
+    <Warning>
+    **CRITICAL: Write down your seed phrase and store it securely offline.**
+    
+    - Never share your seed phrase with anyone
+    - Don't store it digitally (screenshots, cloud storage, etc.)
+    - Anyone with your seed phrase can access your funds
+    - SubWallet cannot recover your seed phrase if lost
+    </Warning>
+    
+    **How to Store Your Seed Phrase:**
+    1. Write it down on paper
+    2. Verify you've written it correctly
+    3. Store it in a secure location (safe, safety deposit box)
+    4. Consider making multiple copies stored separately
+    5. Never take a photo or screenshot
+  </Step>
+  
+  <Step title="Verify Seed Phrase">
+    SubWallet will ask you to verify your seed phrase by selecting words in the correct order.
+    
+    This ensures you've correctly backed up your seed phrase.
+    
+    <Tip>
+    If you make a mistake, you can go back and review your seed phrase again.
+    </Tip>
+  </Step>
+  
+  <Step title="Wallet Created Successfully">
+    Congratulations! Your SubWallet is now set up.
+    
+    You'll see your first account automatically created with a default name like "Account 1".
+  </Step>
+</Steps>
+
+## Understanding Your Wallet Interface
+
+After setup, you'll see the main SubWallet interface:
+
+### Main Sections
+
+<CardGroup cols={2}>
+  <Card title="Tokens" icon="coins">
+    View and manage your token balances across all supported chains
+  </Card>
+  
+  <Card title="NFTs" icon="image">
+    Browse your NFT collection from supported networks
+  </Card>
+  
+  <Card title="Staking" icon="chart-line">
+    Participate in staking and view earning opportunities
+  </Card>
+  
+  <Card title="History" icon="clock-rotate-left">
+    Track all your transactions and transfers
+  </Card>
+</CardGroup>
+
+### Top Bar Features
+
+- **Network Selector** - Switch between different blockchain networks
+- **Account Switcher** - Change between your accounts
+- **Settings** - Access wallet settings and configurations
+- **Side Panel Toggle** - Open expanded portfolio view
+
+## Creating Additional Accounts
+
+You can create multiple accounts from the same seed phrase:
+
+<Steps>
+  <Step title="Open Account Menu">
+    Click on your account name or the account icon at the top of the extension
+  </Step>
+  
+  <Step title="Create New Account">
+    Select **Create New Account** or click the **+** button
+  </Step>
+  
+  <Step title="Choose Account Type">
+    Select the account type based on your needs:
+    
+    - **Polkadot/Substrate Account** - For Polkadot, Kusama, and parachains
+    - **Ethereum Account** - For Ethereum and EVM-compatible chains
+    - **All Networks** - Universal account (recommended for beginners)
+  </Step>
+  
+  <Step title="Name Your Account">
+    Give your account a meaningful name (e.g., "Trading", "Staking", "DeFi")
+    
+    <Tip>
+    Using descriptive names helps organize accounts when managing multiple wallets.
+    </Tip>
+  </Step>
+</Steps>
+
+## Importing Existing Accounts
+
+If you have existing wallets from other services:
+
+### Import from Seed Phrase
+
+<Steps>
+  <Step title="Access Import Function">
+    Click the account menu → **Import Account** → **Import from seed phrase**
+  </Step>
+  
+  <Step title="Enter Seed Phrase">
+    Type or paste your 12 or 24-word seed phrase
+    
+    <Warning>
+    Ensure you're in a private location when entering your seed phrase.
+    </Warning>
+  </Step>
+  
+  <Step title="Select Derivation Path">
+    Choose the derivation path that matches your original wallet
+    
+    Common options:
+    - Polkadot/Substrate standard
+    - Ethereum standard (BIP44)
+    - Custom path
+  </Step>
+</Steps>
+
+### Import from JSON File
+
+<Steps>
+  <Step title="Select Import Method">
+    **Import Account** → **Import from JSON file**
+  </Step>
+  
+  <Step title="Upload JSON File">
+    Select your exported JSON keystore file from polkadot-js or other compatible wallets
+  </Step>
+  
+  <Step title="Enter Password">
+    Provide the password that was used to encrypt the JSON file
+  </Step>
+</Steps>
+
+### Import from Trust Wallet
+
+<Info>
+SubWallet supports importing accounts from Trust Wallet (added in version 1.3.71).
+</Info>
+
+<Steps>
+  <Step title="Export from Trust Wallet">
+    In Trust Wallet, export your seed phrase or private key
+  </Step>
+  
+  <Step title="Import to SubWallet">
+    Use the **Import from seed phrase** or **Import from private key** option in SubWallet
+  </Step>
+</Steps>
+
+## Receiving Tokens
+
+To receive tokens in your SubWallet:
+
+<Steps>
+  <Step title="Select Network">
+    Choose the network on which you want to receive tokens
+    
+    <Warning>
+    Always verify you're on the correct network. Sending tokens to an address on the wrong network may result in permanent loss.
+    </Warning>
+  </Step>
+  
+  <Step title="Copy Your Address">
+    Click the **Receive** button or your account name to view your address
+    
+    Click the copy icon to copy your address to clipboard
+  </Step>
+  
+  <Step title="Share Address">
+    Provide this address to the sender or use it on exchanges
+    
+    <Tip>
+    SubWallet displays different address formats for different networks. The same account may have different addresses on Polkadot vs. Ethereum chains.
+    </Tip>
+  </Step>
+  
+  <Step title="Verify Receipt">
+    Once tokens are sent, they'll appear in your wallet after network confirmation
+    
+    Check the **Tokens** tab to view your balance
+  </Step>
+</Steps>
+
+## Sending Your First Transaction
+
+Ready to send tokens? Here's how:
+
+<Steps>
+  <Step title="Select Token">
+    In the **Tokens** tab, find the token you want to send
+    
+    Click on the token to view details and options
+  </Step>
+  
+  <Step title="Click Send">
+    Click the **Send** button to initiate a transfer
+  </Step>
+  
+  <Step title="Enter Recipient Details">
+    - **Destination Address** - Enter or paste the recipient's address
+    - **Amount** - Specify how much to send
+    - **Network** - Verify you're on the correct network
+    
+    <Warning>
+    Always double-check the recipient address. Blockchain transactions cannot be reversed.
+    </Warning>
+  </Step>
+  
+  <Step title="Review Transaction Fee">
+    SubWallet will display the estimated network fee (gas fee)
+    
+    For Ethereum and EVM chains, you can adjust:
+    - **Gas limit** - Maximum gas units to use
+    - **Gas price** - How much to pay per gas unit
+    
+    <Tip>
+    Higher gas prices result in faster transaction confirmation but cost more.
+    </Tip>
+  </Step>
+  
+  <Step title="Confirm and Send">
+    Review all details carefully:
+    - Recipient address
+    - Amount to send
+    - Network fee
+    - Total cost
+    
+    Click **Confirm** to sign and broadcast the transaction
+  </Step>
+  
+  <Step title="Track Transaction">
+    After sending, you can track your transaction:
+    - View status in the **History** tab
+    - Click the transaction for details
+    - View on block explorer for real-time updates
+    
+    <Info>
+    Transaction confirmation time varies by network. Polkadot typically confirms in 6-12 seconds, while Ethereum may take 1-5 minutes.
+    </Info>
+  </Step>
+</Steps>
+
+## Connecting to dApps
+
+SubWallet seamlessly integrates with decentralized applications:
+
+<Steps>
+  <Step title="Visit a dApp">
+    Navigate to any dApp that supports wallet connections (e.g., Polkadot.js Apps, Uniswap, Aave)
+  </Step>
+  
+  <Step title="Connect Wallet">
+    Look for a "Connect Wallet" button on the dApp
+    
+    Select **SubWallet** or **Polkadot.js** from the wallet options
+    
+    <Info>
+    SubWallet is compatible with dApps that support polkadot-js extension and MetaMask.
+    </Info>
+  </Step>
+  
+  <Step title="Authorize Connection">
+    SubWallet will prompt you to authorize the connection
+    
+    Review:
+    - Website requesting access
+    - Which accounts to connect
+    - Permissions being granted
+    
+    Click **Connect** to approve
+  </Step>
+  
+  <Step title="Interact with dApp">
+    Once connected, you can:
+    - View your balance on the dApp
+    - Sign transactions
+    - Interact with smart contracts
+    
+    <Tip>
+    SubWallet will prompt you to approve each transaction. Always review transaction details before confirming.
+    </Tip>
+  </Step>
+</Steps>
+
+### Managing dApp Connections
+
+To view and manage your dApp connections:
+
+1. Open SubWallet settings
+2. Navigate to **Manage Website Access**
+3. View all connected websites
+4. Disconnect or modify permissions as needed
+
+## Enabling Tokens and Networks
+
+SubWallet supports hundreds of tokens and networks, but not all are enabled by default:
+
+<Steps>
+  <Step title="Access Token Management">
+    Click the settings icon → **Manage Tokens**
+  </Step>
+  
+  <Step title="Search for Token">
+    Use the search bar to find specific tokens or browse by network
+  </Step>
+  
+  <Step title="Enable Token">
+    Toggle the switch to enable or disable tokens
+    
+    <Info>
+    SubWallet can automatically detect and enable tokens when you receive them on EVM chains (improved in version 1.3.65).
+    </Info>
+  </Step>
+  
+  <Step title="Add Custom Token">
+    For tokens not in the default list:
+    
+    1. Click **Add Custom Token**
+    2. Enter token contract address
+    3. SubWallet will auto-fill token details
+    4. Verify and save
+  </Step>
+</Steps>
+
+## Staking and Earning
+
+Participate in staking to earn rewards:
+
+<Steps>
+  <Step title="Navigate to Staking">
+    Click the **Staking** tab in SubWallet
+  </Step>
+  
+  <Step title="Choose Staking Option">
+    Browse available staking opportunities:
+    - **Direct Staking** - Stake directly with validators
+    - **Liquid Staking** - Receive liquid staking tokens
+    - **Collator Staking** - Support parachain collators
+    
+    View APY rates for each option
+  </Step>
+  
+  <Step title="Select Validator">
+    Choose a validator or collator to stake with
+    
+    <Tip>
+    Research validators before staking. Consider factors like commission rate, performance, and reputation.
+    </Tip>
+  </Step>
+  
+  <Step title="Enter Stake Amount">
+    Specify how much you want to stake
+    
+    <Info>
+    Most networks have minimum staking amounts and lock-up periods. SubWallet will display these requirements.
+    </Info>
+  </Step>
+  
+  <Step title="Confirm Staking">
+    Review the staking details and confirm the transaction
+    
+    Your staked balance will appear in the Staking tab
+  </Step>
+</Steps>
+
+## Using Advanced Features
+
+SubWallet offers advanced features for power users:
+
+### Multisig Accounts (Phase 1)
+
+Create and manage multisig accounts requiring multiple signatures:
+
+- Enhanced security for large holdings
+- Team treasury management
+- Requires multiple approvals for transactions
+
+<Info>
+Multisig account support was added in version 1.3.74.
+</Info>
+
+### Proxy Accounts
+
+Delegate account permissions without sharing private keys:
+
+- Set up proxy accounts for specific actions
+- Maintain security while delegating functions
+- Supported on Polkadot and Kusama networks
+
+### OpenGov Participation
+
+Participate in on-chain governance:
+
+- View active proposals
+- Vote on referenda
+- Track voting history
+
+<Info>
+OpenGov integration (Phase 1) was added in version 1.3.70.
+</Info>
+
+### Cross-Chain Transfers
+
+Transfer assets between different blockchains:
+
+1. Select the token to transfer
+2. Choose source and destination chains
+3. SubWallet will automatically find available bridges
+4. Review fees and confirm transfer
+
+## Security Best Practices
+
+<Warning>
+**Essential Security Tips:**
+
+- Never share your seed phrase or private keys
+- Always verify transaction details before confirming
+- Double-check recipient addresses
+- Be cautious of phishing websites
+- Keep your browser and SubWallet updated
+- Use a strong master password
+- Disconnect from dApps when not in use
+- Verify the dApp URL before connecting
+</Warning>
+
+## Troubleshooting Common Issues
+
+### Transaction Stuck or Pending
+
+- Check network status and congestion
+- For EVM chains, try increasing gas price
+- Wait for network confirmation (can take several minutes)
+
+### Can't See My Tokens
+
+- Ensure the token is enabled in Manage Tokens
+- Verify you're on the correct network
+- Check if the transaction has confirmed on-chain
+- For custom tokens, verify the contract address
+
+### dApp Not Connecting
+
+- Refresh the dApp page
+- Check if SubWallet is authorized for the website
+- Try disconnecting and reconnecting
+- Ensure you're on the correct network for the dApp
+
+### Forgot Master Password
+
+<Warning>
+If you forget your master password, you'll need to uninstall and reinstall SubWallet, then restore from your seed phrase. This is why backing up your seed phrase is critical.
+</Warning>
+
+## Next Steps
+
+Now that you're familiar with SubWallet basics, explore more features:
+
+<CardGroup cols={2}>
+  <Card title="Explore Staking" icon="coins">
+    Start earning rewards through staking
+  </Card>
+  
+  <Card title="Manage NFTs" icon="image">
+    Import and view your NFT collection
+  </Card>
+  
+  <Card title="Cross-Chain Swaps" icon="arrow-right-arrow-left">
+    Exchange tokens across different chains
+  </Card>
+  
+  <Card title="Join Governance" icon="landmark">
+    Participate in on-chain decision making
+  </Card>
+</CardGroup>
+
+## Get Help
+
+Need assistance?
+
+- Visit [https://subwallet.app](https://subwallet.app)
+- Check [GitHub Issues](https://github.com/Koniverse/Subwallet-V2/issues)
+- Review the [CHANGELOG](https://github.com/Koniverse/Subwallet-V2/blob/master/CHANGELOG.md) for recent updates
+
+<Tip>
+SubWallet is actively developed with regular updates. Keep your extension updated to access the latest features and security improvements.
+</Tip>

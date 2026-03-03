@@ -1,0 +1,320 @@
+---
+title: Staking & Earning
+description: Stake your tokens to earn rewards across multiple networks and protocols
+---
+
+SubWallet Extension makes it easy to stake your tokens and earn rewards. Access native staking, liquid staking, and nomination pools across multiple blockchain networks - all from your wallet.
+
+## Staking Options
+
+SubWallet supports multiple types of staking to fit different needs and risk profiles.
+
+### Native Staking
+
+Participate in network consensus directly:
+
+- **Direct Nomination**: Nominate validators on Polkadot, Kusama, and other Substrate chains
+- **Flexible Control**: Choose which validators to support
+- **Network Security**: Help secure the network while earning rewards
+- **Unbonding Period**: Tokens are locked and require time to unbond
+
+<Note>
+Native staking typically offers the highest potential rewards but requires tokens to be locked for an unbonding period (28 days on Polkadot, 7 days on Kusama).
+</Note>
+
+### Nomination Pools
+
+Pool your tokens with others for easier staking:
+
+- **Lower Minimum**: Stake with smaller amounts than direct nomination requires
+- **Simplified Process**: Join a pool without selecting validators
+- **Automatic Management**: Pool operators handle validator selection
+- **Shared Rewards**: Rewards distributed proportionally to pool members
+
+<Tip>
+Nomination pools are perfect for users who want to stake without meeting the high minimum requirements of direct nomination or managing validator selection.
+</Tip>
+
+### Liquid Staking
+
+Stake while maintaining liquidity:
+
+- **Derivative Tokens**: Receive liquid tokens representing your staked assets (e.g., LDOT, vDOT)
+- **Immediate Liquidity**: Use derivative tokens in DeFi without unstaking
+- **No Unbonding Wait**: Swap back to original tokens anytime via DEX
+- **Supported Protocols**: Acala, Bifrost, Parallel, Lido, and more
+
+<CardGroup cols={2}>
+  <Card title="Acala" icon="droplet">
+    Stake DOT to receive LDOT. Use LDOT in Acala's DeFi ecosystem while earning staking rewards.
+  </Card>
+  <Card title="Bifrost" icon="arrows-split-up-and-left">
+    Multi-chain liquid staking supporting DOT (vDOT), KSM (vKSM), GLMR (vGLMR), and more.
+  </Card>
+  <Card title="Parallel" icon="circle-nodes">
+    Stake DOT to receive sDOT. Earn staking rewards plus additional yields through Parallel's DeFi products.
+  </Card>
+  <Card title="Lido" icon="ethereum">
+    Stake ETH to receive stETH. The leading liquid staking protocol for Ethereum.
+  </Card>
+</CardGroup>
+
+### Lending Protocols
+
+Earn interest by lending your assets:
+
+- **Supply Assets**: Lend tokens to borrowers
+- **Interest Earnings**: Receive yield from borrower interest payments
+- **Variable Rates**: APY changes based on supply and demand
+- **Withdraw Anytime**: Remove your funds when lending liquidity allows
+
+## Getting Started with Staking
+
+<Steps>
+  <Step title="Choose a staking option">
+    Browse available staking opportunities in the Earning section. Filter by network, minimum amount, or APY.
+  </Step>
+  <Step title="Select amount to stake">
+    Enter how much you want to stake. SubWallet shows the minimum required and your available balance.
+  </Step>
+  <Step title="Configure staking parameters">
+    For native staking, select validators. For pools, choose a nomination pool. Liquid staking is automatic.
+  </Step>
+  <Step title="Review and confirm">
+    Check the estimated APY, fees, and unbonding period. Approve the transaction with your password or hardware wallet.
+  </Step>
+</Steps>
+
+## Managing Your Stakes
+
+### Active Positions
+
+View all your staking positions in one place:
+
+- **Staked Amount**: Total tokens currently earning rewards
+- **Current APY**: Annual percentage yield for each position
+- **Rewards Earned**: Accumulated rewards (claimed and unclaimed)
+- **Status**: Active, unbonding, or ready to withdraw
+
+### Staking Rewards
+
+Track and claim your earnings:
+
+<CardGroup cols={3}>
+  <Card title="Pending Rewards" icon="clock">
+    Rewards earned but not yet claimed or bonded.
+  </Card>
+  <Card title="Claim Rewards" icon="hand-holding-dollar">
+    Transfer rewards to your transferable balance.
+  </Card>
+  <Card title="Compound Rewards" icon="arrows-rotate">
+    Automatically re-stake rewards to earn more (when supported).
+  </Card>
+</CardGroup>
+
+<Tip>
+Compounding rewards (re-staking) can significantly increase your earnings over time through the power of compound interest.
+</Tip>
+
+## Validator Selection
+
+For native staking, choosing the right validators is crucial.
+
+### What to Look For
+
+<AccordionGroup>
+  <Accordion title="Commission Rate">
+    The percentage of rewards validators keep. Lower commission means more rewards for you, but very low rates may indicate inadequate infrastructure.
+  </Accordion>
+  <Accordion title="Total Stake">
+    Amount staked with the validator. Avoid over-subscribed validators as you may not earn rewards if you're not in the top nominators.
+  </Accordion>
+  <Accordion title="Identity">
+    Verified on-chain identity shows professionalism and accountability. Look for validators with complete identity information.
+  </Accordion>
+  <Accordion title="Performance">
+    Historical uptime and era points. Validators who miss blocks or are offline reduce your rewards.
+  </Accordion>
+  <Accordion title="Slash History">
+    Check if validators have been slashed before. Slashing penalties affect nominator rewards.
+  </Accordion>
+</AccordionGroup>
+
+### Recommended Validators
+
+SubWallet can help you select validators:
+
+- **Auto-Selection**: Algorithm chooses optimal validators based on performance and decentralization
+- **Manual Selection**: Pick your own validators from the full list
+- **Diversification**: Select multiple validators to reduce risk
+
+<Warning>
+Never stake all your tokens with a single validator. Distribute across multiple validators to minimize the impact of downtime or slashing.
+</Warning>
+
+## Unstaking and Withdrawals
+
+### Unstaking Process
+
+<Steps>
+  <Step title="Initiate unstaking">
+    Select the staking position and choose how much to unstake.
+  </Step>
+  <Step title="Wait for unbonding">
+    Tokens enter an unbonding period where they don't earn rewards but can't be transferred. Duration varies by network.
+  </Step>
+  <Step title="Withdraw funds">
+    After unbonding completes, withdraw your tokens to make them transferable again.
+  </Step>
+</Steps>
+
+### Unbonding Periods
+
+Different networks have different unbonding times:
+
+- **Polkadot**: 28 days
+- **Kusama**: 7 days  
+- **Astar**: 10 days
+- **Moonbeam**: 7 days
+- **Ethereum 2.0**: Withdrawals enabled since Shanghai upgrade
+
+<Note>
+During unbonding, your tokens don't earn rewards but remain locked. Plan accordingly if you need liquidity.
+</Note>
+
+### Fast Unstaking
+
+Some protocols offer quick exits:
+
+- **Liquid Staking**: Swap derivative tokens back to original tokens on DEXs
+- **Lending Protocols**: Withdraw instantly if liquidity is available
+- **Fast Unstake**: Some chains offer fast unstaking if you haven't earned rewards recently
+
+## Earning Thresholds and Limits
+
+### Minimum Amounts
+
+Each staking option has minimum requirements:
+
+- **Native Staking**: Often requires 100+ tokens (varies by network)
+- **Nomination Pools**: Usually 1-10 tokens minimum
+- **Liquid Staking**: Minimums vary by protocol (often very low)
+- **Lending**: Typically no minimum or very small amounts
+
+### Maximum Nominations
+
+For native staking:
+
+- Maximum number of validators you can nominate (typically 16-24)
+- Over-nominating can reduce your rewards
+- SubWallet helps ensure optimal nomination counts
+
+## Staking Risks
+
+<Warning>
+Understand these risks before staking:
+</Warning>
+
+### Slashing
+
+- Validators can be penalized for misbehavior
+- Nominators share in slashing penalties
+- Choose validators carefully to minimize risk
+
+### Lock-up Period
+
+- Tokens are locked and cannot be transferred
+- Unbonding takes time (varies by network)
+- Plan for liquidity needs before staking
+
+### Validator Performance
+
+- Poor validator performance reduces rewards
+- Offline validators earn no rewards
+- Monitor your validators regularly
+
+### Smart Contract Risk
+
+- Liquid staking and lending use smart contracts
+- Contracts can have bugs or be exploited
+- Use established protocols with audited code
+
+### Market Risk
+
+- Token price can fluctuate while staked
+- Rewards in native tokens subject to price changes
+- Consider your risk tolerance
+
+## Changing Validators
+
+Update your validator selection without unstaking:
+
+<Steps>
+  <Step title="Access your staking position">
+    Find the active stake you want to modify.
+  </Step>
+  <Step title="Change nominations">
+    Select new validators to replace underperforming ones.
+  </Step>
+  <Step title="Confirm changes">
+    Changes take effect in the next era (typically 24 hours for Polkadot).
+  </Step>
+</Steps>
+
+<Tip>
+Regularly review your validators' performance and update nominations if you notice declining rewards or uptime issues.
+</Tip>
+
+## Reward History
+
+Track your earning performance over time:
+
+- **Daily Rewards**: See rewards earned each day
+- **Historical APY**: Track how yields change over time
+- **Claim History**: Record of all reward claims
+- **Total Earned**: Cumulative rewards across all positions
+
+## Advanced Features
+
+### Reward Destination
+
+Choose where rewards go:
+
+- **Staked**: Automatically compound by adding rewards to stake
+- **Free Balance**: Claim rewards to transferable balance
+- **Custom Account**: Send rewards to a different account
+
+### Multi-Chain Staking
+
+Manage stakes across multiple networks:
+
+- View all positions in one dashboard
+- Compare APYs across networks
+- Optimize your portfolio allocation
+- Track total earnings across chains
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Start Small">
+    If you're new to staking, start with a small amount to understand the process before committing larger sums.
+  </Accordion>
+  <Accordion title="Diversify Validators">
+    Spread your stake across multiple validators to reduce risks from slashing, downtime, or over-subscription.
+  </Accordion>
+  <Accordion title="Monitor Regularly">
+    Check your staking positions periodically to ensure validators are performing well and you're earning expected rewards.
+  </Accordion>
+  <Accordion title="Compound When Possible">
+    Re-staking rewards maximizes long-term earnings through compound interest, especially on networks with frequent reward payouts.
+  </Accordion>
+  <Accordion title="Keep Reserve Funds">
+    Don't stake all your tokens. Keep some liquid for transaction fees, emergencies, or opportunities.
+  </Accordion>
+  <Accordion title="Understand Unbonding">
+    Know the unbonding period before staking. If you might need funds soon, consider liquid staking or lending instead.
+  </Accordion>
+  <Accordion title="Research Protocols">
+    For liquid staking and lending, research the protocol's track record, audits, and total value locked before participating.
+  </Accordion>
+</AccordionGroup>

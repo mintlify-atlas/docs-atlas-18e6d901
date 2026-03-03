@@ -1,0 +1,374 @@
+---
+title: Swapping Tokens
+description: Learn how to swap tokens directly within SubWallet Extension using integrated DEX aggregators
+---
+
+SubWallet Extension includes an integrated swap feature that finds the best exchange rates across multiple decentralized exchanges (DEXs) and swap providers, allowing you to trade tokens without leaving your wallet.
+
+## How SubWallet Swap Works
+
+SubWallet's swap feature:
+- Aggregates quotes from multiple DEXs and swap providers
+- Finds the best rate for your trade
+- Supports single-chain and cross-chain swaps
+- Handles complex routes automatically for optimal pricing
+
+## Performing a Token Swap
+
+<Steps>
+  <Step title="Access the swap interface">
+    From the SubWallet home screen, click the **Swap** button or navigate to **Swap** from the menu.
+  </Step>
+
+  <Step title="Select the token to swap from">
+    Click on the **From** token selector and choose the token you want to swap. You'll see:
+    - Token name and symbol
+    - Your available balance
+    - The token's blockchain network
+
+    <Tip>
+      SubWallet shows tokens sorted by balance, with your largest holdings first. Use the search bar to quickly find specific tokens.
+    </Tip>
+  </Step>
+
+  <Step title="Select the token to receive">
+    Click on the **To** token selector and choose what token you want to receive.
+
+    <Note>
+      SubWallet only shows tokens that have available swap routes from your selected source token.
+    </Note>
+  </Step>
+
+  <Step title="Choose your account">
+    If you have multiple accounts, select which account will execute the swap. Ensure this account has:
+    - The tokens you want to swap
+    - Native tokens for gas fees
+  </Step>
+
+  <Step title="Enter the swap amount">
+    Type the amount you want to swap in the **From** field. SubWallet will automatically:
+    - Fetch quotes from multiple providers
+    - Calculate the amount you'll receive
+    - Display the exchange rate and price impact
+
+    <Note>
+      You can also enter an amount in the **To** field, and SubWallet will calculate how much you need to swap.
+    </Note>
+  </Step>
+
+  <Step title="Review the quote details">
+    SubWallet displays important swap information:
+    - **Exchange rate**: How many tokens you'll receive per token swapped
+    - **Price impact**: How much your trade affects the market price
+    - **Minimum received**: Minimum amount guaranteed (accounting for slippage)
+    - **Swap route**: The path your swap will take (may involve multiple hops)
+    - **Provider**: The DEX or aggregator providing the best rate
+    - **Estimated fee**: Total transaction costs
+
+    <Warning>
+      High price impact (typically >5%) means your trade will significantly affect the token price. Consider splitting large trades into smaller swaps.
+    </Warning>
+  </Step>
+
+  <Step title="Adjust slippage (optional)">
+    Click on the settings icon to adjust slippage tolerance:
+    - **Low slippage** (0.5-1%): Safer but may fail during high volatility
+    - **Medium slippage** (1-3%): Balanced option
+    - **High slippage** (3-5%+): More likely to succeed but higher risk of price deviation
+
+    <Tip>
+      For stablecoins or low-volatility tokens, use 0.5-1% slippage. For volatile tokens, 2-3% is more appropriate.
+    </Tip>
+  </Step>
+
+  <Step title="Review alternative quotes (optional)">
+    Click on the quote provider name to see all available quotes from different providers. SubWallet automatically selects the best rate, but you can manually choose another provider if preferred.
+  </Step>
+
+  <Step title="Accept terms of service">
+    On your first swap, you'll need to accept the swap terms of service. Review and accept to continue.
+
+    <Note>
+      This is a one-time requirement. You won't need to accept again for future swaps.
+    </Note>
+  </Step>
+
+  <Step title="Submit the swap">
+    Click the **Swap** button to proceed.
+  </Step>
+
+  <Step title="Approve token spending (if required)">
+    For EVM chains, you may need to approve the swap contract to spend your tokens:
+    1. A token approval transaction will appear first
+    2. Sign the approval transaction
+    3. Wait for it to confirm
+    4. Then the actual swap transaction will execute
+
+    <Note>
+      Token approvals are required once per token per swap provider. Future swaps of the same token won't need approval again.
+    </Note>
+  </Step>
+
+  <Step title="Confirm the swap transaction">
+    Review the final transaction details and enter your password to sign and execute the swap.
+  </Step>
+
+  <Step title="Wait for confirmation">
+    The swap transaction will process. Once confirmed:
+    - The swapped tokens will be deducted from your balance
+    - The received tokens will appear in your wallet
+    - You can view the transaction details in your History
+  </Step>
+</Steps>
+
+## Swap Features
+
+### Quote Comparison
+
+SubWallet aggregates quotes from multiple sources including:
+- Kyber Network
+- Chainflip
+- And other DEX aggregators
+
+The interface automatically selects the best rate, but you can click the provider name to compare all quotes.
+
+### Swap Routes
+
+For optimal pricing, SubWallet may route your swap through multiple pools:
+- **Direct swap**: Token A → Token B
+- **Multi-hop**: Token A → Token X → Token B
+
+The route is displayed in the quote details. Multi-hop swaps may have higher fees but better overall rates.
+
+### Cross-Chain Swaps
+
+SubWallet supports swapping tokens across different blockchains:
+
+<Steps>
+  <Step title="Select tokens on different chains">
+    Choose a source token on one chain (e.g., DOT on Polkadot) and a destination token on another chain (e.g., USDT on Moonbeam).
+  </Step>
+
+  <Step title="Review cross-chain route">
+    SubWallet will show the cross-chain bridge or protocol being used for the swap.
+  </Step>
+
+  <Step title="Understand fees and time">
+    Cross-chain swaps:
+    - Have higher fees (source chain fee + destination chain fee + bridge fee)
+    - Take longer to complete (minutes to hours)
+    - May have different slippage characteristics
+  </Step>
+
+  <Step title="Execute the swap">
+    The process is the same as single-chain swaps, but you'll see multiple transaction steps in your history.
+  </Step>
+</Steps>
+
+### Quote Refresh
+
+Swap quotes are time-sensitive and refresh automatically:
+- Quotes expire after a set period (typically 30 seconds to 2 minutes)
+- A countdown timer shows when the quote will refresh
+- If idle for too long, you'll be prompted to refresh before swapping
+
+<Warning>
+  If you see an idle warning, click **Refresh Quote** to get the latest rates before proceeding with your swap.
+</Warning>
+
+## Advanced Settings
+
+### Slippage Tolerance
+
+Slippage is the difference between the expected price and the actual execution price.
+
+<Steps>
+  <Step title="Open slippage settings">
+    Click the settings icon in the swap interface.
+  </Step>
+
+  <Step title="Choose slippage tolerance">
+    Select from preset options or enter a custom percentage:
+    - **0.1-0.5%**: Very low slippage (may fail frequently)
+    - **0.5-1%**: Low slippage (good for stablecoins)
+    - **1-3%**: Medium slippage (balanced)
+    - **3-5%+**: High slippage (for volatile tokens or low liquidity)
+  </Step>
+
+  <Step title="Save settings">
+    Your slippage preference is saved for future swaps.
+  </Step>
+</Steps>
+
+### Fee Token Selection
+
+On some networks, you can choose which token to pay fees with:
+
+<Steps>
+  <Step title="Click the fee token selector">
+    If available, you'll see a fee token dropdown in the swap interface.
+  </Step>
+
+  <Step title="Select an alternative fee token">
+    Choose from available tokens that can be used to pay transaction fees.
+  </Step>
+
+  <Step title="Verify sufficient balance">
+    Ensure you have enough of the selected token to cover fees.
+  </Step>
+</Steps>
+
+## Understanding Swap Costs
+
+### Transaction Fees
+
+Swap costs include:
+1. **Network gas fees**: Cost to execute the transaction on the blockchain
+2. **Swap protocol fees**: Fees charged by the DEX or swap provider (typically 0.1-0.3%)
+3. **Price impact**: Market price movement due to your trade size
+4. **Slippage**: Potential difference between expected and actual price
+
+The total estimated fee is displayed before you confirm the swap.
+
+### Price Impact
+
+Price impact shows how much your trade will move the market:
+- **Less than 1%**: Minimal impact
+- **1-3%**: Moderate impact
+- **3-5%**: High impact
+- **Greater than 5%**: Very high impact (consider smaller trades)
+
+Large trades in low-liquidity pools can have significant price impact.
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="No swap routes available">
+    If SubWallet can't find swap routes:
+    - The token pair may not have liquidity
+    - One or both tokens may not be supported on available DEXs
+    - Try swapping to a more common token first (like ETH, DOT, or USDT)
+
+    Solution: Check if both tokens are tradable on DEXs, or use an intermediate token.
+  </Accordion>
+
+  <Accordion title="Swap fails with 'Insufficient balance'">
+    You need:
+    - Enough tokens to swap
+    - Extra native tokens for gas fees
+    - Tokens for approval transaction (on first swap)
+
+    Solution: Reduce the swap amount to reserve tokens for fees.
+  </Accordion>
+
+  <Accordion title="Quote expired error">
+    Swap quotes have limited validity. If you wait too long:
+    - The quote expires
+    - You need to refresh to get new rates
+
+    Solution: Click **Refresh Quote** or re-enter the amount to fetch a new quote.
+  </Accordion>
+
+  <Accordion title="Transaction failed due to slippage">
+    If the price moved beyond your slippage tolerance:
+    - The transaction reverts to protect you from bad rates
+    - You still pay gas fees for the failed transaction
+
+    Solution: Increase slippage tolerance or try again when the market is less volatile.
+  </Accordion>
+
+  <Accordion title="Received less than expected">
+    Small differences are normal due to:
+    - Price impact
+    - Slippage
+    - Protocol fees
+
+    Large differences may indicate:
+    - High price impact
+    - Market volatility during execution
+    - Front-running (rare)
+
+    Solution: Use lower amounts per swap, or increase slippage for volatile tokens.
+  </Accordion>
+
+  <Accordion title="Approval transaction required">
+    On EVM chains, you must approve token spending before swapping:
+    1. First transaction: Approve token spending
+    2. Second transaction: Execute the swap
+
+    This is a one-time requirement per token per provider.
+
+    Solution: Complete the approval transaction, then proceed with the swap.
+  </Accordion>
+</AccordionGroup>
+
+## Swap Providers
+
+SubWallet integrates with multiple swap providers:
+
+### Kyber Network
+- Aggregates liquidity from multiple DEXs
+- Supports Ethereum and EVM chains
+- Typically offers competitive rates
+
+### Chainflip
+- Cross-chain swaps without wrapped tokens
+- Supports Bitcoin, Ethereum, Polkadot ecosystem
+- Fixed slippage model
+
+### Other Providers
+- SubWallet continues to add more providers for better rates and coverage
+
+## Best Practices
+
+<Tip>
+  - Compare quotes before swapping (click the provider name)
+  - For large swaps, split into smaller transactions to reduce price impact
+  - Use appropriate slippage based on token volatility
+  - Refresh quotes if you wait more than 30 seconds
+  - Keep extra native tokens for gas fees
+  - Test with small amounts first when swapping new token pairs
+  - Monitor price impact - over 5% means you should use smaller amounts
+</Tip>
+
+## Security Considerations
+
+<Warning>
+  **Swap Risks:**
+  - Smart contract risk: DEXs and aggregators involve smart contract interactions
+  - Price volatility: Token prices can change rapidly during execution
+  - Slippage: You may receive less than expected in volatile markets
+  - Front-running: Large swaps can be front-run by MEV bots (rare)
+  - Scam tokens: Verify you're swapping legitimate tokens
+
+  **Safety Tips:**
+  - Only swap well-known, verified tokens
+  - Be cautious of tokens with very high APYs or suspicious names
+  - Verify token contract addresses if unsure
+  - Use reasonable slippage settings (don't set it too high)
+  - Start with small test swaps for unfamiliar tokens
+</Warning>
+
+## FAQs
+
+<AccordionGroup>
+  <Accordion title="What's the difference between swap and send?">
+    - **Swap**: Exchange one token for another (e.g., ETH → USDT)
+    - **Send**: Transfer tokens to another address (no exchange)
+
+    Use swap when you want to convert between different tokens.
+  </Accordion>
+
+  <Accordion title="Can I cancel a swap after submitting?">
+    No, blockchain transactions are irreversible once submitted. Double-check all details before confirming.
+  </Accordion>
+
+  <Accordion title="Why do I need to approve tokens?">
+    On EVM chains, approval grants the swap contract permission to spend your tokens. This is a security feature to prevent unauthorized token transfers.
+  </Accordion>
+
+  <Accordion title="How long does a swap take?">
+    - Same-chain swaps: Seconds to minutes (depends on network)
+    - Cross-chain swaps: Minutes to hours (depends on bridge)
+  </Accordion>
+</AccordionGroup>

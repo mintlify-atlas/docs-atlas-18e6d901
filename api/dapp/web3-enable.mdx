@@ -1,0 +1,281 @@
+---
+title: 'web3Enable'
+description: 'Enable SubWallet Extension access for your decentralized application'
+---
+
+## Overview
+
+The `web3Enable()` function is the entry point for all dApp interactions with SubWallet Extension. It must be called before any other API functions and enables your dApp to access the wallet's functionality.
+
+## Function Signature
+
+```typescript
+function web3Enable(
+  originName: string,
+  compatInits?: (() => Promise<boolean>)[]
+): Promise<InjectedExtension[]>
+```
+
+### Source Code Reference
+
+`packages/extension-dapp/src/bundle.ts:67`
+
+## Parameters
+
+<ParamField path="originName" type="string" required>
+  The name of your dApp. This is displayed to users in authorization prompts and helps them identify which application is requesting access.
+  
+  **Important**: This parameter is required. An error will be thrown if not provided.
+</ParamField>
+
+<ParamField path="compatInits" type="(() => Promise<boolean>)[]" default="[]">
+  Optional array of compatibility initialization functions. These functions are executed before enabling the extension and can be used to initialize compatibility layers for other wallet extensions.
+  
+  Each function should return a Promise that resolves to a boolean indicating success or failure.
+</ParamField>
+
+## Return Value
+
+<ResponseField name="extensions" type="InjectedExtension[]">
+  An array of all enabled wallet extensions. Each extension object contains:
+  
+  <Expandable title="InjectedExtension properties">
+    <ResponseField name="name" type="string">
+      The name of the extension (e.g., "subwallet-js")
+    </ResponseField>
+    
+    <ResponseField name="version" type="string">
+      The version of the extension
+    </ResponseField>
+    
+    <ResponseField name="accounts" type="InjectedAccounts">
+      Interface for accessing and subscribing to accounts
+      
+      - `get(anyType?: boolean): Promise<InjectedAccount[]>` - Retrieve accounts
+      - `subscribe(cb: (accounts: InjectedAccount[]) => void): Unsubcall` - Subscribe to account changes
+    </ResponseField>
+    
+    <ResponseField name="signer" type="InjectedSigner">
+      Interface for signing transactions and messages
+    </ResponseField>
+    
+    <ResponseField name="metadata" type="InjectedMetadata" optional>
+      Interface for chain metadata operations (optional)
+      
+      - `get(): Promise<InjectedMetadataKnown[]>` - Get known metadata
+      - `provide(definition: MetadataDef): Promise<boolean>` - Provide chain metadata
+    </ResponseField>
+    
+    <ResponseField name="provider" type="InjectedProvider" optional>
+      RPC provider interface for connecting to blockchain nodes (optional)
+      
+      - `listProviders(): Promise<ProviderList>` - List available providers
+      - `startProvider(key: string): Promise<ProviderMeta>` - Start a specific provider
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Usage Examples
+
+### Basic Usage
+
+```javascript
+import { web3Enable } from '@subwallet/extension-dapp';
+
+const extensions = await web3Enable('My DApp Name');
+
+if (extensions.length === 0) {
+  // No extension installed, prompt user to install SubWallet
+  console.log('Please install SubWallet extension');
+} else {
+  console.log(`Enabled ${extensions.length} extension(s)`);
+  // Proceed with your dApp logic
+}
+```
+
+### With Error Handling
+
+```javascript
+import { web3Enable } from '@subwallet/extension-dapp';
+
+try {
+  const extensions = await web3Enable('My DApp Name');
+  
+  if (extensions.length === 0) {
+    throw new Error('No wallet extension found');
+  }
+  
+  console.log('Successfully enabled extensions:', 
+    extensions.map(ext => `${ext.name}/${ext.version}`)
+  );
+  
+  // Continue with account access
+} catch (error) {
+  console.error('Failed to enable extension:', error);
+  // Show error UI to user
+}
+```
+
+### TypeScript Example
+
+```typescript
+import { web3Enable, InjectedExtension } from '@subwallet/extension-dapp';
+
+async function initializeWallet(): Promise<InjectedExtension[]> {
+  const APP_NAME = 'My DApp';
+  
+  const extensions = await web3Enable(APP_NAME);
+  
+  if (extensions.length === 0) {
+    throw new Error('No wallet extension detected');
+  }
+  
+  // Log extension details
+  extensions.forEach((ext: InjectedExtension) => {
+    console.log(`Extension: ${ext.name} v${ext.version}`);
+  });
+  
+  return extensions;
+}
+```
+
+### React Integration
+
+```javascript
+import { useState, useEffect } from 'react';
+import { web3Enable } from '@subwallet/extension-dapp';
+
+function App() {
+  const [extensions, setExtensions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  useEffect(() => {
+    async function initExtension() {
+      try {
+        const exts = await web3Enable('My DApp');
+        
+        if (exts.length === 0) {
+          setError('Please install SubWallet extension');
+        } else {
+          setExtensions(exts);
+        }
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    initExtension();
+  }, []);
+  
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
+  
+  return (
+    <div>
+      <h1>Connected to {extensions.length} wallet(s)</h1>
+      {/* Your app content */}
+    </div>
+  );
+}
+```
+
+### With Compatibility Initializers
+
+```javascript
+import { web3Enable } from '@subwallet/extension-dapp';
+
+// Example compatibility initializer for another wallet
+const compatInit = async () => {
+  try {
+    // Initialize compatibility layer
+    console.log('Initializing compatibility layer');
+    return true;
+  } catch (error) {
+    console.error('Compatibility init failed:', error);
+    return false;
+  }
+};
+
+const extensions = await web3Enable('My DApp', [compatInit]);
+```
+
+## Important Notes
+
+<Warning>
+  **Call Before Other APIs**: You must call `web3Enable()` before using any other functions like `web3Accounts()`, `web3FromAddress()`, etc. Otherwise, they will throw an error.
+</Warning>
+
+<Info>
+  **User Authorization**: The first time your dApp calls `web3Enable()`, users will see a permission prompt asking them to authorize your application. Users can reject this request.
+</Info>
+
+<Tip>
+  **Cache the Promise**: The function returns a promise that is cached internally. Subsequent calls will return the same promise, so you don't need to cache it yourself.
+</Tip>
+
+## Behavior Details
+
+### Document Ready
+
+The function waits for the document to be ready before attempting to access the injected extension:
+
+```javascript
+// From packages/extension-dapp/src/bundle.ts:76
+web3EnablePromise = documentReadyPromise(
+  (): Promise<InjectedExtension[]> => /* ... */
+);
+```
+
+This ensures the extension has been properly injected into the page before your dApp tries to access it.
+
+### Extension Detection
+
+The function checks `window.injectedWeb3` for available extensions and attempts to enable each one:
+
+```javascript
+// From packages/extension-dapp/src/bundle.ts:52
+Object.entries(win.injectedWeb3).map(
+  ([name, { enable, version }]): Promise<[InjectedExtensionInfo, Injected | void]> =>
+    Promise.all([
+      Promise.resolve({ name, version }),
+      enable(originName).catch((error: Error): void => {
+        console.error(`Error initializing ${name}: ${error.message}`);
+      })
+    ])
+);
+```
+
+### Account Subscription Polyfill
+
+If an extension doesn't support account subscriptions, the function adds a single-shot subscription implementation:
+
+```javascript
+// From packages/extension-dapp/src/bundle.ts:85
+if (!ext.accounts.subscribe) {
+  ext.accounts.subscribe = (cb) => {
+    ext.accounts.get().then(cb).catch(console.error);
+    return () => {}; // No unsubscribe needed for single-shot
+  };
+}
+```
+
+## Error Handling
+
+The function throws an error if `originName` is not provided:
+
+```javascript
+if (!originName) {
+  throw new Error('You must pass a name for your app to the web3Enable function');
+}
+```
+
+Other errors are caught and logged, and the function returns an empty array if all extensions fail to initialize.
+
+## See Also
+
+- [web3Accounts()](/api/dapp/accounts#web3accounts) - Get user accounts after enabling
+- [Account Management](/api/dapp/accounts) - Working with accounts
+- [isWeb3Injected](/api/dapp/overview#api-overview) - Check if extension is available

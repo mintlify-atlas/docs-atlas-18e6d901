@@ -1,0 +1,657 @@
+---
+title: State Management
+description: Understanding SubWallet's state management architecture using stores, Redux, and Chrome storage
+---
+
+## Overview
+
+SubWallet employs a multi-layer state management architecture:
+
+1. **Chrome Storage Stores** - Persistent storage for background service
+2. **Redux Store** - Client-side state management in UI
+3. **Service State** - In-memory state in background services
+4. **Subscriptions** - Real-time state synchronization
+
+## Architecture
+
+```
+Background Service
+├── Chrome Storage (BaseStore/SubscribableStore)
+│   ├── AccountsStore
+│   ├── KeyringStore
+│   ├── SettingsStore
+│   └── ...
+└── Service State (in-memory)
+    ├── BalanceService
+    ├── ChainService
+    └── ...
+         |
+         | Subscriptions
+         v
+Extension UI
+└── Redux Store
+    ├── accountState
+    ├── chainStore
+    ├── balance
+    └── ...
+```
+
+## Chrome Storage Stores
+
+### BaseStore
+
+The foundation for all persistent storage in the background.
+
+**Location**: `packages/extension-base/src/stores/Base.ts`
+
+```typescript
+export default abstract class BaseStore<T> {
+  #prefix: string;
+
+  constructor(prefix: string | null) {
+    this.#prefix = prefix ? `${prefix}:` : '';
+  }
+
+  public getPrefix(): string {
+    return this.#prefix;
+  }
+
+  // Get all items
+  public all(update: (key: string, value: T) => void): void {
+    this.allMap((map): void => {
+      Object.entries(map).forEach(([key, value]): void => {
+        update(key, value);
+      });
+    });
+  }
+
+  // Get all items as map
+  public allMap(update: (value: Record<string, T>) => void): void {
+    chrome.storage.local.get(null, (result: StoreValue): void => {
+      const entries = Object.entries(result);
+      const map: Record<string, T> = {};
+
+      for (let i = 0; i < entries.length; i++) {
+        const [key, value] = entries[i];
+        if (key.startsWith(this.#prefix)) {
+          map[key.replace(this.#prefix, '')] = value as T;
+        }
+      }
+
+      update(map);
+    });
+  }
+
+  // Get single item
+  public get(_key: string, update: (value: T) => void): void {
+    const key = `${this.#prefix}${_key}`;
+    chrome.storage.local.get([key], (result: StoreValue): void => {
+      update(result[key] as T);
+    });
+  }
+
+  // Set item
+  public set(_key: string, value: T, update?: () => void): void {
+    const key = `${this.#prefix}${_key}`;
+    chrome.storage.local.set({ [key]: value }, (): void => {
+      update && update();
+    });
+  }
+
+  // Remove item
+  public remove(_key: string, update?: () => void): void {
+    const key = `${this.#prefix}${_key}`;
+    chrome.storage.local.remove(key, (): void => {
+      update && update();
+    });
+  }
+}
+```
+
+Source: `packages/extension-base/src/stores/Base.ts:14-81`
+
+**Key Features**:
+- Namespaced keys with prefix
+- Async callback-based API
+- Chrome storage.local backend
+- Type-safe value storage
+
+### SubscribableStore
+
+Extends BaseStore with RxJS subscription support.
+
+**Location**: `packages/extension-base/src/stores/SubscribableStore.ts`
+
+```typescript
+import BaseStore from '@subwallet/extension-base/stores/Base';
+import { Subject } from 'rxjs';
+
+export default abstract class SubscribableStore<T> extends BaseStore<T> {
+  private readonly subject: Subject<T> = new Subject<T>();
+
+  public getSubject(): Subject<T> {
+    return this.subject;
+  }
+
+  public override set(_key: string, value: T, update?: () => void): void {
+    super.set(_key, value, () => {
+      this.subject.next(value);  // Emit update
+      update && update();
+    });
+  }
+
+  public asyncGet = async (key: string): Promise<T> => {
+    return new Promise((resolve) => {
+      this.get(key, resolve);
+    });
+  };
+
+  public removeAll() {
+    return this.all((key) => this.remove(key));
+  }
+}
+```
+
+Source: `packages/extension-base/src/stores/SubscribableStore.ts:7-30`
+
+**Key Features**:
+- RxJS Subject for reactive updates
+- Emits on every `set()` call
+- Promise-based `asyncGet()` helper
+- Batch removal support
+
+### Built-in Stores
+
+**Location**: `packages/extension-base/src/stores/`
+
+```typescript
+// Account management
+export class AccountsStore extends BaseStore<KeyringJson> {
+  constructor() {
+    super(EXTENSION_PREFIX ? `${EXTENSION_PREFIX}accounts` : null);
+  }
+
+  public override set(key: string, value: KeyringJson, update?: () => void): void {
+    // Skip testing accounts
+    if (key.startsWith('account:') && value.meta && value.meta.isTesting) {
+      update && update();
+      return;
+    }
+    super.set(key, value, update);
+  }
+}
+
+// Keyring passwords
+export class KeyringStore extends BaseStore<string> {
+  constructor() {
+    super(EXTENSION_PREFIX ? `${EXTENSION_PREFIX}keyring` : null);
+  }
+}
+
+// Current account
+export class CurrentAccountStore extends SubscribableStore<CurrentAccountInfo> {
+  constructor() {
+    super('current-account');
+  }
+}
+
+// Settings
+export class SettingsStore extends SubscribableStore<UiSettings> {
+  constructor() {
+    super('settings');
+  }
+}
+
+// Chain metadata
+export class MetadataStore extends BaseStore<MetadataDef> {
+  constructor() {
+    super(EXTENSION_PREFIX ? `${EXTENSION_PREFIX}metadata` : null);
+  }
+}
+
+// Authorization
+export class AuthorizeStore extends BaseStore<AuthUrls> {
+  constructor() {
+    super(EXTENSION_PREFIX ? `${EXTENSION_PREFIX}auth` : null);
+  }
+}
+```
+
+Source: `packages/extension-base/src/stores/Accounts.ts:9-24`
+
+## Redux Store (UI)
+
+### Store Configuration
+
+**Location**: `packages/extension-koni-ui/src/stores/index.ts`
+
+```typescript
+import { combineReducers, configureStore } from '@reduxjs/toolkit';
+import { persistReducer, persistStore } from 'redux-persist';
+import storage from 'redux-persist/lib/storage';
+
+const persistConfig = {
+  key: 'root',
+  version: 1,
+  storage: storage,
+  whitelist: [
+    'settings',
+    'uiViewState',
+    'staking',
+    'campaign',
+    'buyService',
+    'staticContent',
+    'price',
+    'earning'
+  ]
+};
+
+const rootReducers = combineReducers({
+  // Feature stores
+  transactionHistory: TransactionHistoryReducer,
+  crowdloan: CrowdloanReducer,
+  nft: NftReducer,
+  staking: StakingReducer,
+  price: PriceReducer,
+  balance: BalanceReducer,
+  bonding: BondingReducer,
+  mantaPay: MantaPayReducer,
+  campaign: CampaignReducer,
+  buyService: BuyServiceReducer,
+  earning: EarningReducer,
+  swap: SwapReducer,
+  
+  // Common stores
+  chainStore: ChainStoreReducer,
+  assetRegistry: AssetRegistryReducer,
+  
+  // Base stores
+  requestState: RequestStateReducer,
+  settings: SettingsReducer,
+  accountState: AccountStateReducer,
+  uiViewState: UIViewStateReducer,
+  staticContent: StaticContentReducer,
+  
+  // Other stores
+  walletConnect: WalletConnectReducer,
+  missionPool: MissionPoolReducer,
+  notification: NotificationReducer,
+  openGov: GovernanceReducer,
+  multisig: MultisigReducer
+});
+
+const persistedReducer = persistReducer(persistConfig, rootReducers);
+
+export const store = configureStore({
+  devTools: process.env.NODE_ENV !== 'production',
+  reducer: persistedReducer,
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: {
+        ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER]
+      }
+    })
+});
+
+export const persistor = persistStore(store);
+
+export type RootState = ReturnType<typeof store.getState>;
+export type StoreName = keyof RootState;
+export type AppStore = typeof store;
+export type AppDispatch = typeof store.dispatch;
+```
+
+Source: `packages/extension-koni-ui/src/stores/index.ts:4-110`
+
+### Store Categories
+
+#### Base Stores
+
+**accountState**: Account list, current account
+**settings**: UI settings, theme, language
+**requestState**: Authorization, signing requests
+**uiViewState**: UI state, modals, navigation
+**staticContent**: Static content, campaigns
+
+#### Feature Stores
+
+**balance**: Account balances
+**price**: Token prices
+**transactionHistory**: Transaction history
+**staking**: Staking positions
+**earning**: Yield positions
+**nft**: NFT collections and items
+**swap**: Swap pairs and quotes
+**crowdloan**: Crowdloan contributions
+
+#### Common Stores
+
+**chainStore**: Chain info, metadata, state
+**assetRegistry**: Token/asset registry
+
+### Redux Toolkit Slices
+
+Example slice structure:
+
+```typescript
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+
+interface AccountState {
+  accounts: AccountJson[];
+  currentAccount: AccountJson | null;
+  isReady: boolean;
+}
+
+const initialState: AccountState = {
+  accounts: [],
+  currentAccount: null,
+  isReady: false
+};
+
+const accountSlice = createSlice({
+  name: 'accountState',
+  initialState,
+  reducers: {
+    updateAccounts: (state, action: PayloadAction<AccountJson[]>) => {
+      state.accounts = action.payload;
+      state.isReady = true;
+    },
+    setCurrentAccount: (state, action: PayloadAction<AccountJson | null>) => {
+      state.currentAccount = action.payload;
+    },
+    reset: (state) => {
+      state.accounts = [];
+      state.currentAccount = null;
+      state.isReady = false;
+    }
+  }
+});
+
+export const { updateAccounts, setCurrentAccount, reset } = accountSlice.actions;
+export default accountSlice.reducer;
+```
+
+## State Synchronization
+
+### Background to UI Subscriptions
+
+**Location**: `packages/extension-koni-ui/src/stores/utils.ts`
+
+```typescript
+// Subscribe to account updates
+export function subscribeAccountsData() {
+  return lazySubscribeMessage(
+    'pri(accounts.subscribe)',
+    null,
+    (data) => {
+      store.dispatch(updateAccounts(data));
+    },
+    (data) => {
+      store.dispatch(updateAccounts(data));
+    }
+  );
+}
+
+// Subscribe to balance updates
+export function subscribeBalance() {
+  return lazySubscribeMessage(
+    'pri(balance.subscribe)',
+    null,
+    (data) => {
+      store.dispatch(updateBalance(data));
+    },
+    (data) => {
+      store.dispatch(updateBalance(data));
+    }
+  );
+}
+
+// Subscribe to chain info
+export function subscribeChainInfoMap() {
+  return lazySubscribeMessage(
+    'pri(chainService.subscribeChainInfoMap)',
+    null,
+    (data) => {
+      store.dispatch(updateChainInfoMap(data));
+    },
+    (data) => {
+      store.dispatch(updateChainInfoMap(data));
+    }
+  );
+}
+```
+
+### DataContext Integration
+
+**Location**: `packages/extension-koni-ui/src/contexts/DataContext.tsx`
+
+```typescript
+export interface DataHandler {
+  name: string;
+  unsub?: () => void;
+  isSubscription?: boolean;
+  start: () => void;
+  isStarted?: boolean;
+  isStartImmediately?: boolean;
+  promise?: Promise<any>;
+  relatedStores: StoreName[];
+}
+
+const DataContext: DataContextType = {
+  handlerMap: {},
+  storeDependencies: {},
+  
+  addHandler: function(item: DataHandler) {
+    const { name } = item;
+    item.isSubscription = !!item.unsub;
+    
+    if (!this.handlerMap[name]) {
+      this.handlerMap[name] = item;
+      
+      // Track dependencies
+      item.relatedStores.forEach((storeName) => {
+        if (!this.storeDependencies[storeName]) {
+          this.storeDependencies[storeName] = [];
+        }
+        this.storeDependencies[storeName]?.push(name);
+      });
+      
+      // Auto-start if configured
+      if (item.isStartImmediately) {
+        item.start();
+        item.isStarted = true;
+      }
+    }
+    
+    return () => this.removeHandler(name);
+  },
+  
+  awaitStores: async function(storeNames: StoreName[]): Promise<boolean> {
+    // Wait for all required handlers to complete
+    const handlers = storeNames.flatMap(
+      (storeName) => this.storeDependencies[storeName] || []
+    );
+    
+    const promises = handlers.map((name) => {
+      const handler = this.handlerMap[name];
+      if (!handler.isStarted) {
+        handler.start();
+        handler.isStarted = true;
+      }
+      return handler.promise;
+    });
+    
+    await Promise.all(promises);
+    return true;
+  }
+};
+```
+
+Source: `packages/extension-koni-ui/src/contexts/DataContext.tsx:41-103`
+
+## Common Patterns
+
+### Reading from Chrome Storage
+
+```typescript
+// Callback-based
+const accountStore = new AccountsStore();
+accountStore.get('account:0x123', (account) => {
+  console.log(account);
+});
+
+// Promise-based (with SubscribableStore)
+const settingsStore = new SettingsStore();
+const settings = await settingsStore.asyncGet('default');
+```
+
+### Writing to Chrome Storage
+
+```typescript
+const accountStore = new AccountsStore();
+accountStore.set('account:0x123', accountData, () => {
+  console.log('Account saved');
+});
+```
+
+### Subscribing to Changes
+
+```typescript
+const currentAccountStore = new CurrentAccountStore();
+const subject = currentAccountStore.getSubject();
+
+const subscription = subject.subscribe((account) => {
+  console.log('Account changed:', account);
+});
+
+// Later
+subscription.unsubscribe();
+```
+
+### Using Redux Store in Components
+
+```typescript
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState } from '@subwallet/extension-koni-ui/stores';
+
+function MyComponent() {
+  const dispatch = useDispatch();
+  
+  // Select state
+  const accounts = useSelector((state: RootState) => state.accountState.accounts);
+  const balance = useSelector((state: RootState) => state.balance);
+  
+  // Dispatch actions
+  const handleUpdate = () => {
+    dispatch(updateAccounts(newAccounts));
+  };
+  
+  return <div>{accounts.length} accounts</div>;
+}
+```
+
+### Awaiting Store Data
+
+```typescript
+import { useContext, useEffect, useState } from 'react';
+import { DataContext } from '@subwallet/extension-koni-ui/contexts/DataContext';
+
+function MyComponent() {
+  const { awaitStores } = useContext(DataContext);
+  const [isReady, setIsReady] = useState(false);
+  
+  useEffect(() => {
+    awaitStores(['accountState', 'chainStore', 'balance'])
+      .then(() => setIsReady(true));
+  }, []);
+  
+  if (!isReady) {
+    return <LoadingScreen />;
+  }
+  
+  return <MyContent />;
+}
+```
+
+## State Persistence
+
+### Chrome Storage (Background)
+
+**Persistent**:
+- Survives extension restart
+- Survives browser restart
+- Shared across all extension contexts
+- Quota: ~5MB (local storage)
+
+**Use Cases**:
+- Account data
+- Keyring
+- Settings
+- Authorization data
+- Metadata
+
+### Redux Persist (UI)
+
+**Persistent** (via localStorage):
+- Survives page refresh
+- Lost on extension update (sometimes)
+- Separate per popup instance
+
+**Persisted Stores**:
+```typescript
+whitelist: [
+  'settings',      // UI preferences
+  'uiViewState',   // UI state
+  'staking',       // Staking preferences
+  'campaign',      // Campaign state
+  'buyService',    // Buy service state
+  'staticContent', // Static content
+  'price',         // Price cache
+  'earning'        // Earning preferences
+]
+```
+
+**Not Persisted** (ephemeral):
+- Balance (refreshed on load)
+- Transaction history (subscribed)
+- NFTs (subscribed)
+- Chain state (subscribed)
+- Request state (ephemeral)
+
+## Best Practices
+
+1. **Use Appropriate Storage**:
+   - Chrome Storage for critical data in background
+   - Redux for UI state
+   - Don't duplicate data unnecessarily
+
+2. **Subscribe to Updates**:
+   - Use SubscribableStore for reactive data
+   - Set up subscriptions in DataContext
+   - Clean up subscriptions on unmount
+
+3. **Await Store Readiness**:
+   - Use `awaitStores()` before rendering
+   - Show loading states while waiting
+   - Handle loading errors gracefully
+
+4. **Type Safety**:
+   - Define TypeScript types for all state
+   - Use RootState type for selectors
+   - Use PayloadAction for Redux actions
+
+5. **Performance**:
+   - Don't persist large datasets
+   - Use memoization for expensive selectors
+   - Batch updates when possible
+
+6. **Error Handling**:
+   - Handle Chrome storage errors
+   - Validate data on read
+   - Provide fallbacks for missing data
+
+## Related Documentation
+
+- [Background Services](./background-services.mdx) - Service architecture
+- [Extension UI](./extension-ui.mdx) - Redux integration
+- [Message Passing](./message-passing.mdx) - State synchronization

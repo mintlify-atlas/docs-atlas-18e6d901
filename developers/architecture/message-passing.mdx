@@ -1,0 +1,655 @@
+---
+title: Message Passing
+description: Understanding SubWallet's message passing architecture, protocols, and communication patterns
+---
+
+## Overview
+
+SubWallet uses Chrome's runtime messaging API to enable communication between different parts of the extension:
+- **Content Scripts** ↔ Background Service
+- **Extension UI** ↔ Background Service
+- **Web Pages** ↔ Content Scripts (via window.postMessage)
+
+## Architecture
+
+```
+Web Page (dApp)
+       |
+       | window.postMessage
+       v
+Content Script
+       |
+       | chrome.runtime.Port
+       v
+Background Service ← chrome.runtime.Port → Extension UI (Popup)
+```
+
+## Message Protocol
+
+### Message Structure
+
+```typescript
+interface TransportRequestMessage<TMessageType extends MessageTypes> {
+  id: string;                          // Unique message identifier
+  message: TMessageType;               // Message type (e.g., 'pri(accounts.list)')
+  origin: 'page' | 'extension' | string; // Message origin
+  request: RequestTypes[TMessageType]; // Request payload
+}
+
+interface TransportResponseMessage {
+  id: string;                    // Matches request ID
+  response?: any;                // Response data
+  error?: string;                // Error message if failed
+  errorCode?: number;            // Error code
+  errorData?: any;               // Additional error data
+  subscription?: any;            // Subscription update data
+  sender: 'BACKGROUND';          // Always from background
+}
+```
+
+Source: `packages/extension-base/src/background/types.ts:140-145`
+
+### Message Types
+
+Messages follow a naming convention:
+
+**Format**: `<scope>(<namespace>.<action>)`
+
+**Scopes**:
+- `pri()` - Private messages (from extension UI or content script)
+- `pub()` - Public messages (from web pages via injected provider)
+- `mobile()` - Mobile app messages
+
+**Examples**:
+```typescript
+// Account operations
+'pri(accounts.list)'              // Get account list
+'pri(accounts.create)'            // Create new account
+'pri(accounts.export.json)'       // Export account JSON
+
+// Transaction operations  
+'pri(transactions.getOne)'        // Get transaction by ID
+'pri(transaction.history.subscribe)' // Subscribe to transaction history
+
+// Balance operations
+'pri(balance.subscribe)'          // Subscribe to balance updates
+
+// Public operations (from dApps)
+'pub(authorize.tab)'              // Request authorization
+'pub(accounts.list)'              // Get authorized accounts
+'pub(extrinsic.sign)'             // Sign extrinsic
+'pub(bytes.sign)'                 // Sign raw bytes
+```
+
+### Request Signatures
+
+**Location**: `packages/extension-base/src/background/types.ts`
+
+```typescript
+interface RequestSignatures {
+  // Private requests
+  'pri(ping)': [null, string];
+  'pri(accounts.list)': [null, AccountJson[]];
+  'pri(accounts.create)': [RequestAccountCreate, AccountJson];
+  'pri(accounts.export.json)': [RequestAccountExport, ResponseAccountExport];
+  
+  // Subscriptions: [Request, InitialResponse, SubscriptionData]
+  'pri(balance.subscribe)': [null, boolean, BalanceItem[]];
+  'pri(transaction.history.subscribe)': [
+    { address: string, chain: string }, 
+    ResponseSubscribeHistory,
+    TransactionHistoryItem[]
+  ];
+  
+  // Public requests
+  'pub(authorize.tab)': [RequestAuthorizeTab, null];
+  'pub(accounts.list)': [RequestAccountList, InjectedAccount[]];
+  'pub(extrinsic.sign)': [SignerPayloadJSON, ResponseSigning];
+  'pub(bytes.sign)': [SignerPayloadRaw, ResponseSigning];
+}
+
+type MessageTypes = keyof RequestSignatures;
+type RequestTypes = {
+  [MessageType in keyof RequestSignatures]: RequestSignatures[MessageType][0]
+};
+type ResponseTypes = {
+  [MessageType in keyof RequestSignatures]: RequestSignatures[MessageType][1]
+};
+type SubscriptionMessageTypes = {
+  [MessageType in keyof RequestSignatures]: RequestSignatures[MessageType][2]
+};
+```
+
+Source: `packages/extension-base/src/background/types.ts:84-128`
+
+## Port Communication
+
+### Port Types
+
+```typescript
+const PORT_CONTENT = 'koni-content';    // Content script connections
+const PORT_EXTENSION = 'koni-extension'; // UI popup connections  
+const PORT_MOBILE = 'mobile';            // Mobile app connections
+```
+
+Source: `packages/extension-base/src/defaults.ts:18-19`
+
+### Establishing Connection
+
+#### From Extension UI
+
+**Location**: `packages/extension-koni-ui/src/messaging/base.ts`
+
+```typescript
+let port: chrome.runtime.Port;
+
+function onConnectPort() {
+  // Connect to background service
+  port = chrome.runtime.connect({ name: PORT_EXTENSION });
+  
+  // Setup message listener
+  port.onMessage.addListener((data: Message['data']): void => {
+    const handler = handlers[data.id];
+    
+    if (!handler) {
+      console.error(`Unknown response: ${JSON.stringify(data)}.`);
+      return;
+    }
+    
+    if (!handler.subscriber) {
+      delete handlers[data.id];
+    }
+    
+    if (data.subscription) {
+      handler.subscriber(data.subscription);
+    } else if (data.error) {
+      handler.reject(new Error(data.error));
+    } else {
+      handler.resolve(data.response);
+    }
+  });
+  
+  port.onDisconnect.addListener(onDisconnectPort);
+}
+
+onConnectPort(); // Auto-connect on module load
+```
+
+Source: `packages/extension-koni-ui/src/messaging/base.ts:22-56`
+
+#### From Content Script
+
+**Location**: `packages/extension-koni/src/content.ts`
+
+```typescript
+getPort(): chrome.runtime.Port {
+  if (!this.port) {
+    const port = chrome.runtime.connect({ name: PORT_CONTENT });
+    const onMessageHandler = this.onPortMessageHandler.bind(this);
+    
+    const disconnectHandler = () => {
+      this.onDisconnectPort(port, onMessageHandler, disconnectHandler);
+    };
+    
+    this.port = port;
+    this.port.onMessage.addListener(onMessageHandler);
+    this.port.onDisconnect.addListener(disconnectHandler);
+  }
+  
+  return this.port;
+}
+```
+
+Source: `packages/extension-koni/src/content.ts:32-47`
+
+### Sending Messages
+
+#### Simple Request
+
+```typescript
+export function sendMessage<TMessageType extends MessageTypes>(
+  message: TMessageType,
+  request?: RequestTypes[TMessageType],
+  subscriber?: (data: unknown) => void
+): Promise<ResponseTypes[TMessageType]> {
+  return new Promise((resolve, reject): void => {
+    const id = getId(); // Generate unique ID
+    
+    handlers[id] = { reject, resolve, subscriber };
+    
+    if (!port) {
+      console.error('Port is not connected.');
+      return;
+    }
+    
+    port.postMessage({ id, message, request: request || {} });
+  });
+}
+
+// Usage
+const accounts = await sendMessage('pri(accounts.list)', null);
+```
+
+Source: `packages/extension-koni-ui/src/messaging/base.ts:91-105`
+
+#### Subscription Request
+
+```typescript
+export function subscribeMessage<TMessageType extends MessageTypesWithSubscriptions>(
+  message: TMessageType,
+  request: RequestTypes[TMessageType],
+  callback: (data: ResponseTypes[TMessageType]) => void,
+  subscriber: (data: SubscriptionMessageTypes[TMessageType]) => void
+): {
+  promise: Promise<ResponseTypes[TMessageType]>,
+  unsub: () => void
+} {
+  const id = getId();
+  const promise = new Promise((resolve, reject): void => {
+    handlers[id] = { reject, resolve, subscriber };
+  });
+  
+  port.postMessage({ id, message, request: request || {} });
+  
+  promise.then(callback).catch(console.error);
+  
+  return {
+    promise,
+    unsub: () => {
+      const handler = handlers[id];
+      if (handler) {
+        delete handler.subscriber;
+        handler.resolve(null);
+      }
+    }
+  };
+}
+
+// Usage
+const { unsub } = subscribeMessage(
+  'pri(balance.subscribe)',
+  null,
+  (initial) => console.log('Initial:', initial),
+  (updates) => console.log('Update:', updates)
+);
+
+// Later: unsub();
+```
+
+Source: `packages/extension-koni-ui/src/messaging/base.ts:177-189`
+
+### Receiving Messages in Background
+
+**Location**: `packages/extension-base/src/koni/background/handlers/index.ts`
+
+```typescript
+public handle<TMessageType extends MessageTypes>(
+  { id, message, request }: TransportRequestMessage<TMessageType>, 
+  port: chrome.runtime.Port
+): void {
+  const isMobile = port.name === PORT_MOBILE;
+  const isExtension = port.name === PORT_EXTENSION;
+  const sender = port.sender;
+  
+  const from = isExtension
+    ? 'extension'
+    : sender?.url || (sender?.tab && sender?.tab.url) || '<unknown>';
+  const source = `${from}: ${id}: ${message}`;
+  
+  const promise = isMobile
+    ? this.mobileHandler.handle(id, message, request, port)
+    : isExtension
+      ? this.extensionHandler.handle(id, message, request, port)
+      : this.tabHandler.handle(id, message, request, from, port);
+  
+  promise
+    .then((response): void => {
+      assert(port, 'Port has been disconnected');
+      port.postMessage({ id, response, sender: 'BACKGROUND' });
+    })
+    .catch((error: ProviderError): void => {
+      console.error(error);
+      console.log(`[err] ${source}:: ${error.message}`);
+      
+      if (port) {
+        port.postMessage({ 
+          error: error.message, 
+          errorCode: error.code,
+          errorData: error.data,
+          id, 
+          sender: 'BACKGROUND' 
+        });
+      }
+    });
+}
+```
+
+Source: `packages/extension-base/src/koni/background/handlers/index.ts:52-88`
+
+## Window PostMessage (Page ↔ Content Script)
+
+### Message Origins
+
+```typescript
+const MESSAGE_ORIGIN_PAGE = 'koni-page';       // From injected provider
+const MESSAGE_ORIGIN_CONTENT = 'koni-content'; // From content script
+```
+
+Source: `packages/extension-base/src/defaults.ts:20-21`
+
+### Page to Content Script
+
+```typescript
+// In injected provider (on page)
+window.postMessage({
+  id: getId(),
+  message: 'pub(accounts.list)',
+  origin: MESSAGE_ORIGIN_PAGE,
+  request: {}
+}, '*');
+
+// In content script
+window.addEventListener('message', ({ data, source }: Message): void => {
+  // Validate origin
+  if (source !== window || data.origin !== MESSAGE_ORIGIN_PAGE) {
+    return;
+  }
+  
+  // Forward to background via port
+  this.getPort().postMessage(data);
+});
+```
+
+Source: `packages/extension-koni/src/content.ts:75-83`
+
+### Content Script to Page
+
+```typescript
+// In content script
+port.onMessage.addListener((data: {id: string, response: any}): void => {
+  // Forward to page
+  window.postMessage({ 
+    ...data, 
+    origin: MESSAGE_ORIGIN_CONTENT 
+  }, '*');
+});
+
+// In injected provider (on page)
+window.addEventListener('message', ({ data, source }) => {
+  if (source !== window || data.origin !== MESSAGE_ORIGIN_CONTENT) {
+    return;
+  }
+  
+  const handler = handlers[data.id];
+  if (handler) {
+    if (data.error) {
+      handler.reject(new Error(data.error));
+    } else {
+      handler.resolve(data.response);
+    }
+  }
+});
+```
+
+Source: `packages/extension-koni/src/content.ts:50-57`
+
+## Lazy Loading Pattern
+
+### Lazy Send
+
+```typescript
+export function lazySendMessage<TMessageType extends MessageTypesWithNoSubscriptions>(
+  message: TMessageType,
+  request: RequestTypes[TMessageType],
+  callback: (data: ResponseTypes[TMessageType]) => void
+): {
+  promise: Promise<ResponseTypes[TMessageType]>,
+  start: () => void
+} {
+  const id = getId();
+  const handlePromise = new Promise((resolve, reject): void => {
+    handlers[id] = { reject, resolve };
+  });
+  
+  const rs = {
+    promise: handlePromise as Promise<ResponseTypes[TMessageType]>,
+    start: () => {
+      if (!port) {
+        console.error('Port is not connected.');
+        return;
+      }
+      port.postMessage({ id, message, request: request || {} });
+    }
+  };
+  
+  rs.promise.then(callback).catch(console.error);
+  
+  return rs;
+}
+
+// Usage
+const handler = lazySendMessage(
+  'pri(accounts.list)',
+  null,
+  (accounts) => console.log(accounts)
+);
+
+// Start when ready
+handler.start();
+```
+
+Source: `packages/extension-koni-ui/src/messaging/base.ts:107-134`
+
+### Lazy Subscribe
+
+```typescript
+export function lazySubscribeMessage<TMessageType extends MessageTypesWithSubscriptions>(
+  message: TMessageType,
+  request: RequestTypes[TMessageType],
+  callback: (data: ResponseTypes[TMessageType]) => void,
+  subscriber: (data: SubscriptionMessageTypes[TMessageType]) => void
+): {
+  promise: Promise<ResponseTypes[TMessageType]>,
+  start: () => void,
+  unsub: () => void
+} {
+  const id = getId();
+  let cancel = false;
+  const handlePromise = new Promise((resolve, reject): void => {
+    handlers[id] = { reject, resolve, subscriber };
+  });
+  
+  return {
+    promise: handlePromise as Promise<ResponseTypes[TMessageType]>,
+    start: () => {
+      port.postMessage({ id, message, request: request || {} });
+    },
+    unsub: () => {
+      const handler = handlers[id];
+      cancel = true;
+      if (handler) {
+        delete handler.subscriber;
+        handler.resolve(null);
+      }
+    }
+  };
+}
+```
+
+Source: `packages/extension-koni-ui/src/messaging/base.ts:136-175`
+
+## Error Handling
+
+### Port Disconnection
+
+```typescript
+function onDisconnectPort() {
+  const err = checkForLastError();
+  
+  port.onDisconnect.removeListener(onDisconnectPort);
+  
+  if (err) {
+    console.warn(`${err.message}, Reconnecting to the port.`);
+    setTimeout(onConnectPort, 1000); // Retry after 1 second
+  } else {
+    console.error('Port disconnected. Please reload your wallet.');
+  }
+}
+
+function checkForLastError() {
+  const { lastError } = chrome.runtime;
+  if (!lastError) return undefined;
+  return new Error(lastError.message);
+}
+```
+
+Source: `packages/extension-koni-ui/src/messaging/base.ts:59-83`
+
+### Message Errors
+
+```typescript
+// In background handler
+promise.catch((error: ProviderError): void => {
+  console.error(error);
+  
+  if (port) {
+    port.postMessage({ 
+      error: error.message,
+      errorCode: error.code,
+      errorData: error.data,
+      id,
+      sender: 'BACKGROUND'
+    });
+  }
+});
+
+// In UI/content script
+if (data.error) {
+  handler.reject(new Error(data.error));
+} else {
+  handler.resolve(data.response);
+}
+```
+
+## Message Flow Examples
+
+### Example 1: Get Account List
+
+```typescript
+// 1. UI sends request
+const accounts = await sendMessage('pri(accounts.list)', null);
+
+// 2. Message goes through port to background
+port.postMessage({
+  id: 'abc123',
+  message: 'pri(accounts.list)',
+  origin: 'extension',
+  request: null
+});
+
+// 3. Background processes request
+const accounts = keyring.getAccounts();
+
+// 4. Background sends response
+port.postMessage({
+  id: 'abc123',
+  response: accounts,
+  sender: 'BACKGROUND'
+});
+
+// 5. UI receives and resolves promise
+handler.resolve(accounts);
+```
+
+### Example 2: Subscribe to Balance
+
+```typescript
+// 1. UI subscribes
+const { unsub } = subscribeMessage(
+  'pri(balance.subscribe)',
+  null,
+  (initial) => setBalances(initial),
+  (updates) => setBalances(updates)
+);
+
+// 2. Background returns initial state
+port.postMessage({
+  id: 'xyz789',
+  response: true,
+  sender: 'BACKGROUND'
+});
+
+// 3. Background sends subscription updates
+balanceService.on('update', (balances) => {
+  port.postMessage({
+    id: 'xyz789',
+    subscription: balances,
+    sender: 'BACKGROUND'
+  });
+});
+
+// 4. UI receives updates
+handler.subscriber(balances);
+
+// 5. UI unsubscribes
+unsub();
+```
+
+### Example 3: dApp Authorization
+
+```typescript
+// 1. dApp calls injected provider
+await window.injectedWeb3['subwallet-js'].enable('My dApp');
+
+// 2. Injected provider posts to window
+window.postMessage({
+  id: '123',
+  message: 'pub(authorize.tab)',
+  origin: MESSAGE_ORIGIN_PAGE,
+  request: { origin: 'https://mydapp.com' }
+}, '*');
+
+// 3. Content script forwards to background
+port.postMessage({
+  id: '123',
+  message: 'pub(authorize.tab)',
+  origin: 'https://mydapp.com',
+  request: { origin: 'https://mydapp.com' }
+});
+
+// 4. Background shows authorization popup
+await requestService.authorizeUrl(origin);
+
+// 5. Background sends response
+port.postMessage({
+  id: '123',
+  response: null,
+  sender: 'BACKGROUND'
+});
+
+// 6. Content script forwards to page
+window.postMessage({
+  id: '123',
+  response: null,
+  origin: MESSAGE_ORIGIN_CONTENT
+}, '*');
+
+// 7. Injected provider resolves promise
+handler.resolve(null);
+```
+
+## Best Practices
+
+1. **Always Validate Origins**: Check message origins to prevent injection
+2. **Handle Disconnections**: Implement reconnection logic
+3. **Use Type Safety**: Leverage TypeScript message signatures
+4. **Clean Up Subscriptions**: Always unsubscribe when component unmounts
+5. **Error Handling**: Wrap message calls in try-catch
+6. **Unique IDs**: Use `getId()` for unique message identifiers
+7. **Port Lifecycle**: Properly manage port connections and cleanup
+
+## Related Documentation
+
+- [Background Services](./background-services.mdx) - Background architecture
+- [Extension UI](./extension-ui.mdx) - UI messaging implementation
+- [Content Scripts](./content-scripts.mdx) - Content script messaging

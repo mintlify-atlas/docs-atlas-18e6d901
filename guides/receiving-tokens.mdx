@@ -1,0 +1,270 @@
+---
+title: Receiving Tokens
+description: Learn how to receive tokens and cryptocurrency into your SubWallet Extension account
+---
+
+Receiving tokens in SubWallet is straightforward. Each account has unique addresses for different blockchain networks, allowing you to receive a wide variety of tokens.
+
+## Quick Receive
+
+<Steps>
+  <Step title="Open the receive modal">
+    From the SubWallet home screen, click the **Receive** button. This opens the receive modal with your default address.
+  </Step>
+
+  <Step title="Share your address">
+    You can share your address in several ways:
+    - **Show QR code**: Display the QR code for others to scan
+    - **Copy address**: Click the copy button to copy your address to the clipboard
+    - **Share address**: Use the share button to send via email, messaging apps, etc.
+  </Step>
+
+  <Step title="Select the network (optional)">
+    If you want to receive tokens on a specific network:
+    1. Click on the network selector at the top
+    2. Choose the blockchain network
+    3. Your address will update to show the network-specific address
+
+    <Note>
+      Unified accounts use the same address format across compatible chains (like Polkadot and Kusama), while some networks like Ethereum have their own unique address.
+    </Note>
+  </Step>
+
+  <Step title="Wait for the deposit">
+    After sharing your address:
+    - Wait for the sender to complete their transaction
+    - Check the **History** tab to see incoming transactions
+    - Your balance will update once the transaction is confirmed on the blockchain
+  </Step>
+</Steps>
+
+## Receiving Specific Tokens
+
+To receive a specific token:
+
+<Steps>
+  <Step title="Navigate to the token">
+    From the home screen, go to the **Tokens** tab and find the token you want to receive.
+  </Step>
+
+  <Step title="Open token details">
+    Click on the token to open its detail view.
+  </Step>
+
+  <Step title="Click receive">
+    Click the **Receive** button in the token detail screen. This automatically selects the correct network for that token.
+  </Step>
+
+  <Step title="Share the address">
+    Use the QR code or copy button to share your address for this specific token and network.
+  </Step>
+</Steps>
+
+## Understanding Addresses
+
+### Unified Accounts
+
+Unified accounts (the default account type) use:
+- A **single seed phrase** for all networks
+- **Same address format** for Substrate-based chains (Polkadot, Kusama, etc.)
+- **Different addresses** for EVM chains (Ethereum, Polygon, etc.) and other networks
+
+<Note>
+  Even though unified accounts may show the same address across Substrate chains, tokens sent on one chain stay on that chain. For example, DOT sent to your Polkadot address won't appear on Kusama.
+</Note>
+
+### Chain-Specific Addresses
+
+Your account has unique addresses for different types of networks:
+
+- **Substrate chains**: Use the same address (e.g., Polkadot, Kusama, Acala)
+- **EVM chains**: Use the same Ethereum-style address (e.g., Ethereum, Moonbeam, BSC)
+- **Bitcoin**: Unique Bitcoin address
+- **Cardano**: Unique Cardano address
+- **TON**: Unique TON address
+
+To see all your addresses:
+
+<Steps>
+  <Step title="Open account details">
+    Click on your account name at the top of the extension.
+  </Step>
+
+  <Step title="View address list">
+    Scroll down to see the **Address List** section showing all your addresses across different networks.
+  </Step>
+
+  <Step title="Copy specific addresses">
+    Click the copy icon next to any address to copy it to your clipboard.
+  </Step>
+</Steps>
+
+## Receiving from Different Sources
+
+### From Another Wallet
+
+<Steps>
+  <Step title="Get your address">
+    Copy your SubWallet address for the appropriate network.
+  </Step>
+
+  <Step title="Verify the network">
+    Ensure the sender is using the same network. For example:
+    - If receiving USDT, confirm which chain (Ethereum, Polkadot, etc.)
+    - If receiving DOT, confirm it's on Polkadot (not AssetHub or another chain)
+  </Step>
+
+  <Step title="Share the address">
+    Send your address to the sender or show them your QR code.
+  </Step>
+</Steps>
+
+### From an Exchange (CEX)
+
+<Warning>
+  When withdrawing from centralized exchanges, always verify the network matches what SubWallet expects.
+</Warning>
+
+<Steps>
+  <Step title="Select the token on the exchange">
+    In your exchange account, navigate to the withdraw page for the token you want to receive.
+  </Step>
+
+  <Step title="Choose the correct network">
+    Exchanges often support multiple networks for the same token. Select the network that matches your SubWallet address:
+    - **USDT**: Could be ERC20 (Ethereum), BEP20 (BSC), TRC20 (Tron), etc.
+    - **DOT**: Should be Polkadot (not AssetHub)
+    - **ETH**: Ethereum mainnet or other EVM chains
+
+    <Tip>
+      If unsure which network to use, choose the network with the lowest withdrawal fee that's supported by both the exchange and SubWallet.
+    </Tip>
+  </Step>
+
+  <Step title="Enter your SubWallet address">
+    Paste your address from SubWallet into the exchange withdrawal form.
+  </Step>
+
+  <Step title="Double-check everything">
+    Before confirming:
+    - Verify the network selection
+    - Verify the full address was pasted correctly
+    - Check the withdrawal fee and minimum amount
+  </Step>
+
+  <Step title="Complete the withdrawal">
+    Confirm the withdrawal on the exchange. Deposits from exchanges can take anywhere from a few minutes to several hours depending on the network and exchange processing time.
+  </Step>
+</Steps>
+
+### From a DApp or Protocol
+
+<Steps>
+  <Step title="Connect SubWallet to the DApp">
+    Use the SubWallet browser extension to connect to the DApp.
+  </Step>
+
+  <Step title="Initiate the withdrawal or claim">
+    Follow the DApp's process to withdraw, claim, or receive tokens.
+  </Step>
+
+  <Step title="Confirm the transaction">
+    Approve the transaction in the SubWallet popup when prompted.
+  </Step>
+
+  <Step title="Wait for confirmation">
+    Your balance will update once the blockchain confirms the transaction.
+  </Step>
+</Steps>
+
+## Receiving NFTs
+
+NFTs are received the same way as fungible tokens:
+
+1. Copy your address for the NFT's blockchain network
+2. Share the address with the sender
+3. The NFT will appear in your **NFTs** tab after the transaction confirms
+
+See the [Managing NFTs guide](/guides/managing-nfts) for more details.
+
+## Checking Transaction Status
+
+<Steps>
+  <Step title="Open the History tab">
+    Click on the **History** tab in the SubWallet home screen.
+  </Step>
+
+  <Step title="Find your transaction">
+    Look for incoming transactions (marked with a green arrow). Pending transactions show a loading indicator.
+  </Step>
+
+  <Step title="View transaction details">
+    Click on a transaction to see:
+    - Transaction hash
+    - Block number
+    - Timestamp
+    - Amount and token
+    - Network fee
+    - Link to blockchain explorer
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Tokens haven't arrived yet">
+    If your deposit hasn't appeared:
+    1. Check the transaction status on the blockchain explorer using the transaction hash
+    2. Verify the sender sent to the correct address
+    3. Confirm the sender used the correct network
+    4. Wait for blockchain confirmations (can take minutes to hours depending on the network)
+    5. Refresh your SubWallet balance by switching tabs or reopening the extension
+  </Accordion>
+
+  <Accordion title="Wrong network deposit">
+    If you received tokens on the wrong network (e.g., USDT on BSC instead of Ethereum):
+    - The tokens may still be accessible if SubWallet supports that network
+    - Check if the token appears in your token list
+    - If the network isn't supported by SubWallet, you may need to import your account into a wallet that supports that network
+
+    <Warning>
+      If you gave someone an Ethereum address but they sent tokens on BSC (or vice versa), the funds might be recoverable since EVM addresses are the same across chains. Import your account into a wallet that supports the network where the funds were sent.
+    </Warning>
+  </Accordion>
+
+  <Accordion title="QR code not scanning">
+    If someone is having trouble scanning your QR code:
+    - Increase your screen brightness
+    - Zoom out to show the entire QR code
+    - Share the address as text instead
+    - Take a screenshot and send the QR code image
+  </Accordion>
+
+  <Accordion title="Address shows as invalid">
+    If a sender says your address is invalid:
+    - Verify you're giving the address for the correct network
+    - Ensure no spaces or extra characters were copied
+    - Try copying the address again
+    - Send the address in plain text rather than formatted (some messaging apps can alter addresses)
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+<Tip>
+  - Always verify the network before sharing your address
+  - Use QR codes when possible to avoid copy-paste errors
+  - For large deposits, test with a small amount first
+  - Save the transaction hash from the sender for tracking
+  - Check blockchain confirmations before considering funds fully received
+  - Be aware of minimum deposit amounts (especially for exchanges)
+</Tip>
+
+## Security Considerations
+
+<Warning>
+  - Only share your public address, never your seed phrase or private key
+  - Verify you're on the legitimate SubWallet extension (check the extension ID)
+  - Be cautious of fake QR codes or addresses sent through phishing attempts
+  - When receiving from unknown sources, be aware of potential dust attacks or scam tokens
+</Warning>

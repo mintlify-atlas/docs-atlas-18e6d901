@@ -1,0 +1,675 @@
+---
+title: Adding Features
+description: Step-by-step guide to adding new features to SubWallet Extension
+---
+
+This guide walks through the process of adding new features to SubWallet Extension, covering APIs, stores, message handlers, cron jobs, and UI components.
+
+## Understanding the Architecture
+
+Before adding features, understand SubWallet's architecture:
+
+- **Background Environment**: Handles API calls, state management, and cron jobs
+- **Extension UI**: React-based frontend (popup, portfolio pages)
+- **Injected Scripts**: Provides wallet functionality to dApps
+- **Message Passing**: Communication between components
+
+Key principle: **All data requests must be processed in the background. Extension pages and injected scripts use data from the background and do not call APIs directly.**
+
+## Adding an API
+
+APIs are defined in `packages/extension-koni-base/src/api` and handle external data fetching.
+
+<Steps>
+  <Step title="Create API File">
+    Add a new file based on the API type. For example, create `packages/extension-koni-base/src/api/nft.ts`:
+
+    ```typescript
+    import axios from 'axios';
+    import { NftCollection, NftItem } from '../types';
+
+    const NFT_API_BASE = 'https://api.nft-service.com';
+
+    // Simple function-based API
+    export async function fetchNftCollection(address: string): Promise<NftCollection> {
+      const response = await axios.get(`${NFT_API_BASE}/collection/${address}`);
+      return response.data;
+    }
+
+    // Object-based API for complex logic
+    export const NftApi = {
+      async getCollection(address: string): Promise<NftCollection> {
+        const response = await axios.get(`${NFT_API_BASE}/collection/${address}`);
+        return response.data;
+      },
+
+      async getItems(collectionId: string): Promise<NftItem[]> {
+        const response = await axios.get(`${NFT_API_BASE}/items/${collectionId}`);
+        return response.data.items;
+      },
+
+      async getUserNfts(userAddress: string): Promise<NftItem[]> {
+        const response = await axios.get(`${NFT_API_BASE}/user/${userAddress}/nfts`);
+        return response.data;
+      }
+    };
+    ```
+  </Step>
+
+  <Step title="Define Types">
+    Add corresponding types in `packages/extension-koni-base/src/types.ts`:
+
+    ```typescript
+    export interface NftCollection {
+      id: string;
+      name: string;
+      description: string;
+      imageUrl: string;
+      itemCount: number;
+    }
+
+    export interface NftItem {
+      id: string;
+      collectionId: string;
+      name: string;
+      imageUrl: string;
+      owner: string;
+      metadata: Record<string, any>;
+    }
+    ```
+  </Step>
+
+  <Step title="Use API in Background">
+    Import and use the API in `KoniState` or other background services:
+
+    ```typescript
+    import { NftApi } from '../api/nft';
+
+    export default class KoniState extends State {
+      public async loadUserNfts(address: string): Promise<NftItem[]> {
+        try {
+          const nfts = await NftApi.getUserNfts(address);
+          return nfts;
+        } catch (error) {
+          console.error('Failed to load NFTs:', error);
+          return [];
+        }
+      }
+    }
+    ```
+  </Step>
+</Steps>
+
+## Adding a Store
+
+Stores persist data to Chrome local storage and are defined in `packages/extension-koni-base/src/store`.
+
+<Steps>
+  <Step title="Create Store Class">
+    Create a new store file, e.g., `packages/extension-koni-base/src/store/Nft.ts`:
+
+    ```typescript
+    import { SubscribableStore } from './SubscribableStore';
+    import { NftData } from '../types';
+
+    const EXTENSION_PREFIX = 'koni';
+
+    export default class Nft extends SubscribableStore<NftData> {
+      constructor() {
+        super(EXTENSION_PREFIX ? `${EXTENSION_PREFIX}-nft` : null);
+      }
+    }
+    ```
+
+    **Store Types:**
+    - `BaseStore`: Basic persistence to Chrome storage
+    - `SubscribableStore`: Extends `BaseStore`, includes RxJS subject for subscriptions
+  </Step>
+
+  <Step title="Define Store Data Type">
+    Add the data type in `packages/extension-koni-base/src/types.ts`:
+
+    ```typescript
+    export interface NftData {
+      collections: Record<string, NftCollection>;
+      items: Record<string, NftItem>;
+      userNfts: Record<string, string[]>; // address -> nft IDs
+      lastUpdate: number;
+    }
+    ```
+  </Step>
+
+  <Step title="Integrate Store in KoniState">
+    Add the store to `KoniState` in `packages/extension-koni-base/src/background/KoniState.ts`:
+
+    ```typescript
+    import Nft from '../store/Nft';
+
+    export default class KoniState extends State {
+      private readonly nftStore = new Nft();
+      private nftStoreReady = false;
+
+      // Initialize store
+      async init() {
+        await this.nftStore.init();
+        this.nftStoreReady = true;
+      }
+
+      // Setter method
+      public setNftData(nftData: NftData, callback?: (data: NftData) => void): void {
+        this.nftStore.set(nftData);
+        
+        if (callback) {
+          callback(nftData);
+        }
+      }
+
+      // Getter method
+      public getNftData(update: (value: NftData) => void): void {
+        if (!this.nftStoreReady) {
+          this.nftStore.get().then(update).catch(console.error);
+        } else {
+          this.nftStore.get().then(update).catch(console.error);
+        }
+      }
+
+      // Subscription method
+      public subscribeNftData() {
+        return this.nftStore.getSubject();
+      }
+    }
+    ```
+  </Step>
+</Steps>
+
+## Adding a Message Handler
+
+Message handlers enable communication between the background, extension UI, and web pages.
+
+<Steps>
+  <Step title="Define Request Type">
+    Add the message type to `KoniRequestSignatures` interface:
+
+    ```typescript
+    // In packages/extension-koni-base/src/background/types.ts
+
+    export interface RequestNftData {
+      address: string;
+    }
+
+    export interface RequestSubscribeNft {
+      address?: string;
+    }
+
+    export interface KoniRequestSignatures {
+      // Extension messages (start with 'pri')
+      'pri(nft.getData)': [RequestNftData, NftData];
+      'pri(nft.subscribe)': [RequestSubscribeNft, boolean, NftData];
+      
+      // Tab messages (start with 'pub')
+      'pub(nft.getUserNfts)': [RequestNftData, NftItem[]];
+    }
+    ```
+
+    **Message Type Format:**
+    - `pri(...)` - Messages from extension pages
+    - `pub(...)` - Messages from web pages/tabs
+    - Array format: `[RequestType, ResponseType]` or `[RequestType, SubscriptionBool, SubscriptionType]`
+  </Step>
+
+  <Step title="Add Handler in Background">
+    Implement the handler in `KoniExtension` or `KoniTabs`:
+
+    **For Extension Messages (KoniExtension):**
+    ```typescript
+    // In packages/extension-koni-base/src/background/handlers/Extension.ts
+
+    private async handle<TMessageType extends MessageTypes>(
+      id: string,
+      type: TMessageType,
+      request: RequestTypes[TMessageType]
+    ): Promise<ResponseType<TMessageType>> {
+      switch (type) {
+        // ... existing cases
+
+        case 'pri(nft.getData)': {
+          const { address } = request as RequestNftData;
+          return await this.state.loadUserNfts(address);
+        }
+
+        case 'pri(nft.subscribe)': {
+          const { address } = request as RequestSubscribeNft;
+          const subject = this.state.subscribeNftData();
+          
+          return subject.pipe(
+            map((data) => address ? {
+              ...data,
+              userNfts: { [address]: data.userNfts[address] || [] }
+            } : data)
+          );
+        }
+      }
+    }
+    ```
+
+    **For Tab Messages (KoniTabs):**
+    ```typescript
+    // In packages/extension-koni-base/src/background/handlers/Tabs.ts
+
+    case 'pub(nft.getUserNfts)': {
+      const { address } = request as RequestNftData;
+      return await NftApi.getUserNfts(address);
+    }
+    ```
+  </Step>
+
+  <Step title="Add Caller in UI">
+    Create message sender functions in `packages/extension-koni-ui/src/messaging.ts`:
+
+    ```typescript
+    import type { RequestNftData, NftData, NftItem } from '@subwallet/extension-koni-base/background/types';
+
+    // One-time request
+    export async function getNftData(address: string): Promise<NftData> {
+      return sendMessage('pri(nft.getData)', { address });
+    }
+
+    // Subscription request
+    export function subscribeNftData(
+      address: string | undefined,
+      callback: (data: NftData) => void
+    ): () => void {
+      const unsubscribe = subscribeTo(
+        'pri(nft.subscribe)',
+        { address },
+        callback
+      );
+
+      return unsubscribe;
+    }
+    ```
+  </Step>
+
+  <Step title="Use in React Components">
+    Call the messaging functions from UI components:
+
+    ```typescript
+    import { getNftData, subscribeNftData } from '../messaging';
+    import { useEffect, useState } from 'react';
+
+    export function NftGallery({ address }: { address: string }) {
+      const [nftData, setNftData] = useState<NftData | null>(null);
+
+      useEffect(() => {
+        // One-time fetch
+        getNftData(address)
+          .then(setNftData)
+          .catch(console.error);
+
+        // Or subscribe to updates
+        const unsubscribe = subscribeNftData(address, setNftData);
+        
+        return unsubscribe;
+      }, [address]);
+
+      return (
+        <div>
+          {nftData?.userNfts[address]?.map(nftId => (
+            <div key={nftId}>{nftData.items[nftId]?.name}</div>
+          ))}
+        </div>
+      );
+    }
+    ```
+  </Step>
+</Steps>
+
+## Adding a Cron Job
+
+Cron jobs run periodic tasks in the background, such as price updates or chain synchronization.
+
+<Steps>
+  <Step title="Create Cron File">
+    Create a cron file in `packages/extension-koni-base/src/cron/`, e.g., `nftSync.ts`:
+
+    ```typescript
+    import { NftApi } from '../api/nft';
+    import type KoniState from '../background/KoniState';
+
+    export function startNftSync(state: KoniState, interval: number = 300000) {
+      // Run immediately on start
+      syncNfts(state);
+
+      // Then run periodically
+      setInterval(() => {
+        syncNfts(state);
+      }, interval);
+    }
+
+    async function syncNfts(state: KoniState) {
+      try {
+        console.log('[NFT Sync] Starting sync...');
+        
+        // Get active addresses
+        const addresses = await state.getActiveAddresses();
+        
+        // Fetch NFTs for each address
+        for (const address of addresses) {
+          const nfts = await NftApi.getUserNfts(address);
+          
+          // Update store
+          state.updateUserNfts(address, nfts);
+        }
+        
+        console.log('[NFT Sync] Sync completed');
+      } catch (error) {
+        console.error('[NFT Sync] Sync failed:', error);
+      }
+    }
+    ```
+  </Step>
+
+  <Step title="Register in KoniCron">
+    Add the cron job to `KoniCron.init()` in `packages/extension-koni-base/src/background/KoniCron.ts`:
+
+    ```typescript
+    import { startNftSync } from '../cron/nftSync';
+
+    export default class KoniCron {
+      private state: KoniState;
+
+      constructor(state: KoniState) {
+        this.state = state;
+      }
+
+      init() {
+        // Existing cron jobs
+        this.startPriceSync();
+        this.startChainSync();
+        
+        // Add new NFT sync
+        startNftSync(this.state, 300000); // Run every 5 minutes
+      }
+    }
+    ```
+  </Step>
+
+  <Step title="Make Configurable (Optional)">
+    Allow users to configure the interval:
+
+    ```typescript
+    export default class KoniState extends State {
+      private nftSyncInterval: number = 300000; // default 5 min
+
+      public setNftSyncInterval(interval: number) {
+        this.nftSyncInterval = interval;
+        // Restart cron with new interval
+      }
+    }
+    ```
+  </Step>
+</Steps>
+
+## Developing UI Components
+
+SubWallet Extension UI is built with React and Redux Toolkit.
+
+### UI Structure
+
+- `packages/extension-koni-ui/src/`
+  - `Popup.tsx` - Main extension popup
+  - `components/` - Reusable components
+  - `hooks/` - Custom React hooks
+  - `stores/` - Redux stores
+  - `partials/` - Header and layout components
+  - `messaging.ts` - Message passing functions
+
+<Steps>
+  <Step title="Create Redux Store">
+    Define a Redux slice in `packages/extension-koni-ui/src/stores/nft.ts`:
+
+    ```typescript
+    import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+    import type { NftData } from '@subwallet/extension-koni-base/background/types';
+
+    interface NftState {
+      data: NftData | null;
+      loading: boolean;
+      error: string | null;
+    }
+
+    const initialState: NftState = {
+      data: null,
+      loading: false,
+      error: null
+    };
+
+    const nftSlice = createSlice({
+      name: 'nft',
+      initialState,
+      reducers: {
+        setNftData(state, action: PayloadAction<NftData>) {
+          state.data = action.payload;
+          state.loading = false;
+          state.error = null;
+        },
+        setLoading(state, action: PayloadAction<boolean>) {
+          state.loading = action.payload;
+        },
+        setError(state, action: PayloadAction<string>) {
+          state.error = action.payload;
+          state.loading = false;
+        }
+      }
+    });
+
+    export const { setNftData, setLoading, setError } = nftSlice.actions;
+    export default nftSlice.reducer;
+    ```
+  </Step>
+
+  <Step title="Register Store">
+    Add the reducer to the root store in `packages/extension-koni-ui/src/stores/index.ts`:
+
+    ```typescript
+    import { configureStore } from '@reduxjs/toolkit';
+    import nftReducer from './nft';
+
+    export const store = configureStore({
+      reducer: {
+        // ... existing reducers
+        nft: nftReducer
+      }
+    });
+
+    export type RootState = ReturnType<typeof store.getState>;
+    export type AppDispatch = typeof store.dispatch;
+    ```
+  </Step>
+
+  <Step title="Create UI Component">
+    Build the React component:
+
+    ```typescript
+    import React, { useEffect } from 'react';
+    import { useDispatch, useSelector } from 'react-redux';
+    import { subscribeNftData } from '../messaging';
+    import { setNftData, setLoading } from '../stores/nft';
+    import type { RootState } from '../stores';
+
+    export function NftGallery() {
+      const dispatch = useDispatch();
+      const { data, loading, error } = useSelector((state: RootState) => state.nft);
+      const currentAddress = useSelector((state: RootState) => state.account.currentAddress);
+
+      useEffect(() => {
+        dispatch(setLoading(true));
+
+        const unsubscribe = subscribeNftData(currentAddress, (nftData) => {
+          dispatch(setNftData(nftData));
+        });
+
+        return unsubscribe;
+      }, [currentAddress, dispatch]);
+
+      if (loading) return <div>Loading NFTs...</div>;
+      if (error) return <div>Error: {error}</div>;
+      if (!data) return <div>No NFT data</div>;
+
+      const userNfts = data.userNfts[currentAddress] || [];
+
+      return (
+        <div className="nft-gallery">
+          <h2>My NFTs</h2>
+          <div className="nft-grid">
+            {userNfts.map(nftId => {
+              const nft = data.items[nftId];
+              return (
+                <div key={nftId} className="nft-card">
+                  <img src={nft.imageUrl} alt={nft.name} />
+                  <h3>{nft.name}</h3>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+    ```
+  </Step>
+
+  <Step title="Add Routing (if needed)">
+    If creating a new page, add routing:
+
+    ```typescript
+    // In Popup.tsx or router configuration
+    import { NftGallery } from './components/NftGallery';
+
+    <Route path="/nfts" element={<NftGallery />} />
+    ```
+  </Step>
+</Steps>
+
+## Code Quality
+
+Before committing your feature:
+
+<Steps>
+  <Step title="Run Linter">
+    ```bash
+    yarn lint
+    ```
+
+    Fix any linting errors. SubWallet uses ESLint for code validation.
+  </Step>
+
+  <Step title="Write Tests">
+    Create test files with `.spec.ts` extension:
+
+    ```typescript
+    // nftApi.spec.ts
+    import { NftApi } from './nft';
+
+    describe('NFT API', () => {
+      test('should fetch user NFTs', async () => {
+        const nfts = await NftApi.getUserNfts('0x123...');
+        expect(Array.isArray(nfts)).toBe(true);
+      });
+    });
+    ```
+  </Step>
+
+  <Step title="Run Tests">
+    ```bash
+    yarn test
+    ```
+
+    Ensure all tests pass.
+  </Step>
+
+  <Step title="Build and Test">
+    ```bash
+    yarn build
+    ```
+
+    Load the extension in your browser and test the new feature thoroughly.
+  </Step>
+</Steps>
+
+## Best Practices
+
+### API Guidelines
+
+- Keep API logic separate from business logic
+- Use simple functions for single-purpose APIs
+- Use objects for grouped related API calls
+- Always handle errors gracefully
+- Add appropriate TypeScript types
+
+### Store Guidelines
+
+- Use `BaseStore` for simple data persistence
+- Use `SubscribableStore` when UI needs real-time updates
+- Always initialize stores in `KoniState.init()`
+- Use consistent naming: `${EXTENSION_PREFIX}-${storeName}`
+
+### Message Handler Guidelines
+
+- Prefix extension messages with `pri`
+- Prefix tab messages with `pub`
+- Define all types in `KoniRequestSignatures`
+- Keep handlers focused and simple
+- Log errors appropriately
+
+### Cron Job Guidelines
+
+- Make intervals configurable
+- Add error handling for network failures
+- Log start and completion
+- Consider rate limiting for external APIs
+- Clean up resources on extension unload
+
+### UI Guidelines
+
+- Use Redux Toolkit for state management
+- Subscribe to background data instead of polling
+- Handle loading and error states
+- Keep components focused and reusable
+- Follow existing styling patterns
+
+## Example: Complete Feature Implementation
+
+Here's how all the pieces fit together for a complete NFT feature:
+
+```typescript
+// 1. API (packages/extension-koni-base/src/api/nft.ts)
+export const NftApi = {
+  async getUserNfts(address: string): Promise<NftItem[]> { /*...*/ }
+};
+
+// 2. Store (packages/extension-koni-base/src/store/Nft.ts)
+export default class Nft extends SubscribableStore<NftData> { /*...*/ }
+
+// 3. State integration (packages/extension-koni-base/src/background/KoniState.ts)
+export default class KoniState {
+  private readonly nftStore = new Nft();
+  public subscribeNftData() { return this.nftStore.getSubject(); }
+}
+
+// 4. Message handler (packages/extension-koni-base/src/background/handlers/Extension.ts)
+case 'pri(nft.subscribe)': return this.state.subscribeNftData();
+
+// 5. Cron (packages/extension-koni-base/src/cron/nftSync.ts)
+export function startNftSync(state: KoniState) { /*...*/ }
+
+// 6. Messaging (packages/extension-koni-ui/src/messaging.ts)
+export function subscribeNftData(callback) { /*...*/ }
+
+// 7. Redux (packages/extension-koni-ui/src/stores/nft.ts)
+const nftSlice = createSlice({ /*...*/ });
+
+// 8. Component (packages/extension-koni-ui/src/components/NftGallery.tsx)
+export function NftGallery() { /*...*/ }
+```
+
+This architecture ensures clean separation of concerns, maintainability, and follows SubWallet's design patterns.

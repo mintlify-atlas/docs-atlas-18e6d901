@@ -1,0 +1,473 @@
+---
+title: Content Scripts
+description: Understanding SubWallet's content script architecture for dApp integration and page injection
+---
+
+## Overview
+
+Content scripts act as a bridge between web pages and the SubWallet Extension background service. They enable dApps to interact with the wallet through the injected provider API while maintaining security boundaries.
+
+## Architecture
+
+```
+Web Page (dApp)
+       |
+       v
+Injected Provider (window.injectedWeb3)
+       |
+       v
+window.postMessage
+       |
+       v
+Content Script
+       |
+       v
+chrome.runtime.Port
+       |
+       v
+Background Service
+```
+
+## Content Script Entry Point
+
+**Location**: `packages/extension-koni/src/content.ts`
+
+```typescript
+import type { Message } from '@subwallet/extension-base/types';
+import { TransportRequestMessage } from '@subwallet/extension-base/background/types';
+import { 
+  MESSAGE_ORIGIN_CONTENT, 
+  MESSAGE_ORIGIN_PAGE, 
+  PORT_CONTENT 
+} from '@subwallet/extension-base/defaults';
+
+export class ContentHandler {
+  port?: chrome.runtime.Port;
+  isShowNotification = false;
+  isConnected = false;
+
+  // Get the port to communicate with the background
+  getPort(): chrome.runtime.Port {
+    if (!this.port) {
+      const port = chrome.runtime.connect({ name: PORT_CONTENT });
+      const onMessageHandler = this.onPortMessageHandler.bind(this);
+      
+      const disconnectHandler = () => {
+        this.onDisconnectPort(port, onMessageHandler, disconnectHandler);
+      };
+      
+      this.port = port;
+      this.port.onMessage.addListener(onMessageHandler);
+      this.port.onDisconnect.addListener(disconnectHandler);
+    }
+    
+    return this.port;
+  }
+
+  constructor() {
+    this.redirectIfPhishingProm();
+    window.addEventListener('message', this.onPageMessage.bind(this));
+  }
+}
+
+const contentHandler = new ContentHandler();
+```
+
+Source: `packages/extension-koni/src/content.ts:26-130`
+
+## Key Components
+
+### 1. Port Management
+
+The content script maintains a persistent connection to the background service.
+
+```typescript
+getPort(): chrome.runtime.Port {
+  if (!this.port) {
+    const port = chrome.runtime.connect({ name: PORT_CONTENT });
+    const onMessageHandler = this.onPortMessageHandler.bind(this);
+    
+    const disconnectHandler = () => {
+      this.onDisconnectPort(port, onMessageHandler, disconnectHandler);
+    };
+    
+    this.port = port;
+    this.port.onMessage.addListener(onMessageHandler);
+    this.port.onDisconnect.addListener(disconnectHandler);
+  }
+  
+  return this.port;
+}
+```
+
+Source: `packages/extension-koni/src/content.ts:32-47`
+
+**Port Lifecycle**:
+1. **Connect**: Establish connection when first needed
+2. **Listen**: Attach message and disconnect handlers
+3. **Communicate**: Send/receive messages via port
+4. **Disconnect**: Clean up on disconnect or error
+5. **Reconnect**: Automatically handled on next message
+
+### 2. Message Handling from Background
+
+Messages from the background are forwarded to the page.
+
+```typescript
+onPortMessageHandler(data: {id: string, response: any}): void {
+  const { id, resolve } = handleRedirectPhishing;
+  
+  if (data?.id === id) {
+    // Handle phishing check response
+    resolve && resolve(Boolean(data.response));
+  } else {
+    // Forward all other messages to the page
+    window.postMessage({ 
+      ...data, 
+      origin: MESSAGE_ORIGIN_CONTENT 
+    }, '*');
+  }
+}
+```
+
+Source: `packages/extension-koni/src/content.ts:50-58`
+
+### 3. Message Handling from Page
+
+Messages from the injected provider are forwarded to the background.
+
+```typescript
+onPageMessage({ data, source }: Message): void {
+  // Only allow messages from our window, by the inject
+  if (source !== window || data.origin !== MESSAGE_ORIGIN_PAGE) {
+    return;
+  }
+  
+  try {
+    this.isConnected = true;
+    this.getPort().postMessage(data);
+  } catch (e) {
+    console.error(e);
+    
+    if (!this.isShowNotification) {
+      console.log('The SubWallet extension is not installed.');
+      addNotificationPopUp();
+      this.isShowNotification = true;
+      
+      setTimeout(() => {
+        this.isShowNotification = false;
+      }, 5000);
+    }
+  }
+}
+```
+
+Source: `packages/extension-koni/src/content.ts:75-97`
+
+**Security Checks**:
+- Only processes messages from the same window
+- Verifies message origin matches `MESSAGE_ORIGIN_PAGE`
+- Prevents message injection from other sources
+
+### 4. Port Disconnection Handling
+
+```typescript
+onDisconnectPort(
+  port: chrome.runtime.Port, 
+  onMessage: (data: {id: string, response: any}) => void, 
+  onDisconnect: () => void
+): void {
+  const err = checkForLastError();
+  
+  if (err) {
+    console.warn(`${err.message}, port is disconnected.`);
+  }
+  
+  port.onMessage.removeListener(onMessage);
+  port.onDisconnect.removeListener(onDisconnect);
+  
+  this.port = undefined;
+}
+
+function checkForLastError() {
+  const { lastError } = chrome.runtime;
+  
+  if (!lastError) {
+    return undefined;
+  }
+  
+  // Repair incomplete error object (eg chromium v77)
+  return new Error(lastError.message);
+}
+```
+
+Source: `packages/extension-koni/src/content.ts:61-72,15-24`
+
+## Message Origins
+
+The content script uses specific origin identifiers for security:
+
+```typescript
+const MESSAGE_ORIGIN_PAGE = 'koni-page';       // From injected provider
+const MESSAGE_ORIGIN_CONTENT = 'koni-content'; // From content script
+```
+
+Source: `packages/extension-base/src/defaults.ts:20-21`
+
+**Message Flow**:
+
+```
+dApp calls window.injectedWeb3['subwallet-js'].enable()
+       |
+       v
+Injected provider creates message with MESSAGE_ORIGIN_PAGE
+       |
+       v
+window.postMessage(message)
+       |
+       v
+Content script receives (validates origin)
+       |
+       v
+Content script forwards via port.postMessage()
+       |
+       v
+Background processes request
+       |
+       v
+Background sends response via port.postMessage()
+       |
+       v
+Content script receives response
+       |
+       v
+Content script forwards via window.postMessage() with MESSAGE_ORIGIN_CONTENT
+       |
+       v
+Injected provider receives and resolves promise
+```
+
+## Phishing Protection
+
+The content script implements phishing detection on page load.
+
+```typescript
+redirectIfPhishingProm(): void {
+  new Promise<boolean>((resolve, reject) => {
+    handleRedirectPhishing.resolve = resolve;
+    handleRedirectPhishing.reject = reject;
+    
+    const transportRequestMessage: TransportRequestMessage<'pub(phishing.redirectIfDenied)'> = {
+      id: handleRedirectPhishing.id,
+      message: 'pub(phishing.redirectIfDenied)',
+      origin: MESSAGE_ORIGIN_PAGE,
+      request: null
+    };
+    
+    this.getPort().postMessage(transportRequestMessage);
+  }).then((gotRedirected) => {
+    if (!gotRedirected) {
+      console.log('Check phishing by URL: Passed.');
+    }
+  }).catch((e) => {
+    console.warn(`Unable to determine if the site is in the phishing list: ${(e as Error).message}`);
+  });
+}
+```
+
+Source: `packages/extension-koni/src/content.ts:100-120`
+
+**Phishing Flow**:
+1. Content script loads on every page
+2. Immediately sends phishing check request to background
+3. Background checks URL against phishing database
+4. If malicious, background redirects to warning page
+5. If safe, page loads normally
+
+## Error Handling
+
+### Connection Errors
+
+```typescript
+try {
+  this.isConnected = true;
+  this.getPort().postMessage(data);
+} catch (e) {
+  console.error(e);
+  
+  if (!this.isShowNotification) {
+    console.log('The SubWallet extension is not installed.');
+    addNotificationPopUp();
+    this.isShowNotification = true;
+    
+    // Prevent notification spam
+    setTimeout(() => {
+      this.isShowNotification = false;
+    }, 5000);
+  }
+}
+```
+
+Source: `packages/extension-koni/src/content.ts:81-96`
+
+**Error Scenarios**:
+- Extension disabled or uninstalled
+- Background service crashed
+- Port disconnected unexpectedly
+- Message posting failed
+
+### Notification Throttling
+
+The content script prevents notification spam with a flag:
+
+```typescript
+isShowNotification = false;
+
+// Show notification
+if (!this.isShowNotification) {
+  addNotificationPopUp();
+  this.isShowNotification = true;
+  
+  // Reset after 5 seconds
+  setTimeout(() => {
+    this.isShowNotification = false;
+  }, 5000);
+}
+```
+
+This ensures users don't see repeated error notifications within 5 seconds.
+
+## Injected Provider Integration
+
+The content script works with the injected provider API:
+
+**Injected at**: Page load by extension manifest
+
+**Available APIs**:
+- `window.injectedWeb3['subwallet-js']` - Polkadot/Substrate API
+- `window.injectedWeb3['subwallet']` - Legacy API
+- EVM provider APIs
+
+**Example Provider Call**:
+```typescript
+// On the web page
+const provider = window.injectedWeb3['subwallet-js'];
+
+// Enable wallet
+await provider.enable('My dApp');
+
+// Get accounts
+const accounts = await provider.accounts.get();
+
+// Sign message
+const signature = await provider.signer.signRaw({
+  address: accounts[0].address,
+  data: '0x1234',
+  type: 'bytes'
+});
+```
+
+Each call goes through:
+1. Injected provider → window.postMessage
+2. Content script → chrome.runtime.Port
+3. Background service → process request
+4. Background → chrome.runtime.Port
+5. Content script → window.postMessage
+6. Injected provider → resolve promise
+
+## Security Considerations
+
+### Message Validation
+
+```typescript
+// Only allow messages from our window
+if (source !== window || data.origin !== MESSAGE_ORIGIN_PAGE) {
+  return;
+}
+```
+
+**Protections**:
+- Validates message source is the current window
+- Checks origin matches expected value
+- Prevents cross-origin message injection
+- Blocks iframe message spoofing
+
+### Isolated Execution Context
+
+Content scripts run in an isolated world:
+- Cannot directly access page JavaScript variables
+- Cannot be accessed by page JavaScript
+- Can only communicate via window.postMessage
+- Has access to Chrome extension APIs
+- Has access to page DOM
+
+## Best Practices
+
+1. **Origin Validation**: Always validate message origin
+2. **Error Handling**: Gracefully handle port disconnections
+3. **Notification Management**: Prevent notification spam
+4. **Port Lifecycle**: Clean up listeners on disconnect
+5. **Security**: Never expose extension APIs to page context
+
+## Common Patterns
+
+### Handling Port Reconnection
+
+```typescript
+getPort(): chrome.runtime.Port {
+  if (!this.port) {
+    // Create new connection
+    const port = chrome.runtime.connect({ name: PORT_CONTENT });
+    // Setup handlers
+    this.port = port;
+    this.port.onMessage.addListener(...);
+    this.port.onDisconnect.addListener(...);
+  }
+  return this.port;
+}
+```
+
+The `getPort()` method automatically creates a new connection if needed.
+
+### Message Filtering
+
+```typescript
+// Handle specific messages differently
+if (data?.id === specialMessageId) {
+  // Handle special case
+  handleSpecialMessage(data);
+} else {
+  // Forward to page
+  window.postMessage({ ...data, origin: MESSAGE_ORIGIN_CONTENT }, '*');
+}
+```
+
+## Debugging
+
+### Console Messages
+
+```typescript
+// Phishing check passed
+console.log('Check phishing by URL: Passed.');
+
+// Connection error
+console.error(e);
+console.log('The SubWallet extension is not installed.');
+
+// Port disconnect
+console.warn(`${err.message}, port is disconnected.`);
+```
+
+### Chrome DevTools
+
+1. Open DevTools on the web page
+2. Go to Sources → Content Scripts
+3. Find SubWallet content script
+4. Set breakpoints in message handlers
+5. Inspect messages in console
+
+## Related Documentation
+
+- [Message Passing](./message-passing.mdx) - Communication protocols
+- [Background Services](./background-services.mdx) - Background architecture
+- [Extension UI](./extension-ui.mdx) - UI component architecture

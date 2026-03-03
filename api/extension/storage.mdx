@@ -1,0 +1,521 @@
+---
+title: Storage Layer
+description: Chrome storage API integration and persistence utilities
+---
+
+## Overview
+
+SubWallet Extension's storage layer provides a wrapper around Chrome's `chrome.storage.local` API with error handling, prefixing, and type safety. All persistent data is stored using this system.
+
+## Storage Interface
+
+The storage system is built on Chrome's storage API:
+
+```typescript
+chrome.storage.local.get(keys, callback);
+chrome.storage.local.set(items, callback);
+chrome.storage.local.remove(keys, callback);
+```
+
+## Storage Constants
+
+Common storage keys are defined as constants:
+
+```typescript
+// Language settings
+export const LANGUAGE = 'current-language';
+export const DEFAULT_LANGUAGE = 'en';
+
+// Currency settings
+export const CURRENCY = 'current-currency';
+
+// User preferences
+export const REMIND_EXPORT_ACCOUNT = 'remind_export_account';
+
+// Session tracking
+export const LATEST_SESSION = 'general.latest-session';
+
+// Migration flags
+export const UPGRADE_DUPLICATE_ACCOUNT_NAME = 'general.upgrade-duplicate-account-name';
+```
+
+## Storage Data Interface
+
+```typescript
+export interface StorageDataInterface {
+  key: string;
+  value: unknown;
+}
+```
+
+<ParamField path="key" type="string" required>
+  Storage key identifier
+</ParamField>
+
+<ParamField path="value" type="unknown" required>
+  Serializable value to store
+</ParamField>
+
+## BaseStore Implementation
+
+The `BaseStore` class provides the foundational storage operations.
+
+### Constructor
+
+```typescript
+class BaseStore<T> {
+  constructor(prefix: string | null);
+}
+```
+
+<ParamField path="prefix" type="string | null" required>
+  Storage key prefix for namespacing. Pass `null` for no prefix.
+</ParamField>
+
+**Example:**
+
+```typescript
+const store = new BaseStore('myapp');
+// Keys will be prefixed: "myapp:key-name"
+```
+
+### Storage Operations
+
+#### get
+
+Retrieve a single value from storage.
+
+```typescript
+get(key: string, update: (value: T) => void): void
+```
+
+<ParamField path="key" type="string" required>
+  Storage key without prefix
+</ParamField>
+
+<ParamField path="update" type="(value: T) => void" required>
+  Callback invoked with the retrieved value
+</ParamField>
+
+**Example:**
+
+```typescript
+store.get('user-settings', (settings) => {
+  console.log('Settings:', settings);
+});
+```
+
+**Implementation:**
+
+```typescript
+public get(_key: string, update: (value: T) => void): void {
+  const key = `${this.#prefix}${_key}`;
+  
+  chrome.storage.local.get([key], (result: StoreValue): void => {
+    // Check for errors
+    const error = chrome.runtime.lastError;
+    if (error) {
+      console.error(`BaseStore.get:: runtime.lastError:`, error);
+    }
+    
+    update(result[key] as T);
+  });
+}
+```
+
+#### set
+
+Store a value in Chrome storage.
+
+```typescript
+set(key: string, value: T, update?: () => void): void
+```
+
+<ParamField path="key" type="string" required>
+  Storage key without prefix
+</ParamField>
+
+<ParamField path="value" type="T" required>
+  Value to store (must be JSON-serializable)
+</ParamField>
+
+<ParamField path="update" type="() => void">
+  Optional callback invoked after storage completes
+</ParamField>
+
+**Example:**
+
+```typescript
+store.set('user-settings', {
+  theme: 'dark',
+  language: 'en'
+}, () => {
+  console.log('Settings saved!');
+});
+```
+
+**Implementation:**
+
+```typescript
+public set(_key: string, value: T, update?: () => void): void {
+  const key = `${this.#prefix}${_key}`;
+  
+  chrome.storage.local.set({ [key]: value }, (): void => {
+    const error = chrome.runtime.lastError;
+    if (error) {
+      console.error(`BaseStore.set:: runtime.lastError:`, error);
+    }
+    
+    update && update();
+  });
+}
+```
+
+#### remove
+
+Delete a value from storage.
+
+```typescript
+remove(key: string, update?: () => void): void
+```
+
+<ParamField path="key" type="string" required>
+  Storage key to remove
+</ParamField>
+
+<ParamField path="update" type="() => void">
+  Optional callback after removal
+</ParamField>
+
+**Example:**
+
+```typescript
+store.remove('user-settings', () => {
+  console.log('Settings removed!');
+});
+```
+
+**Implementation:**
+
+```typescript
+public remove(_key: string, update?: () => void): void {
+  const key = `${this.#prefix}${_key}`;
+  
+  chrome.storage.local.remove(key, (): void => {
+    const error = chrome.runtime.lastError;
+    if (error) {
+      console.error(`BaseStore.remove:: runtime.lastError:`, error);
+    }
+    
+    update && update();
+  });
+}
+```
+
+#### all
+
+Iterate over all prefixed storage entries.
+
+```typescript
+all(update: (key: string, value: T) => void): void
+```
+
+<ParamField path="update" type="(key: string, value: T) => void" required>
+  Callback invoked for each key-value pair
+</ParamField>
+
+**Example:**
+
+```typescript
+store.all((key, value) => {
+  console.log(`${key}:`, value);
+});
+```
+
+**Implementation:**
+
+```typescript
+public all(update: (key: string, value: T) => void): void {
+  this.allMap((map): void => {
+    Object.entries(map).forEach(([key, value]): void => {
+      update(key, value);
+    });
+  });
+}
+```
+
+#### allMap
+
+Retrieve all prefixed entries as a single object.
+
+```typescript
+allMap(update: (value: Record<string, T>) => void): void
+```
+
+<ParamField path="update" type="(value: Record<string, T>) => void" required>
+  Callback receiving all entries as an object
+</ParamField>
+
+**Example:**
+
+```typescript
+store.allMap((allData) => {
+  console.log('All entries:', allData);
+});
+```
+
+**Implementation:**
+
+```typescript
+public allMap(update: (value: Record<string, T>) => void): void {
+  chrome.storage.local.get(null, (result: StoreValue): void => {
+    const error = chrome.runtime.lastError;
+    if (error) {
+      console.error(`BaseStore.all:: runtime.lastError:`, error);
+    }
+    
+    const entries = Object.entries(result);
+    const map: Record<string, T> = {};
+    
+    for (let i = 0; i < entries.length; i++) {
+      const [key, value] = entries[i];
+      
+      // Only include keys with our prefix
+      if (key.startsWith(this.#prefix)) {
+        map[key.replace(this.#prefix, '')] = value as T;
+      }
+    }
+    
+    update(map);
+  });
+}
+```
+
+#### getPrefix
+
+Get the storage prefix for this store.
+
+```typescript
+getPrefix(): string
+```
+
+**Returns:** The prefix string
+
+**Example:**
+
+```typescript
+const prefix = store.getPrefix();
+console.log('Prefix:', prefix); // "subwallet-accounts:"
+```
+
+## Storage Prefixes
+
+SubWallet uses prefixes to namespace different types of data:
+
+```typescript
+import { EXTENSION_PREFIX } from '@subwallet/extension-base/defaults';
+
+// EXTENSION_PREFIX = 'subwallet-'
+
+// Example prefixed keys:
+const accountsPrefix = `${EXTENSION_PREFIX}accounts`; // "subwallet-accounts"
+const settingsPrefix = `${EXTENSION_PREFIX}settings`; // "subwallet-settings"
+const currentAccountPrefix = `${EXTENSION_PREFIX}current_account`; // "subwallet-current_account"
+```
+
+## Error Handling
+
+All storage operations check for Chrome runtime errors:
+
+```typescript
+const lastError = (type: string): void => {
+  const error = chrome.runtime.lastError;
+  
+  if (error) {
+    console.error(`BaseStore.${type}:: runtime.lastError:`, error);
+  }
+};
+```
+
+Common errors:
+- **QUOTA_BYTES_PER_ITEM exceeded**: Item size exceeds 8KB (for sync storage)
+- **QUOTA_BYTES exceeded**: Total storage exceeds 5MB (local) or 100KB (sync)
+- **Extension context invalidated**: Extension was reloaded/disabled
+
+## Storage Types
+
+Chrome provides multiple storage areas:
+
+### chrome.storage.local
+
+Used by SubWallet for most data.
+
+- **Size limit**: 5MB (can request unlimited)
+- **Synced**: No
+- **Use case**: All extension data
+
+### chrome.storage.sync
+
+Not currently used by SubWallet.
+
+- **Size limit**: 100KB total, 8KB per item
+- **Synced**: Yes, across Chrome instances
+- **Use case**: User preferences (if implemented)
+
+### chrome.storage.session
+
+Not currently used by SubWallet.
+
+- **Size limit**: 10MB
+- **Persisted**: Only during browser session
+- **Use case**: Temporary data
+
+## Best Practices
+
+### 1. Use Prefixes
+
+Always use prefixes to avoid key collisions:
+
+```typescript
+// Good
+const store = new BaseStore('myfeature');
+
+// Bad - could conflict with other stores
+const store = new BaseStore(null);
+```
+
+### 2. Handle Undefined Values
+
+Storage may return undefined for missing keys:
+
+```typescript
+store.get('key', (value) => {
+  if (value === undefined) {
+    console.log('Key not found, using default');
+    value = getDefaultValue();
+  }
+});
+```
+
+### 3. Serialize Complex Objects
+
+Chrome storage only supports JSON-serializable values:
+
+```typescript
+// Good
+store.set('data', {
+  timestamp: Date.now(),
+  values: [1, 2, 3]
+});
+
+// Bad - functions, symbols, etc. won't be stored
+store.set('data', {
+  callback: () => console.log('test'),
+  symbol: Symbol('test')
+});
+```
+
+### 4. Batch Operations
+
+Use `allMap` for reading multiple items efficiently:
+
+```typescript
+// Good - single storage read
+store.allMap((allData) => {
+  processMultipleItems(allData);
+});
+
+// Bad - multiple storage reads
+store.get('item1', (val1) => {
+  store.get('item2', (val2) => {
+    store.get('item3', (val3) => {
+      // callback hell + inefficient
+    });
+  });
+});
+```
+
+### 5. Monitor Storage Quota
+
+```typescript
+chrome.storage.local.getBytesInUse(null, (bytesInUse) => {
+  const quotaBytes = chrome.storage.local.QUOTA_BYTES;
+  const percentUsed = (bytesInUse / quotaBytes) * 100;
+  
+  console.log(`Storage: ${percentUsed.toFixed(2)}% used`);
+  
+  if (percentUsed > 80) {
+    console.warn('Storage almost full!');
+  }
+});
+```
+
+## Storage Migration
+
+When changing storage schema:
+
+```typescript
+function migrateStorage() {
+  store.get('old-key', (oldValue) => {
+    if (oldValue !== undefined) {
+      // Transform old data to new format
+      const newValue = transformData(oldValue);
+      
+      // Save in new format
+      store.set('new-key', newValue, () => {
+        // Remove old key
+        store.remove('old-key');
+      });
+    }
+  });
+}
+```
+
+## Debugging Storage
+
+### View Storage in DevTools
+
+1. Open Chrome DevTools
+2. Go to **Application** tab
+3. Expand **Storage** → **Extension**
+4. Select your extension
+5. View all stored key-value pairs
+
+### Clear Storage
+
+```typescript
+// Clear all extension storage
+chrome.storage.local.clear(() => {
+  console.log('Storage cleared');
+});
+
+// Clear specific store
+store.allMap((allData) => {
+  Object.keys(allData).forEach(key => {
+    store.remove(key);
+  });
+});
+```
+
+## Performance Tips
+
+1. **Minimize storage writes**: Batch updates when possible
+2. **Use appropriate prefixes**: Helps filter data efficiently
+3. **Cache frequently accessed data**: Don't read from storage on every access
+4. **Clean up old data**: Remove obsolete entries periodically
+
+```typescript
+// Cache example
+let cachedSettings = null;
+
+function getSettings(callback) {
+  if (cachedSettings) {
+    callback(cachedSettings);
+  } else {
+    store.get('settings', (settings) => {
+      cachedSettings = settings;
+      callback(settings);
+    });
+  }
+}
+```

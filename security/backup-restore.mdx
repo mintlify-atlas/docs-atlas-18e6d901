@@ -1,0 +1,169 @@
+---
+title: 'Backup & Restore'
+description: 'Learn how to securely backup and restore your SubWallet accounts'
+icon: 'shield-check'
+---
+
+## Overview
+
+Backing up your wallet is critical to ensure you never lose access to your funds. SubWallet provides multiple secure methods to backup and restore your accounts.
+
+<Warning>
+  Never share your seed phrase, private key, or JSON backup file with anyone. SubWallet will never ask for this information.
+</Warning>
+
+## Backup Methods
+
+SubWallet supports four different backup methods, each suited for different use cases:
+
+### 1. Seed Phrase (Mnemonic)
+
+A seed phrase is a 12 or 24-word phrase that can restore all accounts created from it.
+
+<Info>
+  Seed phrases can only be exported for accounts that were created or imported using a mnemonic. Hardware wallet accounts and watch-only accounts cannot export seed phrases.
+</Info>
+
+**To export your seed phrase:**
+
+1. Navigate to **Account Details** for the account you want to backup
+2. Select **Export Account**
+3. Choose **Export Seed Phrase**
+4. Enter your SubWallet password
+5. Write down your seed phrase and store it securely
+
+<Tip>
+  Write your seed phrase on paper and store it in a secure location. Consider using a fireproof safe or safety deposit box. Never store it digitally or take screenshots.
+</Tip>
+
+### 2. JSON File
+
+JSON files are encrypted backups of your account that are password-protected.
+
+**To export a JSON file:**
+
+1. Navigate to **Account Details**
+2. Select **Export Account**
+3. Choose **Export JSON File**
+4. Enter your SubWallet password
+5. The encrypted JSON file will be downloaded automatically
+
+<Info>
+  JSON files are encrypted with the password you provide. Make sure to remember this password, as you'll need it when restoring.
+</Info>
+
+### 3. Private Key
+
+The private key is a hexadecimal string that provides direct access to a single account.
+
+**To export your private key:**
+
+1. Navigate to **Account Details**
+2. Select **Export Account**
+3. Choose **Export Private Key**
+4. Enter your SubWallet password
+5. Copy your private key and store it securely
+
+<Warning>
+  Private keys provide complete access to your account. Anyone with your private key can access and transfer your funds. Handle with extreme care.
+</Warning>
+
+### 4. QR Code
+
+QR codes can be used to import accounts on mobile devices or other wallet applications.
+
+**To export via QR code:**
+
+1. Navigate to **Account Details**
+2. Select **Export Account**
+3. Choose **Export QR Code**
+4. Enter your SubWallet password
+5. Scan the QR code with your target device
+
+## Restore Methods
+
+SubWallet allows you to restore accounts using any of the backup methods above.
+
+### Restore from Seed Phrase
+
+1. Open SubWallet and click **Import Account**
+2. Select **Import from Seed Phrase**
+3. Enter your 12 or 24-word seed phrase
+4. Set an account name
+5. Create or enter your SubWallet password
+6. Click **Import**
+
+### Restore from JSON File
+
+1. Open SubWallet and click **Import Account**
+2. Select **Restore from JSON**
+3. Upload your JSON backup file
+4. Enter the password you used when creating the backup
+5. Enter your SubWallet password
+6. Click **Restore**
+
+### Restore from Private Key
+
+1. Open SubWallet and click **Import Account**
+2. Select **Import from Private Key**
+3. Paste your private key
+4. Set an account name
+5. Create or enter your SubWallet password
+6. Click **Import**
+
+### Restore via QR Code
+
+1. Open SubWallet and click **Import Account**
+2. Select **Import by QR Code**
+3. Allow camera access
+4. Scan your account QR code
+5. Set an account name and password
+6. Click **Import**
+
+## Master Password
+
+SubWallet uses a master password system to encrypt and protect all your accounts.
+
+<Info>
+  Your master password is used to unlock your wallet and approve transactions. It is stored locally and never leaves your device.
+</Info>
+
+### Changing Your Master Password
+
+1. Go to **Settings** > **Security**
+2. Select **Change Password**
+3. Enter your current password
+4. Enter and confirm your new password
+5. Click **Confirm**
+
+<Warning>
+  If you forget your master password, you will need to restore your wallet using your seed phrase or backup files. There is no way to recover a forgotten master password.
+</Warning>
+
+## Best Practices
+
+<Tip>
+  Follow these security best practices to keep your wallet safe:
+</Tip>
+
+- **Multiple Backups**: Create backups using multiple methods (seed phrase + JSON file)
+- **Physical Storage**: Write seed phrases on paper and store in secure locations
+- **Never Share**: Never share your seed phrase, private key, or password with anyone
+- **Verify Before Sending**: Always double-check addresses before sending transactions
+- **Regular Backups**: Create new backups after adding new accounts
+- **Secure Password**: Use a strong, unique password for your wallet
+- **Test Recovery**: Test your backup by restoring on a different device
+
+## Account Types & Backup Compatibility
+
+| Account Type | Seed Phrase | JSON File | Private Key | QR Code |
+|--------------|-------------|-----------|-------------|----------|
+| Mnemonic Account | ✓ | ✓ | ✓ | ✓ |
+| Imported Private Key | ✗ | ✓ | ✓ | ✓ |
+| Hardware Wallet | ✗ | ✗ | ✗ | ✗ |
+| Watch-Only | ✗ | ✗ | ✗ | ✗ |
+| QR Signer | ✗ | ✗ | ✗ | ✓ |
+
+<Info>
+  Hardware wallet and watch-only accounts cannot be backed up through SubWallet as the private keys are not stored in the extension.
+</Info>

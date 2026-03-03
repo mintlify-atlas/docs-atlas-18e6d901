@@ -1,0 +1,461 @@
+---
+title: 'Development Setup'
+description: 'Get started with SubWallet Extension development - clone, install, and run your first build'
+---
+
+## Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+<CardGroup cols={2}>
+  <Card title="Node.js" icon="node">
+    Version 17 or higher recommended
+  </Card>
+  <Card title="Yarn" icon="yarn">
+    Version 3.0.1 (managed via packageManager)
+  </Card>
+  <Card title="Git" icon="git">
+    For cloning the repository
+  </Card>
+  <Card title="Code Editor" icon="code">
+    VSCode or your preferred editor with ESLint support
+  </Card>
+</CardGroup>
+
+## Installation
+
+<Steps>
+  <Step title="Clone the Repository">
+    Clone the SubWallet Extension repository from GitHub:
+
+    ```bash
+    git clone https://github.com/Koniverse/Subwallet-V2.git
+    cd Subwallet-V2
+    ```
+  </Step>
+
+  <Step title="Install Dependencies">
+    Install all package dependencies using Yarn:
+
+    ```bash
+    yarn install
+    ```
+
+    <Info>
+      The `postinstall` script will automatically run after installation to set up the environment and apply patches.
+    </Info>
+  </Step>
+
+  <Step title="Verify Installation">
+    Verify that all packages are installed correctly:
+
+    ```bash
+    yarn --version
+    ```
+
+    You should see version 3.0.1 or compatible.
+  </Step>
+</Steps>
+
+## Development Build
+
+### Running the Development Server
+
+Start the development build with hot-reloading:
+
+<CodeGroup>
+```bash Chrome/Edge (Default)
+yarn dev
+```
+
+```bash Chrome/Edge (with source maps)
+yarn watch-dev
+```
+
+```bash Firefox
+yarn dev:firefox
+```
+</CodeGroup>
+
+<Info>
+  The `yarn dev` command is an alias for `yarn watch-dev`, which includes inline source maps for better debugging.
+</Info>
+
+### What Happens During Development Build?
+
+When you run the development command:
+
+1. Webpack compiles the extension in development mode
+2. Watch mode monitors file changes for hot-reloading
+3. Source maps are generated for debugging
+4. Build output is placed in `packages/extension-koni/build/`
+
+### Loading the Extension in Browser
+
+<Tabs>
+  <Tab title="Chrome/Edge">
+    <Steps>
+      <Step title="Open Extensions Page">
+        Navigate to `chrome://extensions/` or `edge://extensions/`
+      </Step>
+      <Step title="Enable Developer Mode">
+        Toggle the "Developer mode" switch in the top-right corner
+      </Step>
+      <Step title="Load Unpacked Extension">
+        Click "Load unpacked" and select the `packages/extension-koni/build/` directory
+      </Step>
+    </Steps>
+  </Tab>
+  <Tab title="Firefox">
+    <Steps>
+      <Step title="Open Debugging Page">
+        Navigate to `about:debugging#/runtime/this-firefox`
+      </Step>
+      <Step title="Load Temporary Add-on">
+        Click "Load Temporary Add-on"
+      </Step>
+      <Step title="Select Manifest">
+        Navigate to `packages/extension-koni/build-firefox/` and select the `manifest.json` file
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+## Production Build
+
+### Full Build Process
+
+Create a production-ready build:
+
+```bash
+yarn build
+```
+
+This command performs the following operations:
+
+<Steps>
+  <Step title="TypeScript Compilation">
+    Runs `koni-dev-build-ts` to compile TypeScript files
+  </Step>
+  <Step title="Create ZIP Archives">
+    Generates distribution and source ZIP files
+  </Step>
+  <Step title="Rollup Bundle">
+    Runs Rollup to create optimized bundles
+  </Step>
+</Steps>
+
+### Individual Build Commands
+
+<AccordionGroup>
+  <Accordion title="Build UI Only">
+    Build just the UI components in production mode:
+
+    ```bash
+    yarn build:ui
+    ```
+
+    This runs Webpack in production mode for the extension UI.
+  </Accordion>
+
+  <Accordion title="Build Internationalization">
+    Build i18n locale files:
+
+    ```bash
+    yarn build:i18n
+    ```
+  </Accordion>
+
+  <Accordion title="Build ZIP Files">
+    Create distribution ZIP archives:
+
+    ```bash
+    yarn build:zip
+    ```
+
+    This creates:
+    - `master-build.zip` - Chrome/Edge build
+    - `master-build-firefox.zip` - Firefox build
+    - `master-src.zip` - Source code archive
+  </Accordion>
+
+  <Accordion title="Build for Release">
+    Create a GitHub Actions release build:
+
+    ```bash
+    yarn build:release
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Output Directories
+
+After building, you'll find compiled files in:
+
+- `packages/extension-koni/build/` - Chrome/Edge extension
+- `packages/extension-koni/build-firefox/` - Firefox extension
+- `master-build.zip` - Packaged Chrome/Edge extension
+- `master-build-firefox.zip` - Packaged Firefox extension
+
+## Code Quality
+
+### Linting
+
+SubWallet Extension enforces code quality with ESLint:
+
+<CodeGroup>
+```bash Lint All Files
+yarn lint
+```
+
+```bash Lint Changed Files Only
+yarn lint:changes
+```
+</CodeGroup>
+
+<Warning>
+  Always run `yarn lint` before committing code. The CI pipeline will fail if linting errors are present.
+</Warning>
+
+### Setting Up ESLint in Your Editor
+
+For the best development experience, configure ESLint in your editor:
+
+<Tabs>
+  <Tab title="VSCode">
+    Install the ESLint extension:
+
+    1. Open Extensions (Ctrl+Shift+X)
+    2. Search for "ESLint"
+    3. Install the official ESLint extension
+    4. Reload VSCode
+
+    The project's `.eslintrc.js` will be automatically detected.
+  </Tab>
+  <Tab title="Other Editors">
+    Refer to ESLint's [editor integrations](https://eslint.org/docs/user-guide/integrations) for setup instructions.
+  </Tab>
+</Tabs>
+
+## Testing
+
+### Running Tests
+
+SubWallet uses Jest for testing:
+
+<CodeGroup>
+```bash Run All Tests
+yarn test
+```
+
+```bash Run Single Test File
+yarn test:one path/to/test.spec.ts
+```
+</CodeGroup>
+
+### Writing Tests
+
+Create test files with the `.spec.ts` extension:
+
+```typescript
+// Example: myFeature.spec.ts
+import { describe, expect, test } from '@jest/globals';
+
+describe('MyFeature', () => {
+  test('should do something', () => {
+    expect(true).toBe(true);
+  });
+});
+```
+
+<Info>
+  Tests are automatically discovered by Jest. Files matching `*.spec.ts` or `*.test.ts` patterns will be executed, except those in `node_modules` or matching `ignore-*` patterns.
+</Info>
+
+## Cleaning Build Artifacts
+
+Remove all build artifacts and start fresh:
+
+```bash
+yarn clean
+```
+
+This removes:
+- `packages/extension-koni/build/`
+- `packages/extension-koni/build-firefox/`
+- Other generated files
+
+## Internationalization (i18n)
+
+SubWallet supports multiple languages. Here are the i18n-related commands:
+
+<AccordionGroup>
+  <Accordion title="Scan for Translation Keys">
+    ```bash
+    yarn i18n:scan
+    ```
+    Scans the codebase for translation keys and generates mapping files.
+  </Accordion>
+
+  <Accordion title="Combine Locale Files">
+    ```bash
+    yarn i18n:combine-locales
+    ```
+    Combines translation files from different sources.
+  </Accordion>
+
+  <Accordion title="Update Extension Translations">
+    ```bash
+    yarn i18n:update:ext
+    ```
+    Updates translation files for the extension.
+  </Accordion>
+
+  <Accordion title="Update Web/Mobile Translations">
+    ```bash
+    yarn i18n:update:web-mobile
+    ```
+    Updates translation files for web and mobile platforms.
+  </Accordion>
+</AccordionGroup>
+
+## Updating Dependencies
+
+### Polkadot Libraries
+
+Update all Polkadot-related dependencies:
+
+```bash
+yarn update:polkadot-libs
+```
+
+This updates:
+- @polkadot/api
+- @polkadot/util
+- @polkadot/util-crypto
+- And other Polkadot ecosystem packages
+
+### SubWallet Libraries
+
+Update SubWallet-specific dependencies:
+
+```bash
+yarn update:subwallet-libs
+```
+
+This updates:
+- @subwallet/chain-list
+- @subwallet/keyring
+- @subwallet/ui-keyring
+
+## Development Workflow Best Practices
+
+<Steps>
+  <Step title="Create a Feature Branch">
+    Create a new branch for your work:
+
+    ```bash
+    git checkout -b initials-feature-name
+    ```
+
+    Example: `jd-add-wallet-connect`
+  </Step>
+
+  <Step title="Make Your Changes">
+    Develop your feature with the development server running:
+
+    ```bash
+    yarn dev
+    ```
+  </Step>
+
+  <Step title="Validate Your Code">
+    Before committing, run linting and tests:
+
+    ```bash
+    yarn lint
+    yarn test
+    ```
+  </Step>
+
+  <Step title="Commit and Push">
+    Commit your changes and push to GitHub:
+
+    ```bash
+    git add .
+    git commit -m "Add feature description"
+    git push origin initials-feature-name
+    ```
+  </Step>
+
+  <Step title="Create Pull Request">
+    Create a pull request on GitHub and wait for CI to pass before requesting review.
+  </Step>
+</Steps>
+
+<Warning>
+  - Never use `--force` push or modify Git history
+  - Always work in feature branches, not `master`
+  - Ensure CI passes before merging PRs
+  - Address all review comments before merging
+</Warning>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Yarn Version Mismatch">
+    If you encounter version issues, ensure you're using the correct Yarn version:
+
+    ```bash
+    corepack enable
+    yarn --version
+    ```
+
+    The project uses Yarn 3.0.1 as specified in `packageManager`.
+  </Accordion>
+
+  <Accordion title="Build Errors After Pull">
+    After pulling new changes, clean and reinstall:
+
+    ```bash
+    yarn clean
+    yarn install
+    yarn dev
+    ```
+  </Accordion>
+
+  <Accordion title="Extension Not Loading in Browser">
+    1. Ensure the build completed successfully
+    2. Check the correct directory is selected (`build/` for Chrome, `build-firefox/` for Firefox)
+    3. Try removing and re-adding the extension
+    4. Check browser console for errors
+  </Accordion>
+
+  <Accordion title="Port Already in Use">
+    If Webpack dev server fails to start, check if another process is using the port:
+
+    ```bash
+    lsof -i :port_number
+    kill -9 PID
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+Now that your development environment is set up:
+
+<CardGroup cols={2}>
+  <Card title="Understand the Architecture" icon="sitemap" href="/developers/architecture">
+    Learn about the extension's architecture and components
+  </Card>
+  <Card title="View Contributing Guidelines" icon="handshake" href="https://github.com/Koniverse/Subwallet-V2/blob/master/CONTRIBUTING.md">
+    Read the contribution guidelines
+  </Card>
+  <Card title="Explore the Codebase" icon="magnifying-glass" href="https://github.com/Koniverse/Subwallet-V2">
+    Browse the source code on GitHub
+  </Card>
+  <Card title="Join the Community" icon="users" href="https://github.com/Koniverse/Subwallet-V2/issues">
+    Report issues and engage with developers
+  </Card>
+</CardGroup>

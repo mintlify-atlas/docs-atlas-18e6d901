@@ -1,0 +1,318 @@
+---
+title: NFT Service
+description: Service for detecting and managing NFTs across EVM chains
+---
+
+## Overview
+
+The `NftService` is responsible for detecting and managing NFT (Non-Fungible Token) collections and items across EVM-compatible chains. It automatically fetches NFT metadata, collections, and ownership information.
+
+## Key Features
+
+- EVM NFT collection detection
+- Automatic metadata fetching
+- Support for ERC-721 tokens
+- Collection and item mapping
+- Batch processing for multiple addresses
+
+## Class: NftService
+
+### Constructor
+
+```typescript
+constructor(state: KoniState)
+```
+
+<ParamField path="state" type="KoniState" required>
+  The global state object of the extension
+</ParamField>
+
+## Core Methods
+
+### fetchEvmCollectionsWithPreview()
+
+Fetches NFT collections with preview items for EVM addresses.
+
+```typescript
+async fetchEvmCollectionsWithPreview(addresses: string[]): Promise<void>
+```
+
+<ParamField path="addresses" type="string[]" required>
+  Array of EVM wallet addresses to fetch NFTs for
+</ParamField>
+
+**Description:**
+
+This method detects NFT collections owned by the provided addresses across supported EVM chains. It:
+- Queries NFT detection API for each address
+- Maps SDK collection data to internal NFT format
+- Handles collection metadata (name, image, item count)
+- Processes NFT instances with attributes and properties
+- Automatically stores detected NFTs in the extension state
+
+**Usage:**
+
+```typescript
+const nftService = new NftService(state);
+
+await nftService.fetchEvmCollectionsWithPreview([
+  '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
+  '0x1234567890123456789012345678901234567890'
+]);
+```
+
+### getFullNftInstancesByCollection()
+
+Retrieves all NFT instances for a specific collection.
+
+```typescript
+async getFullNftInstancesByCollection(
+  request: NftFullListRequest
+): Promise<boolean>
+```
+
+<ParamField path="request" type="NftFullListRequest" required>
+  Request parameters for fetching NFT instances
+  
+  <ParamField path="chainInfo" type="_ChainInfo" required>
+    Chain information object
+  </ParamField>
+  
+  <ParamField path="contractAddress" type="string" required>
+    NFT collection contract address
+  </ParamField>
+  
+  <ParamField path="owners" type="string | string[]" required>
+    Owner address(es)
+  </ParamField>
+</ParamField>
+
+**Returns:**
+
+<ResponseField name="boolean" type="boolean">
+  `true` if the operation succeeded, `false` otherwise
+</ResponseField>
+
+**Description:**
+
+Fetches all NFT instances from a specific collection contract. This is useful when you need complete collection data rather than just preview items.
+
+**Usage:**
+
+```typescript
+const success = await nftService.getFullNftInstancesByCollection({
+  chainInfo: chainInfoMap['ethereum'],
+  contractAddress: '0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D',
+  owners: ['0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb']
+});
+
+if (success) {
+  console.log('Successfully fetched all NFT instances');
+}
+```
+
+## Data Types
+
+### NftItem
+
+Represents an individual NFT.
+
+```typescript
+interface NftItem {
+  id: string;
+  chain: string;
+  collectionId: string;
+  owner: string;
+  name: string;
+  image?: string;
+  externalUrl?: string;
+  rarity?: string;
+  description?: string;
+  properties: Record<string, string | number | boolean | null> | null;
+  type: _AssetType.ERC721;
+  originAsset?: string;
+  rmrk_ver?: string;
+  onChainOption?: any;
+  assetHubType?: any;
+}
+```
+
+**Fields:**
+
+<ResponseField name="id" type="string">
+  Unique NFT token ID
+</ResponseField>
+
+<ResponseField name="chain" type="string">
+  Chain slug where the NFT exists
+</ResponseField>
+
+<ResponseField name="collectionId" type="string">
+  Collection contract address
+</ResponseField>
+
+<ResponseField name="owner" type="string">
+  Current owner's wallet address
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  NFT name (from metadata)
+</ResponseField>
+
+<ResponseField name="image" type="string">
+  NFT image URL (IPFS URLs are automatically parsed)
+</ResponseField>
+
+<ResponseField name="properties" type="Record<string, any> | null">
+  NFT attributes and traits
+</ResponseField>
+
+<ResponseField name="rarity" type="string">
+  Rarity classification if available
+</ResponseField>
+
+<ResponseField name="type" type="_AssetType.ERC721">
+  NFT standard type (currently only ERC-721 is supported)
+</ResponseField>
+
+### NftCollection
+
+Represents an NFT collection.
+
+```typescript
+interface NftCollection {
+  collectionId: string;
+  chain: string;
+  collectionName: string;
+  image?: string;
+  itemCount: number;
+  externalUrl?: string;
+  originAsset?: string;
+}
+```
+
+**Fields:**
+
+<ResponseField name="collectionId" type="string">
+  Collection contract address
+</ResponseField>
+
+<ResponseField name="chain" type="string">
+  Chain slug
+</ResponseField>
+
+<ResponseField name="collectionName" type="string">
+  Collection name
+</ResponseField>
+
+<ResponseField name="image" type="string">
+  Collection icon/image URL
+</ResponseField>
+
+<ResponseField name="itemCount" type="number">
+  Number of items in the collection
+</ResponseField>
+
+### NftFullListRequest
+
+Request parameters for fetching complete NFT lists.
+
+```typescript
+interface NftFullListRequest {
+  chainInfo: _ChainInfo;
+  contractAddress: string;
+  owners: string | string[];
+}
+```
+
+## Supported NFT Standards
+
+Currently, the NFT Service supports:
+
+- **ERC-721**: Standard NFT contract on EVM chains
+
+<Note>
+  ERC-1155 (semi-fungible tokens) and other standards are not currently supported.
+</Note>
+
+## NFT Metadata
+
+The service automatically parses NFT metadata including:
+
+- **Basic Information**: Name, description, image
+- **Attributes**: Trait types and values
+- **Rarity**: Rarity classification from attributes
+- **External Links**: Project websites and marketplaces
+- **Media**: Images, videos (IPFS URLs are converted to HTTP gateways)
+
+## Detection Flow
+
+1. **Address Validation**: Checks if addresses are valid Ethereum-type addresses
+2. **API Query**: Queries the NFT detection API for collections
+3. **Data Mapping**: Converts SDK format to internal NFT format
+4. **Metadata Parsing**: Extracts and normalizes metadata
+5. **Storage**: Stores NFT collections and items in state
+6. **Event Emission**: Notifies UI of detected NFTs
+
+## Example: NFT Detection Workflow
+
+```typescript
+import NftService from '@subwallet/extension-base/services/nft-service';
+
+// Initialize service
+const nftService = new NftService(state);
+
+// Detect NFTs for multiple addresses
+const addresses = [
+  '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
+  '0x1234567890123456789012345678901234567890'
+];
+
+await nftService.fetchEvmCollectionsWithPreview(addresses);
+
+// NFTs are automatically stored in state and can be accessed via:
+// state.handleDetectedNftCollections(collections)
+// state.handleDetectedNfts(address, nftItems)
+```
+
+## Example: Fetch Complete Collection
+
+```typescript
+// Get all NFTs from a specific collection
+const chainInfo = state.chainService.getChainInfoByKey('ethereum');
+
+const success = await nftService.getFullNftInstancesByCollection({
+  chainInfo,
+  contractAddress: '0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D', // BAYC
+  owners: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb'
+});
+
+if (success) {
+  // All NFT instances have been fetched and stored
+  console.log('Complete collection data loaded');
+}
+```
+
+## Performance Considerations
+
+- NFT detection runs asynchronously to avoid blocking
+- Multiple addresses can be processed in parallel
+- Duplicate checks prevent re-processing ongoing requests
+- Results are cached to reduce API calls
+
+## Error Handling
+
+The service handles errors gracefully:
+
+```typescript
+try {
+  await nftService.fetchEvmCollectionsWithPreview(addresses);
+} catch (error) {
+  console.warn('NFT detection error:', error);
+  // Service continues operating, individual errors are logged
+}
+```
+
+<Warning>
+  NFT detection requires valid EVM addresses. Non-EVM addresses will be skipped.
+</Warning>

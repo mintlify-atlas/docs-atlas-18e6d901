@@ -1,0 +1,337 @@
+---
+title: Testing
+description: Learn how to run tests and write test cases for SubWallet Extension
+---
+
+SubWallet Extension uses Jest as its testing framework, providing comprehensive test coverage for background services, stores, and utilities.
+
+## Running Tests
+
+### Run All Tests
+
+To execute the complete test suite:
+
+```bash
+yarn test
+```
+
+This command runs `polkadot-dev-run-test` with the following options:
+- `--detectOpenHandles` - Helps identify async operations that prevent Jest from exiting
+- Ignores test files in `node_modules` and files matching `.*/ignore-.*\.(test|spec)\..*`
+
+### Run a Specific Test
+
+To run a single test file:
+
+```bash
+yarn test:one path/to/test.spec.ts
+```
+
+Or run Jest directly:
+
+```bash
+yarn jest packages/extension-koni-base/src/utils/some.spec.ts
+```
+
+### Run Tests in Watch Mode
+
+For test-driven development:
+
+```bash
+yarn jest --watch
+```
+
+## Test File Structure
+
+SubWallet follows these conventions for test files:
+
+### File Naming
+
+Test files use the `.spec.ts` extension:
+
+```
+src/
+├── utils/
+│   ├── validation.ts
+│   └── validation.spec.ts
+├── api/
+│   ├── price.ts
+│   └── price.spec.ts
+└── store/
+    ├── Price.ts
+    └── Price.spec.ts
+```
+
+### Test Organization
+
+Organize tests using `describe` blocks and individual `test` or `it` statements:
+
+```typescript
+import { validateAddress } from './validation';
+
+describe('Address Validation', () => {
+  describe('validateAddress', () => {
+    test('should validate correct Substrate address', () => {
+      const result = validateAddress('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY');
+      expect(result).toBe(true);
+    });
+
+    test('should reject invalid address', () => {
+      const result = validateAddress('invalid');
+      expect(result).toBe(false);
+    });
+
+    test('should handle empty string', () => {
+      const result = validateAddress('');
+      expect(result).toBe(false);
+    });
+  });
+});
+```
+
+## Writing Tests
+
+### Basic Test Structure
+
+Create a test file with the `.spec.ts` extension:
+
+<Steps>
+  <Step title="Import Dependencies">
+    ```typescript
+    import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
+    import { functionToTest } from './module';
+    ```
+  </Step>
+
+  <Step title="Set Up Test Suite">
+    ```typescript
+    describe('Module Name', () => {
+      // Your tests go here
+    });
+    ```
+  </Step>
+
+  <Step title="Write Individual Tests">
+    ```typescript
+    test('should perform expected behavior', () => {
+      const result = functionToTest('input');
+      expect(result).toBe('expected output');
+    });
+    ```
+  </Step>
+</Steps>
+
+### Testing Store Classes
+
+When testing store classes that extend `BaseStore` or `SubscribableStore`:
+
+```typescript
+import Price from './Price';
+import { PriceJson } from '../types';
+
+describe('Price Store', () => {
+  let priceStore: Price;
+
+  beforeEach(() => {
+    priceStore = new Price();
+  });
+
+  test('should initialize with correct prefix', () => {
+    expect(priceStore.prefix).toBe('koni-price');
+  });
+
+  test('should store and retrieve price data', async () => {
+    const mockData: PriceJson = {
+      currency: 'usd',
+      priceMap: { DOT: 5.23 }
+    };
+
+    await priceStore.set(mockData);
+    const retrieved = await priceStore.get();
+
+    expect(retrieved).toEqual(mockData);
+  });
+
+  test('should emit updates via subject', (done) => {
+    const mockData: PriceJson = {
+      currency: 'usd',
+      priceMap: { DOT: 5.23 }
+    };
+
+    priceStore.getSubject().subscribe((data) => {
+      expect(data).toEqual(mockData);
+      done();
+    });
+
+    priceStore.set(mockData);
+  });
+});
+```
+
+### Testing API Functions
+
+For API functions that make external calls:
+
+```typescript
+import { fetchPrice } from './priceApi';
+import axios from 'axios';
+
+jest.mock('axios');
+const mockedAxios = axios as jest.Mocked<typeof axios>;
+
+describe('Price API', () => {
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  test('should fetch price successfully', async () => {
+    const mockResponse = {
+      data: { DOT: { usd: 5.23 } }
+    };
+
+    mockedAxios.get.mockResolvedValue(mockResponse);
+
+    const result = await fetchPrice('DOT');
+    expect(result).toEqual(5.23);
+    expect(mockedAxios.get).toHaveBeenCalledWith(
+      expect.stringContaining('DOT')
+    );
+  });
+
+  test('should handle API errors', async () => {
+    mockedAxios.get.mockRejectedValue(new Error('Network error'));
+
+    await expect(fetchPrice('DOT')).rejects.toThrow('Network error');
+  });
+});
+```
+
+### Testing Message Handlers
+
+For testing message handlers in the extension:
+
+```typescript
+import { handleMessage } from './messageHandler';
+import type { KoniRequestSignatures } from '../types';
+
+describe('Message Handler', () => {
+  test('should handle price request', async () => {
+    const request: KoniRequestSignatures['pri(price.getPrice)'][0] = {
+      currency: 'usd'
+    };
+
+    const response = await handleMessage('pri(price.getPrice)', request);
+    
+    expect(response).toHaveProperty('priceMap');
+    expect(response.currency).toBe('usd');
+  });
+});
+```
+
+## Jest Configuration
+
+The project uses a custom Jest configuration (`jest.config.cjs`) that extends `@polkadot/dev` configuration:
+
+### Module Name Mapping
+
+The configuration maps package aliases for testing:
+
+```javascript
+moduleNameMapper: {
+  '@subwallet/extension-(base|chains|compat-metamask|dapp|inject|mocks|koni-base|koni-ui|web-ui)(.*)$': 
+    '<rootDir>/packages/extension-$1/src/$2',
+  '@subwallet/extension-koni(.*)$': 
+    '<rootDir>/packages/extension-koni/src/$1',
+  '\\.(css|less)$': 'empty/object',
+  '\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$': 
+    '<rootDir>/packages/extension-mocks/src/fileMock.js'
+}
+```
+
+This allows you to import using package aliases in tests:
+
+```typescript
+import { someUtil } from '@subwallet/extension-koni-base/utils';
+import { MockProvider } from '@subwallet/extension-mocks';
+```
+
+### Ignored Test Files
+
+Tests matching these patterns are ignored:
+- Files in `node_modules`
+- Files matching `.*/ignore-.*\.(test|spec)\..*`
+
+To exclude a test from running, prefix it with `ignore-`:
+```
+ignore-incomplete.spec.ts
+```
+
+## Mocking Browser APIs
+
+SubWallet uses `sinon-chrome` for mocking Chrome extension APIs:
+
+```typescript
+import chrome from 'sinon-chrome';
+
+describe('Chrome API Integration', () => {
+  beforeEach(() => {
+    global.chrome = chrome as any;
+  });
+
+  afterEach(() => {
+    chrome.flush();
+  });
+
+  test('should save to chrome storage', async () => {
+    chrome.storage.local.set.yields();
+    
+    await saveToStorage({ key: 'value' });
+    
+    expect(chrome.storage.local.set.calledOnce).toBe(true);
+  });
+});
+```
+
+## Best Practices
+
+<Steps>
+  <Step title="Test Before Committing">
+    Always run tests before committing:
+    ```bash
+    yarn lint && yarn test
+    ```
+  </Step>
+
+  <Step title="Write Tests for New Features">
+    Create corresponding `.spec.ts` files for new functionality.
+  </Step>
+
+  <Step title="Test Edge Cases">
+    Include tests for:
+    - Empty inputs
+    - Invalid data
+    - Error conditions
+    - Boundary values
+  </Step>
+
+  <Step title="Use Descriptive Test Names">
+    ```typescript
+    // Good
+    test('should return null when address is invalid')
+    
+    // Bad
+    test('test address')
+    ```
+  </Step>
+
+  <Step title="Keep Tests Isolated">
+    Each test should be independent and not rely on other tests.
+  </Step>
+</Steps>
+
+## Continuous Integration
+
+Tests run automatically in CI/CD pipelines. Ensure all tests pass before:
+- Creating pull requests
+- Merging to main branches
+- Creating releases

@@ -1,0 +1,456 @@
+---
+title: Debugging
+description: Learn how to debug SubWallet Extension in the browser and troubleshoot common issues
+---
+
+This guide covers debugging techniques for SubWallet Extension, including browser developer tools, common issues, and troubleshooting strategies.
+
+## Browser Developer Tools
+
+### Loading the Extension for Debugging
+
+<Steps>
+  <Step title="Build in Development Mode">
+    Build the extension with source maps enabled:
+    ```bash
+    yarn watch-dev
+    ```
+    
+    This enables inline source maps for easier debugging.
+  </Step>
+
+  <Step title="Load Extension in Chrome">
+    1. Open Chrome and navigate to `chrome://extensions/`
+    2. Enable "Developer mode" in the top right
+    3. Click "Load unpacked"
+    4. Select the `packages/extension-koni/build` directory
+  </Step>
+
+  <Step title="Load Extension in Firefox">
+    Build Firefox version:
+    ```bash
+    yarn dev:firefox
+    ```
+    
+    Then:
+    1. Navigate to `about:debugging#/runtime/this-firefox`
+    2. Click "Load Temporary Add-on"
+    3. Select the `manifest.json` file from `packages/extension-koni/build-firefox`
+  </Step>
+</Steps>
+
+### Debugging the Background Script
+
+The background environment (`background.ts`) handles all API calls, state management, and message processing.
+
+<Steps>
+  <Step title="Open Background Page DevTools">
+    **Chrome:**
+    1. Go to `chrome://extensions/`
+    2. Find SubWallet in the list
+    3. Click "background page" or "service worker" link
+    4. DevTools will open for the background context
+
+    **Firefox:**
+    1. Go to `about:debugging#/runtime/this-firefox`
+    2. Find SubWallet
+    3. Click "Inspect"
+  </Step>
+
+  <Step title="Set Breakpoints">
+    In the DevTools Sources tab:
+    1. Navigate to `background.ts` or related files
+    2. Click line numbers to set breakpoints
+    3. Trigger actions in the extension to hit breakpoints
+  </Step>
+
+  <Step title="Monitor Console Output">
+    Check the Console tab for:
+    - Log messages from `console.log()`
+    - Error messages
+    - Network requests
+    - Chrome API calls
+  </Step>
+</Steps>
+
+### Debugging the Extension UI (Popup)
+
+The popup is the main UI that appears when clicking the extension icon.
+
+<Steps>
+  <Step title="Open Popup DevTools">
+    1. Right-click on the extension popup
+    2. Select "Inspect" or "Inspect Element"
+    3. DevTools opens for the popup context
+  </Step>
+
+  <Step title="Debug React Components">
+    Install React Developer Tools:
+    - [Chrome Extension](https://chrome.google.com/webstore/detail/react-developer-tools/fmkadmapgofadopljbjfkapdkoienihi)
+    - [Firefox Add-on](https://addons.mozilla.org/en-US/firefox/addon/react-devtools/)
+
+    Then:
+    1. Open popup DevTools
+    2. Switch to "Components" tab
+    3. Inspect React component tree and props
+  </Step>
+
+  <Step title="Debug Redux State">
+    Install Redux DevTools:
+    - [Chrome Extension](https://chrome.google.com/webstore/detail/redux-devtools/lmhkpmbekcpmknklioeibfkpmmfibljd)
+    - [Firefox Add-on](https://addons.mozilla.org/en-US/firefox/addon/reduxdevtools/)
+
+    Access the Redux tab to:
+    - View current state
+    - Track actions
+    - Time-travel debug state changes
+  </Step>
+</Steps>
+
+### Debugging Injected Scripts
+
+Injected scripts run in web pages to provide wallet functionality to dApps.
+
+<Steps>
+  <Step title="Open Page DevTools">
+    1. Navigate to a dApp page
+    2. Right-click and select "Inspect"
+    3. Open the Console tab
+  </Step>
+
+  <Step title="Check Injection">
+    Verify the extension is injected:
+    ```javascript
+    console.log(window.injectedWeb3);
+    console.log(window.SubWallet);
+    ```
+  </Step>
+
+  <Step title="Monitor Messages">
+    Log messages between the page and background:
+    ```javascript
+    // In injected script
+    console.log('Message sent to background:', message);
+    
+    // In background script
+    console.log('Message received from page:', request);
+    ```
+  </Step>
+</Steps>
+
+## Debugging Message Passing
+
+SubWallet uses Chrome's message passing API for communication between components.
+
+### Message Flow
+
+```
+Popup/Page → Content Script → Background Script
+     ↓                               ↓
+   Response ← ← ← ← ← ← ← ← ← ← Response
+```
+
+### Debug Message Handlers
+
+Add logging to track message flow:
+
+```typescript
+// In KoniExtension or KoniTabs handler
+private async handle<TMessageType extends MessageTypes>(
+  id: string,
+  type: TMessageType,
+  request: RequestTypes[TMessageType],
+  port: chrome.runtime.Port
+): Promise<ResponseType<TMessageType>> {
+  console.log(`[${id}] Handling message type: ${type}`, request);
+  
+  try {
+    const response = await this.processMessage(type, request);
+    console.log(`[${id}] Response:`, response);
+    return response;
+  } catch (error) {
+    console.error(`[${id}] Error:`, error);
+    throw error;
+  }
+}
+```
+
+### Common Message Types
+
+```typescript
+// Extension messages (start with 'pri')
+'pri(price.getPrice)'
+'pri(accounts.list)'
+'pri(accounts.subscribe)'
+
+// Tab messages (start with 'pub')
+'pub(utils.getRandom)'
+'pub(authorize.request)'
+```
+
+## Debugging Storage
+
+Inspect and modify Chrome storage data.
+
+### View Storage Contents
+
+**In DevTools Console:**
+```javascript
+// View all local storage
+chrome.storage.local.get(null, (items) => {
+  console.log('Storage contents:', items);
+});
+
+// View specific key
+chrome.storage.local.get(['koni-price'], (result) => {
+  console.log('Price data:', result['koni-price']);
+});
+```
+
+### Clear Storage
+
+```javascript
+// Clear all storage
+chrome.storage.local.clear(() => {
+  console.log('Storage cleared');
+});
+
+// Remove specific keys
+chrome.storage.local.remove(['koni-price', 'koni-accounts'], () => {
+  console.log('Keys removed');
+});
+```
+
+### Monitor Storage Changes
+
+```javascript
+chrome.storage.onChanged.addListener((changes, namespace) => {
+  console.log('Storage changes in', namespace, changes);
+  
+  for (let [key, { oldValue, newValue }] of Object.entries(changes)) {
+    console.log(`${key}: ${oldValue} → ${newValue}`);
+  }
+});
+```
+
+## Source Maps
+
+Enable source maps for better debugging experience:
+
+### Development Build with Source Maps
+
+```bash
+yarn watch-dev
+```
+
+This adds inline source maps (`-d inline-source-map`) to the webpack build.
+
+### Navigate Original Source
+
+With source maps enabled:
+1. DevTools shows original TypeScript files
+2. Breakpoints work in `.ts` files instead of bundled `.js`
+3. Stack traces reference original source locations
+
+## Common Issues
+
+### Extension Not Loading
+
+**Symptoms:** Extension doesn't appear in browser toolbar or crashes on load
+
+**Solutions:**
+<Steps>
+  <Step title="Check Build Output">
+    Ensure build completed successfully:
+    ```bash
+    yarn clean
+    yarn build
+    ```
+  </Step>
+
+  <Step title="Verify Manifest">
+    Check `packages/extension-koni/build/manifest.json` exists and is valid JSON.
+  </Step>
+
+  <Step title="Check Console Errors">
+    Open background page DevTools and look for errors during initialization.
+  </Step>
+
+  <Step title="Clear Browser Cache">
+    1. Remove the extension
+    2. Restart browser
+    3. Reload extension
+  </Step>
+</Steps>
+
+### Messages Not Being Received
+
+**Symptoms:** UI doesn't update, background doesn't respond
+
+**Solutions:**
+
+1. **Verify message type format:**
+   ```typescript
+   // Correct
+   'pri(price.getPrice)'
+   
+   // Incorrect
+   'price.getPrice'
+   ```
+
+2. **Check handler exists:**
+   Ensure message type is defined in `KoniRequestSignatures` and has a handler in `KoniExtension` or `KoniTabs`.
+
+3. **Add debug logging:**
+   ```typescript
+   console.log('Sending message:', type, request);
+   const response = await sendMessage(type, request);
+   console.log('Received response:', response);
+   ```
+
+### State Not Persisting
+
+**Symptoms:** Extension state resets after browser restart
+
+**Solutions:**
+
+1. **Verify store initialization:**
+   ```typescript
+   // Ensure store is marked as ready
+   private priceStoreReady = false;
+   
+   async init() {
+     await this.priceStore.init();
+     this.priceStoreReady = true;
+   }
+   ```
+
+2. **Check Chrome storage permissions:**
+   Verify `manifest.json` includes:
+   ```json
+   {
+     "permissions": ["storage"]
+   }
+   ```
+
+3. **Monitor storage writes:**
+   ```javascript
+   chrome.storage.local.set({ key: value }, () => {
+     console.log('Saved to storage');
+     if (chrome.runtime.lastError) {
+       console.error('Storage error:', chrome.runtime.lastError);
+     }
+   });
+   ```
+
+### Cron Jobs Not Running
+
+**Symptoms:** Periodic updates not happening
+
+**Solutions:**
+
+1. **Check cron initialization:**
+   Verify cron jobs are registered in `KoniCron.init()`
+
+2. **Add logging:**
+   ```typescript
+   setInterval(() => {
+     console.log('Cron job executing...');
+     this.updatePrices();
+   }, interval);
+   ```
+
+3. **Verify background persistence:**
+   Ensure background script stays alive (Manifest V2) or uses service worker correctly (Manifest V3)
+
+### Hot Reload Not Working
+
+**Symptoms:** Changes don't appear after rebuilding
+
+**Solutions:**
+
+1. **Manually reload extension:**
+   - Chrome: Go to `chrome://extensions/` and click reload icon
+   - Firefox: Go to `about:debugging` and click reload
+
+2. **Use watch mode:**
+   ```bash
+   yarn watch-dev
+   ```
+
+3. **Hard refresh popup:**
+   Close and reopen the popup, or press Ctrl+R while popup is focused
+
+## Performance Debugging
+
+### Profile Background Script
+
+1. Open background page DevTools
+2. Go to Performance tab
+3. Click Record
+4. Perform actions in extension
+5. Stop recording
+6. Analyze flame chart for bottlenecks
+
+### Monitor Memory Usage
+
+1. Open DevTools Memory tab
+2. Take heap snapshot
+3. Perform actions
+4. Take another snapshot
+5. Compare to identify memory leaks
+
+### Network Monitoring
+
+1. Open Network tab in background DevTools
+2. Monitor API calls
+3. Check request/response times
+4. Identify slow or failing requests
+
+## Debugging Tools
+
+### Essential Browser Extensions
+
+- **React Developer Tools** - Inspect React components
+- **Redux DevTools** - Debug Redux state
+- **JSON Viewer** - Format JSON responses
+
+### Logging Best Practices
+
+Use structured logging:
+
+```typescript
+// Good: Structured with context
+console.log('[Price API] Fetching price for:', currency, { timestamp: Date.now() });
+
+// Bad: Unclear context
+console.log('fetching');
+```
+
+Use log levels appropriately:
+
+```typescript
+console.log('Info: Normal operation');
+console.warn('Warning: Deprecated API used');
+console.error('Error: Failed to fetch price', error);
+console.debug('Debug: Internal state:', state);
+```
+
+## Remote Debugging
+
+For debugging on other devices:
+
+### Android Chrome
+
+1. Enable USB debugging on Android device
+2. Connect device to computer
+3. Open `chrome://inspect` in desktop Chrome
+4. Select device and inspect
+
+### iOS Safari (limited support)
+
+1. Enable Web Inspector on iOS device
+2. Connect to Mac
+3. Open Safari > Develop > [Device Name]
+
+Note: Extension support on mobile browsers is limited.

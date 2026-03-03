@@ -1,0 +1,168 @@
+---
+title: Importing an Existing Account
+description: Import your existing wallet into SubWallet Extension using seed phrase, private key, or JSON file
+---
+
+SubWallet Extension provides multiple methods to import existing accounts. Choose the method that matches how your account was originally created.
+
+## Import from Seed Phrase
+
+If you have a 12, 15, 18, 21, or 24-word seed phrase (also called recovery phrase or mnemonic), follow these steps:
+
+<Steps>
+  <Step title="Navigate to the import screen">
+    Go to **Accounts** > **Import Account** > **Import from Seed Phrase** in the extension.
+  </Step>
+
+  <Step title="Select the phrase length">
+    Choose the number of words in your seed phrase (12, 15, or 24 words). The default is 12 words.
+
+    <Note>
+      If you paste your seed phrase, SubWallet will automatically detect the word count and adjust the selection.
+    </Note>
+  </Step>
+
+  <Step title="Enter your seed phrase">
+    Type each word of your seed phrase in order. You can:
+
+    - Type each word manually in the numbered input fields
+    - Paste the entire seed phrase at once (it will auto-fill all fields)
+    - Toggle the **Show seed phrase** / **Hide seed phrase** button to hide or reveal the words as you type
+
+    <Warning>
+      Each word must be a valid BIP39 word. The input will show an error if you enter an invalid word.
+    </Warning>
+  </Step>
+
+  <Step title="Handle compatibility warnings (if applicable)">
+    If you're importing a seed phrase from Trust Wallet or another wallet, SubWallet may display a compatibility warning:
+
+    - **Trust Wallet seed phrases**: These are compatible but may have limitations with certain chains
+    - **Unified vs. Standard**: SubWallet will detect if your seed phrase is unified or chain-specific
+
+    Review the warning and click **Import** to continue or **Go Back** to cancel.
+  </Step>
+
+  <Step title="Name your account">
+    Enter a name for your imported account to help you identify it within SubWallet.
+  </Step>
+
+  <Step title="Complete the import">
+    Wait for SubWallet to derive your account addresses across all supported chains. Your account is now ready to use.
+  </Step>
+</Steps>
+
+## Import from Private Key
+
+For accounts created with a private key (common for Ethereum/EVM wallets):
+
+<Steps>
+  <Step title="Access the import menu">
+    Navigate to **Accounts** > **Import Account** > **Import from Private Key**.
+  </Step>
+
+  <Step title="Enter your private key">
+    Paste or type your private key in the input field. Private keys typically start with `0x` for EVM accounts.
+
+    <Warning>
+      Never share your private key. Anyone with your private key has complete control over the associated account.
+    </Warning>
+  </Step>
+
+  <Step title="Name and import">
+    Provide a name for the account and click **Import Account** to complete the process.
+  </Step>
+</Steps>
+
+## Import from JSON File
+
+To restore an account from a JSON backup file (common for Polkadot/Substrate wallets):
+
+<Steps>
+  <Step title="Open the JSON import screen">
+    Go to **Accounts** > **Import Account** > **Restore from JSON**.
+  </Step>
+
+  <Step title="Upload your JSON file">
+    Click **Select file** and choose the JSON file containing your account backup.
+  </Step>
+
+  <Step title="Enter the file password">
+    If the JSON file is encrypted (which is standard), enter the password that was used when creating the backup.
+  </Step>
+
+  <Step title="Complete the import">
+    Click **Import** to restore your account. The account will be available immediately.
+  </Step>
+</Steps>
+
+## Import by QR Code
+
+For accounts from hardware wallets or watch-only accounts:
+
+<Steps>
+  <Step title="Connect QR signer">
+    Navigate to **Accounts** > **Connect a QR Signer** and select your device type:
+    - Polkadot Vault
+    - Keystone
+  </Step>
+
+  <Step title="Scan the QR code">
+    Use your device to display the account QR code, then click **Scan QR** in SubWallet to capture it with your camera.
+  </Step>
+
+  <Step title="Confirm the import">
+    Review the account details and click **Connect** to add the account to SubWallet.
+  </Step>
+</Steps>
+
+## Import Watch-Only Account
+
+To track an account without importing its private keys:
+
+<Steps>
+  <Step title="Access the attach account feature">
+    Go to **Accounts** > **Attach Account**.
+  </Step>
+
+  <Step title="Enter the address">
+    Paste the public address you want to watch. This can be any valid blockchain address.
+  </Step>
+
+  <Step title="Add the account">
+    Name the account and click **Attach**. You can now monitor balances and transactions, but you cannot sign transactions.
+
+    <Tip>
+      Watch-only accounts are useful for monitoring cold wallets, exchange addresses, or other accounts you don't control.
+    </Tip>
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Invalid seed phrase error">
+    Ensure:
+    - All words are spelled correctly
+    - Words are in the correct order
+    - You've selected the correct phrase length
+    - Each word is a valid BIP39 word (SubWallet will auto-suggest valid words)
+  </Accordion>
+
+  <Accordion title="Wrong account imported">
+    Different wallet software may derive addresses differently from the same seed phrase. If the imported addresses don't match your original wallet, the derivation path may be different.
+  </Accordion>
+
+  <Accordion title="Can't find my JSON file">
+    JSON backups are typically downloaded to your default downloads folder. Look for files with `.json` extension, often named after your account.
+  </Accordion>
+</AccordionGroup>
+
+## Security Reminders
+
+<Warning>
+  - Only import accounts on devices you trust
+  - Verify you're using the official SubWallet Extension
+  - Never enter your seed phrase or private key on websites or apps you don't fully trust
+  - Always use a strong master password to encrypt your accounts in SubWallet
+</Warning>

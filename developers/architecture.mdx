@@ -1,0 +1,317 @@
+---
+title: 'Architecture'
+description: 'High-level architecture of SubWallet Extension and its core components'
+---
+
+## Extension Architecture Diagram
+
+SubWallet Extension follows a multi-layered architecture designed for browser extensions:
+
+![Main Concept](https://github.com/Koniverse/Subwallet-V2/wiki/images/ExtensionConcept.png)
+
+The extension is compiled from the `packages/extension-koni` folder and operates across three distinct execution contexts that communicate via Chrome's message passing API.
+
+## Core Components
+
+### Background Environment
+
+<Card title="Background Script" icon="server">
+  The background environment is the heart of the extension, compiled from `packages/extension-koni/src/background.ts`
+</Card>
+
+**Responsibilities:**
+
+- Handle messages from extension pages and Chrome tabs via Chrome API Message Passing
+- Manage all application state and persist to Chrome storage
+- Execute cronjobs for periodic tasks
+- Process all API calls and blockchain interactions
+- Coordinate data flow between different parts of the extension
+
+**Key Features:**
+
+- Centralized state management through `KoniState` class
+- Message routing via `KoniExtension` and `KoniTabs` handlers
+- Scheduled tasks through `KoniCron`
+- Store persistence to Chrome local storage
+
+### Extension Pages
+
+The frontend interface of SubWallet consists of two main views:
+
+<CardGroup cols={2}>
+  <Card title="popup.html" icon="window-maximize">
+    Main extension page displayed when clicking the extension icon in the browser toolbar
+  </Card>
+  <Card title="portfolio.html" icon="chart-line">
+    Advanced view for displaying complex data like dashboards and transaction history
+  </Card>
+</CardGroup>
+
+**UI Technology Stack:**
+
+- **React** - Component-based UI framework
+- **Redux Toolkit** - State management with React hooks
+- **Webpack** - Module bundler for production builds
+
+### Inject Scripts
+
+Scripts injected into Chrome tabs to enable dapp interactions:
+
+- Expose wallet functionality to web pages
+- Provide the `window.injectedWeb3` interface
+- Enable MetaMask compatibility for EVM chains
+- Bridge communication between dapps and the background environment
+
+## Data Flow Architecture
+
+<Steps>
+  <Step title="Request Initiation">
+    Extension pages or Chrome tabs send messages to the background environment
+  </Step>
+  <Step title="Background Processing">
+    Background script processes requests, calls APIs, and updates state
+  </Step>
+  <Step title="State Persistence">
+    Updated state is persisted to Chrome local storage
+  </Step>
+  <Step title="Response Delivery">
+    Background sends response back to the requesting context
+  </Step>
+</Steps>
+
+<Warning>
+  All data requests must be processed in the background environment. Extension pages and inject scripts use data from the background and should not call APIs directly.
+</Warning>
+
+## Package Structure
+
+The monorepo is organized into specialized packages:
+
+### Core Packages
+
+<AccordionGroup>
+  <Accordion title="extension-base">
+    **Purpose:** Foundation package for background functionality
+    
+    Contains:
+    - Main features running in background
+    - API calling infrastructure
+    - Data persistence to Chrome storage
+    - Inject script utilities
+  </Accordion>
+
+  <Accordion title="extension-koni-base">
+    **Purpose:** Custom extension of extension-base
+    
+    Contains:
+    - SubWallet-specific features
+    - API definitions (`packages/extension-koni-base/src/api`)
+    - Store implementations (`packages/extension-koni-base/src/store`)
+    - Cronjob definitions (`packages/extension-koni-base/src/cron`)
+    - Message handlers for `KoniExtension` and `KoniTabs`
+  </Accordion>
+
+  <Accordion title="extension-koni">
+    **Purpose:** Main entry point for the extension
+    
+    Contains:
+    - Injection logic
+    - Background processing orchestration
+    - Webpack configuration for builds
+  </Accordion>
+
+  <Accordion title="extension-koni-ui">
+    **Purpose:** User interface components
+    
+    Contains:
+    - React components
+    - Redux stores
+    - Hooks for global functions
+    - Internationalization (i18n)
+    - Messaging utilities (`messaging.ts`)
+    - Assets and resources
+  </Accordion>
+</AccordionGroup>
+
+### Integration Packages
+
+<AccordionGroup>
+  <Accordion title="extension-dapp">
+    Convenience wrapper for dapps to integrate with the extension, simplifying data extraction for any application that wishes to use the injected objects.
+  </Accordion>
+
+  <Accordion title="extension-inject">
+    Wrapper enabling extension developers to inject their extension for use by any dapp.
+  </Accordion>
+
+  <Accordion title="extension-chains">
+    Chain definitions and metadata for supported blockchain networks, including bare definitions and stripped-down call-only metadata formats.
+  </Accordion>
+
+  <Accordion title="extension-compat-metamask">
+    MetaMask compatibility layer for EVM chain support and web3 provider compatibility.
+  </Accordion>
+
+  <Accordion title="extension-mocks">
+    Mock data for testing purposes.
+  </Accordion>
+</AccordionGroup>
+
+## Message Passing System
+
+SubWallet uses Chrome's message passing API for communication between components.
+
+### Message Types
+
+<CodeGroup>
+```typescript Extension Message
+export interface KoniRequestSignatures {
+  // One-time message from extension
+  'pri(price.getPrice)': [RequestPrice, PriceJson]
+  
+  // Subscription message from extension
+  'pri(price.getSubscription)': [RequestSubscribePrice, boolean, PriceJson]
+}
+```
+
+```typescript Tab Message
+export interface KoniRequestSignatures {
+  // Message from Chrome tabs (web pages)
+  'pub(utils.getRandom)': [RandomTestRequest, number]
+}
+```
+</CodeGroup>
+
+**Message Format:**
+
+- Messages from extension pages start with `pri` prefix
+- Messages from Chrome tabs start with `pub` prefix
+- Each message type defines: type name, request type, response type, and optional subscription parameter
+
+### Communication Patterns
+
+<Tabs>
+  <Tab title="One-time Message">
+    Extension or Chrome tab sends a request and listens for a single response. The listener is removed after receiving the response.
+    
+    ```typescript
+    // Send request
+    sendMessage('pri(price.getPrice)', request)
+      .then(response => {
+        // Handle response
+      });
+    ```
+  </Tab>
+  <Tab title="Subscription Message">
+    Similar to one-time messages, but the listener continues to receive data until the window closes.
+    
+    ```typescript
+    // Subscribe to updates
+    subscribeMessage('pri(price.getSubscription)', request, (data) => {
+      // Handle continuous updates
+    });
+    ```
+  </Tab>
+</Tabs>
+
+## State Management
+
+### Store System
+
+Stores persist data to Chrome local storage and are defined in `packages/extension-koni-base/src/store`.
+
+<CodeGroup>
+```typescript BaseStore
+// Simple store with basic persistence
+export default class MyStore extends BaseStore<DataType> {
+  constructor() {
+    super(EXTENSION_PREFIX ? `${EXTENSION_PREFIX}mystore` : null);
+  }
+}
+```
+
+```typescript SubscribableStore
+// Store with RxJS subject for subscriptions
+export default class Price extends SubscribableStore<PriceJson> {
+  constructor() {
+    super(EXTENSION_PREFIX ? `${EXTENSION_PREFIX}price` : null);
+  }
+}
+```
+</CodeGroup>
+
+**Store Classes:**
+
+- `BaseStore` - Basic persistence to Chrome local storage
+- `SubscribableStore` - Extends BaseStore with RxJS subjects for reactive updates
+
+### State Coordination
+
+Stores are managed by the `KoniState` class:
+
+```typescript
+export default class KoniState extends State {
+  private readonly priceStore = new Price();
+  private priceStoreReady = false;
+
+  public setPrice(priceData: PriceJson, callback?: (priceData: PriceJson) => void): void {
+    // Update price data
+  }
+
+  public getPrice(update: (value: PriceJson) => void): void {
+    // Retrieve price data
+  }
+
+  public subscribePrice() {
+    return this.priceStore.getSubject();
+  }
+}
+```
+
+## Background Services
+
+### Cronjob System
+
+Periodic tasks are defined in `packages/extension-koni-base/src/cron` and initialized through the `KoniCron` class.
+
+**Use Cases:**
+
+- Price updates
+- Balance refreshes
+- Network status checks
+- Transaction monitoring
+
+## UI Structure
+
+The extension UI (`packages/extension-koni-ui`) is organized into:
+
+- **assets** - Images and resources
+- **components** - Reusable React components
+- **hooks** - Custom React hooks for global functions
+- **i18n** - Internationalization files
+- **stores** - Redux stores generated with Redux Toolkit
+- **partials** - Header and layout components
+- **util** - Utility methods
+- **messaging.ts** - Functions to send messages to background and handle responses
+
+## Security Considerations
+
+<Warning>
+  - All API calls must go through the background environment
+  - Extension pages cannot make direct API calls
+  - Inject scripts operate in isolated contexts
+  - State is persisted securely to Chrome storage
+</Warning>
+
+## Next Steps
+
+Now that you understand the architecture, you can:
+
+<CardGroup cols={2}>
+  <Card title="Setup Development Environment" icon="wrench" href="/developers/setup">
+    Get started with local development
+  </Card>
+  <Card title="View Source Code" icon="github" href="https://github.com/Koniverse/Subwallet-V2">
+    Explore the codebase on GitHub
+  </Card>
+</CardGroup>

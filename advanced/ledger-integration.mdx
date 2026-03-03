@@ -1,0 +1,390 @@
+---
+title: "Ledger Integration"
+description: "Use Ledger hardware wallets with SubWallet for maximum security"
+---
+
+## What is Ledger integration?
+
+Ledger integration allows you to use Ledger hardware wallets (Ledger Nano S, Nano S Plus, and Nano X) with SubWallet. Your private keys remain securely stored on the Ledger device, while SubWallet provides the interface for managing accounts and signing transactions.
+
+<Info>
+With Ledger integration, your private keys never leave the hardware device, providing the highest level of security for your crypto assets.
+</Info>
+
+## Why use Ledger with SubWallet?
+
+Combining Ledger hardware security with SubWallet's features gives you:
+
+- **Maximum security**: Private keys stored on tamper-proof hardware
+- **Full feature access**: Use all SubWallet features (staking, DeFi, NFTs) with Ledger security
+- **Multi-chain support**: Manage both EVM and Substrate chains from one interface
+- **Backup protection**: Ledger's 24-word recovery phrase protects your accounts
+- **Transaction verification**: Verify and approve all transactions on the Ledger screen
+
+## Supported Ledger devices
+
+SubWallet works with:
+
+- **Ledger Nano S**: Entry-level hardware wallet
+- **Ledger Nano S Plus**: Enhanced storage and screen
+- **Ledger Nano X**: Bluetooth-enabled premium device
+
+<Note>
+All Ledger devices provide the same security level. Choose based on your budget and feature preferences.
+</Note>
+
+## Supported networks
+
+You can use Ledger with SubWallet for:
+
+### Substrate chains (Polkadot app)
+- Polkadot
+- Kusama
+- Supported parachains
+- Other Substrate-based networks
+
+### EVM chains (Ethereum app)
+- Ethereum
+- Polygon
+- Binance Smart Chain
+- Avalanche C-Chain
+- All other EVM-compatible networks
+
+<Info>
+Different blockchain apps must be installed on your Ledger device for different network types. Install the Polkadot app for Substrate chains and Ethereum app for EVM chains.
+</Info>
+
+## Setting up Ledger with SubWallet
+
+### Prerequisites
+
+1. **Ledger device** initialized with recovery phrase
+2. **Ledger Live** app installed on your computer
+3. **Latest firmware** installed on your Ledger device
+4. **Required blockchain apps** installed via Ledger Live:
+   - Polkadot app (for Substrate chains)
+   - Ethereum app (for EVM chains)
+5. **SubWallet Extension** installed in your browser
+
+### Connecting your Ledger
+
+<Steps>
+  <Step title="Prepare your Ledger">
+    1. Connect your Ledger device to your computer via USB
+    2. Enter your PIN on the Ledger
+    3. Open the appropriate blockchain app:
+       - **Polkadot** app for Substrate chains
+       - **Ethereum** app for EVM chains
+    4. Ensure the app shows "Application is ready"
+  </Step>
+  
+  <Step title="Connect in SubWallet">
+    1. Open SubWallet Extension
+    2. Click the account selector
+    3. Select **Attach account**
+    4. Choose **Connect Ledger device**
+    5. Select the network type:
+       - **Substrate (Polkadot)** for Substrate chains
+       - **Ethereum** for EVM chains
+  </Step>
+  
+  <Step title="Grant browser permissions">
+    1. Your browser will request USB device access
+    2. Select your Ledger device from the list
+    3. Click **Connect** to grant permission
+    
+    <Info>
+    This is a one-time permission. SubWallet can access your Ledger in future sessions without re-requesting.
+    </Info>
+  </Step>
+  
+  <Step title="Select accounts">
+    1. SubWallet will scan for accounts on your Ledger
+    2. You'll see a list of available addresses
+    3. For Substrate chains:
+       - Choose **Generic** (works on all chains) or **Chain-specific**
+       - Select account indices to import
+    4. For EVM chains:
+       - Choose account derivation path (standard is m/44'/60'/0'/0)
+       - Select addresses to import
+    5. Customize account names if desired
+    6. Click **Import accounts**
+  </Step>
+</Steps>
+
+<Tip>
+For Substrate chains, using **Generic** mode allows the same account to work across multiple networks (Polkadot, Kusama, parachains). Chain-specific mode creates separate accounts per network.
+</Tip>
+
+## Using Ledger accounts
+
+### Viewing balances and assets
+
+Ledger accounts in SubWallet work like regular accounts:
+
+- View balances across all supported networks
+- See NFT collections
+- Track transaction history
+- Monitor staking positions
+
+Your Ledger device doesn't need to be connected to view balances.
+
+### Signing transactions
+
+When you initiate a transaction with a Ledger account:
+
+1. **Create the transaction** in SubWallet (transfer, stake, etc.)
+2. **Review in SubWallet**: Check transaction details
+3. **Connect your Ledger**:
+   - Plug in the device if not connected
+   - Enter your PIN
+   - Open the appropriate blockchain app
+4. **Verify on Ledger screen**:
+   - Transaction details appear on Ledger screen
+   - Carefully review all information
+   - Use Ledger buttons to scroll through details
+5. **Approve or reject**:
+   - Press both buttons on "Approve" to sign
+   - Or navigate to "Reject" to cancel
+6. **Broadcast**: SubWallet broadcasts the signed transaction
+
+<Warning>
+Always verify transaction details on the Ledger screen. The device display is the source of truth - if it doesn't match SubWallet, DO NOT approve.
+</Warning>
+
+### Supported operations
+
+You can perform all SubWallet operations with Ledger accounts:
+
+<CardGroup cols={2}>
+  <Card title="Transfers" icon="arrow-right-arrow-left">
+    Send tokens and assets to other accounts
+  </Card>
+  <Card title="Staking" icon="coins">
+    Stake, nominate, bond, unbond, and claim rewards
+  </Card>
+  <Card title="NFTs" icon="image">
+    Transfer and manage NFT collections
+  </Card>
+  <Card title="DeFi" icon="chart-line">
+    Interact with DeFi protocols and smart contracts
+  </Card>
+  <Card title="Governance" icon="landmark">
+    Vote on proposals and participate in governance
+  </Card>
+  <Card title="dApp Connections" icon="plug">
+    Connect to dApps via WalletConnect or MetaMask mode
+  </Card>
+</CardGroup>
+
+## Account derivation paths
+
+Ledger uses derivation paths to generate multiple accounts from one seed:
+
+### Ethereum (EVM) derivation
+
+Standard path: `m/44'/60'/0'/0/x` where x is the account index
+
+- Index 0: First account
+- Index 1: Second account
+- Index 2: Third account, etc.
+
+### Polkadot (Substrate) derivation
+
+Substrate uses different account indices:
+
+- Account 0: `//0`
+- Account 1: `//1`
+- Account 2: `//2`, etc.
+
+<Info>
+SubWallet automatically handles derivation paths. You simply choose which account indices to import.
+</Info>
+
+## Advanced features
+
+### Generic Ledger accounts
+
+For Substrate chains, Generic mode creates a single account that works across multiple networks:
+
+**Advantages:**
+- Same address on Polkadot, Kusama, and parachains
+- Easier to manage cross-chain identity
+- Simplified backup and recovery
+
+**When to use:**
+- You want a unified address across networks
+- You interact with multiple Substrate chains
+- You're building cross-chain reputation
+
+### Chain-specific Ledger accounts
+
+Alternatively, use chain-specific mode:
+
+**Advantages:**
+- Separate accounts per network
+- Better privacy (addresses not linked)
+- Network-specific security isolation
+
+**When to use:**
+- You want separate identities per chain
+- Maximum privacy is important
+- You're only using specific networks
+
+### Ledger with proxy accounts
+
+Combine Ledger security with proxy convenience:
+
+1. **Main account**: Store on Ledger (cold storage)
+2. **Proxy account**: Hot wallet in SubWallet
+3. **Setup**: Add hot wallet as proxy to Ledger account
+4. **Use**: Execute transactions via proxy without connecting Ledger
+5. **Security**: Funds stay on Ledger; proxy can only perform authorized actions
+
+This is ideal for frequent staking operations or governance participation.
+
+<Tip>
+See the [Proxy Accounts](/advanced/proxy-accounts) guide for detailed setup instructions.
+</Tip>
+
+## Security best practices
+
+<CardGroup cols={1}>
+  <Card title="Verify on device" icon="shield-check">
+    Always verify transaction details on the Ledger screen. Never approve a transaction if the Ledger display doesn't match what you expect.
+  </Card>
+  
+  <Card title="Secure your recovery phrase" icon="key">
+    Your 24-word recovery phrase is the backup to your Ledger:
+    - Store it offline in a secure location
+    - Never enter it on a computer or phone
+    - Never share it with anyone
+    - Consider using metal backup solutions
+  </Card>
+  
+  <Card title="Keep firmware updated" icon="arrow-up">
+    Regularly update your Ledger firmware through Ledger Live to get security patches and new features.
+  </Card>
+  
+  <Card title="Use genuine devices only" icon="badge-check">
+    Only purchase Ledger devices from official sources. Never buy from third-party sellers or second-hand.
+  </Card>
+  
+  <Card title="Verify SubWallet extension" icon="fingerprint">
+    Ensure you've installed the official SubWallet extension from legitimate sources to prevent phishing.
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Ledger not detected">
+    Try:
+    - Reconnecting the USB cable
+    - Using a different USB port
+    - Ensuring the blockchain app is open on Ledger
+    - Granting browser USB permissions when prompted
+    - Restarting your browser
+    - Updating Ledger firmware via Ledger Live
+  </Accordion>
+  
+  <Accordion title="Transaction not showing on Ledger">
+    Check:
+    - Correct blockchain app is open (Polkadot or Ethereum)
+    - Ledger is unlocked and app shows "Application is ready"
+    - SubWallet is connected to the Ledger
+    - Try unplugging and reconnecting the device
+  </Accordion>
+  
+  <Accordion title="Wrong network showing">
+    For Substrate chains:
+    - Generic accounts work on all networks (normal behavior)
+    - Chain-specific accounts only work on their designated network
+    
+    For EVM chains:
+    - Ensure you're on the correct EVM network in SubWallet
+    - All EVM Ledger accounts use the same derivation
+  </Accordion>
+  
+  <Accordion title="Can't import accounts">
+    Verify:
+    - Ledger firmware is up to date
+    - Required blockchain app (Polkadot or Ethereum) is installed
+    - App is open on the Ledger device
+    - Browser has USB device access permission
+    - You're not running Ledger Live simultaneously (can cause conflicts)
+  </Accordion>
+  
+  <Accordion title="Transaction fails after signing">
+    This can happen if:
+    - Network congestion (try again or increase fees)
+    - Insufficient balance for amount + fees
+    - Transaction parameters changed (try creating a new transaction)
+    - Network connection lost during signing
+  </Accordion>
+</AccordionGroup>
+
+## Browser compatibility
+
+Ledger integration requires WebUSB support:
+
+- **Chrome**: Full support ✓
+- **Edge**: Full support ✓
+- **Brave**: Full support ✓
+- **Opera**: Full support ✓
+- **Firefox**: Limited support (may require configuration)
+- **Safari**: Not supported
+
+<Note>
+For best experience, use Chrome, Edge, or Brave browsers with Ledger integration.
+</Note>
+
+## Ledger Live compatibility
+
+**Can I use Ledger Live and SubWallet together?**
+
+Yes, but not simultaneously:
+
+- Close Ledger Live before using SubWallet
+- Both can access the same Ledger device
+- Accounts and balances will match
+- Avoid running both connected to the device at the same time
+
+## Recovery and backup
+
+### Recovering Ledger accounts
+
+If you need to restore access:
+
+1. **Device lost/damaged**: 
+   - Get a new Ledger device
+   - Restore using your 24-word recovery phrase
+   - Reconnect to SubWallet
+   - Import the same account indices
+
+2. **SubWallet reinstalled**:
+   - Simply reconnect your existing Ledger
+   - Import the same accounts again
+   - All on-chain data is preserved
+
+### What gets backed up?
+
+- **Your recovery phrase** backs up all Ledger accounts
+- **Account names** in SubWallet are local (not backed up by Ledger)
+- **Transaction history** is on the blockchain (always accessible)
+- **Settings and preferences** in SubWallet are local
+
+<Warning>
+Never lose your 24-word recovery phrase. It's the ONLY way to recover your Ledger accounts if your device is lost, damaged, or reset.
+</Warning>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Multisig Accounts" icon="users" href="/advanced/multisig-accounts">
+    Use Ledger accounts as signers in multisig setups
+  </Card>
+  <Card title="Proxy Accounts" icon="user-shield" href="/advanced/proxy-accounts">
+    Set up hot wallet proxies for your Ledger account
+  </Card>
+</CardGroup>

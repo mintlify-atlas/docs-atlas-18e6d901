@@ -1,0 +1,139 @@
+---
+title: 'Developer Overview'
+description: 'Technical overview of SubWallet Extension - a browser extension for managing multi-chain crypto assets'
+---
+
+## What is SubWallet Extension?
+
+SubWallet Extension is a browser extension wallet forked from polkadot-js/extension, designed to support multiple blockchain networks while maintaining the ability to rebase with the polkadot-js origin at any time. It provides a comprehensive solution for managing crypto assets across different chains within a browser environment.
+
+## Technical Perspective
+
+SubWallet Extension is built as a multi-package monorepo that follows Chrome Extension architecture patterns. The extension operates across three main execution contexts:
+
+- **Background environment** - Handles message passing, state management, and API calls
+- **Extension UI** - React-based frontend for popup and portfolio views
+- **Inject scripts** - Scripts injected into web pages to enable dapp interactions
+
+All data requests are centralized through the background environment. Extension pages and inject scripts consume data from the background without making direct API calls, ensuring consistent state management and security.
+
+## Tech Stack
+
+SubWallet Extension is built with the following core technologies:
+
+<CardGroup cols={2}>
+  <Card title="TypeScript" icon="code">
+    Fully typed codebase for better developer experience and code safety
+  </Card>
+  <Card title="React" icon="react">
+    UI components built with React and Redux Toolkit for state management
+  </Card>
+  <Card title="Polkadot.js" icon="link">
+    Core blockchain interaction libraries from the Polkadot ecosystem
+  </Card>
+  <Card title="Webpack" icon="box">
+    Module bundler for compiling the extension for different browsers
+  </Card>
+</CardGroup>
+
+### Key Dependencies
+
+- **@polkadot/api** (^16.4.2) - Blockchain API interactions
+- **@subwallet/chain-list** (0.2.124) - Multi-chain support definitions
+- **Redux Toolkit** - State management with react hooks
+- **RxJS** (^7.8.1) - Reactive programming for subscriptions
+- **Dexie** (^3.2.2) - IndexedDB wrapper for local storage
+- **bitcoinjs-lib** (6.1.5) - Bitcoin protocol support
+
+## Architecture Overview
+
+![Main Concept](https://github.com/Koniverse/Subwallet-V2/wiki/images/ExtensionConcept.png)
+
+The extension consists of three primary components:
+
+1. **Background Environment** - Core processing engine
+2. **Extension Pages** - User-facing interfaces
+3. **Inject Scripts** - Dapp integration layer
+
+For detailed architecture information, see the [Architecture](/developers/architecture) page.
+
+## What Can Developers Build?
+
+### Extension Development
+
+Developers can extend SubWallet's functionality by:
+
+- Adding new blockchain network support
+- Implementing custom API integrations
+- Creating new storage stores for persistent data
+- Building custom cronjobs for background tasks
+- Adding new UI components and pages
+
+### Dapp Integration
+
+Dapp developers can integrate with SubWallet to:
+
+- Connect to user wallets via the injected provider
+- Request account access and signatures
+- Interact with multiple blockchain networks
+- Leverage MetaMask compatibility mode
+
+### Available Packages
+
+<AccordionGroup>
+  <Accordion title="extension-base">
+    Core features running in background: API calls, data persistence, and script injection
+  </Accordion>
+  <Accordion title="extension-dapp">
+    Convenience wrapper for dapps to work with injected objects and simplify integration
+  </Accordion>
+  <Accordion title="extension-inject">
+    Wrapper allowing extension developers to inject their extension for dapp use
+  </Accordion>
+  <Accordion title="extension-chains">
+    Chain definitions and stripped-down metadata formats for supported networks
+  </Accordion>
+  <Accordion title="extension-koni-base">
+    Custom package extending extension-base with SubWallet-specific features
+  </Accordion>
+  <Accordion title="extension-koni-ui">
+    React UI components for the extension popup and portfolio views
+  </Accordion>
+  <Accordion title="extension-koni">
+    Main entry point containing injection and background processing logic
+  </Accordion>
+  <Accordion title="extension-compat-metamask">
+    MetaMask compatibility layer for EVM chain support
+  </Accordion>
+</AccordionGroup>
+
+## Development Workflow
+
+SubWallet Extension uses modern development practices:
+
+- **Monorepo structure** with Yarn workspaces
+- **Automated testing** with Jest
+- **Code quality** enforced with ESLint
+- **CI/CD** with GitHub Actions for automated builds
+- **Internationalization** support with i18next
+
+## Getting Started
+
+Ready to start developing? Head over to the [Setup Guide](/developers/setup) to get your development environment configured.
+
+## Resources
+
+<CardGroup cols={2}>
+  <Card title="GitHub Repository" icon="github" href="https://github.com/Koniverse/Subwallet-V2">
+    View the source code and contribute
+  </Card>
+  <Card title="Report Issues" icon="bug" href="https://github.com/Koniverse/Subwallet-V2/issues">
+    Submit bugs and feature requests
+  </Card>
+  <Card title="Architecture Guide" icon="sitemap" href="/developers/architecture">
+    Deep dive into the extension architecture
+  </Card>
+  <Card title="Setup Guide" icon="wrench" href="/developers/setup">
+    Get your development environment ready
+  </Card>
+</CardGroup>

@@ -1,0 +1,285 @@
+---
+title: Buying tokens
+description: Purchase cryptocurrency directly in SubWallet using fiat on-ramp services
+---
+
+SubWallet makes it easy to purchase cryptocurrency with fiat currency (USD, EUR, etc.) through integrated on-ramp providers. You can buy tokens directly in the extension without leaving the app.
+
+## Supported On-Ramp Services
+
+SubWallet integrates with multiple trusted on-ramp providers:
+
+- **Transak** - Wide currency and payment method support
+- **Banxa** - Available in 100+ countries
+- **Coinbase Pay** - Direct integration with Coinbase
+- **Meld** - Support for various payment methods
+
+Each service has different:
+- Supported tokens and chains
+- Payment methods (card, bank transfer, etc.)
+- Geographic availability
+- Fees and limits
+
+## How to Buy Tokens
+
+<Steps>
+  <Step title="Open Buy Tokens">
+    From the main wallet screen, look for the **Buy** button or navigate to the Buy section
+  </Step>
+  
+  <Step title="Select Token">
+    Choose the cryptocurrency you want to purchase
+    
+    <Info>
+    Not all tokens are available through all services. SubWallet will show you which services support your selected token.
+    </Info>
+  </Step>
+  
+  <Step title="Select Account">
+    Choose which account should receive the purchased tokens
+    
+    - The account must be compatible with the token's blockchain type
+    - For EVM tokens, use an Ethereum-type account
+    - For Substrate tokens, use a Polkadot-type account
+  </Step>
+  
+  <Step title="Choose Service Provider">
+    Select your preferred on-ramp service from the available options
+    
+    SubWallet will show:
+    - Supported payment methods
+    - Estimated fees
+    - Service availability
+  </Step>
+  
+  <Step title="Review Disclaimer">
+    Read and accept the service provider's terms
+    
+    <Warning>
+    SubWallet acts as an aggregator. The actual purchase is processed by the third-party on-ramp provider. Review their terms, fees, and policies before proceeding.
+    </Warning>
+  </Step>
+  
+  <Step title="Complete Purchase">
+    You'll be redirected to the provider's website to:
+    
+    1. Enter purchase amount
+    2. Provide payment information
+    3. Complete KYC verification (if required)
+    4. Confirm the transaction
+    
+    The tokens will be sent directly to your selected SubWallet address once the payment is confirmed.
+  </Step>
+</Steps>
+
+## Supported Tokens
+
+Common tokens available for purchase include:
+
+<CardGroup cols={2}>
+  <Card title="Bitcoin (BTC)" icon="bitcoin">
+    Bitcoin network
+  </Card>
+  <Card title="Polkadot (DOT)" icon="circle">
+    Polkadot relay chain
+  </Card>
+  <Card title="Kusama (KSM)" icon="circle">
+    Kusama relay chain
+  </Card>
+  <Card title="Ethereum (ETH)" icon="ethereum">
+    Ethereum mainnet
+  </Card>
+</CardGroup>
+
+Many other tokens are supported including:
+- Stablecoins (USDT, USDC, DAI)
+- Substrate ecosystem tokens
+- EVM-compatible chain tokens
+- Layer 2 tokens
+
+<Info>
+The available tokens depend on the selected on-ramp service and your geographic location.
+</Info>
+
+## Payment Methods
+
+Available payment methods vary by provider:
+
+- **Credit/Debit Card** - Instant but higher fees
+- **Bank Transfer** - Lower fees, 1-3 day processing
+- **Apple Pay / Google Pay** - Quick mobile payments
+- **Other methods** - Depending on provider and region
+
+## Fees and Limits
+
+### Transaction Fees
+
+On-ramp services charge fees that typically include:
+
+- **Service Fee** - Provider's commission (1-5%)
+- **Network Fee** - Blockchain transaction cost
+- **Payment Processing** - Credit card or bank fees
+
+<Tip>
+Compare fees between different providers for your specific purchase to find the best rate.
+</Tip>
+
+### Purchase Limits
+
+Limits vary by:
+- Service provider
+- Payment method
+- KYC verification level
+- Geographic location
+
+Most services have:
+- **Minimum**: $20-50 USD
+- **Maximum**: $500-10,000 per transaction (higher with full KYC)
+
+## Geographic Restrictions
+
+On-ramp services are subject to regional regulations:
+
+- **Available Globally**: Most major regions supported
+- **Restricted Regions**: Some countries have limitations due to local regulations
+- **Payment Methods**: Vary by country
+
+<Note>
+If a service is not available in your region, try a different provider from the list.
+</Note>
+
+## KYC Requirements
+
+Know Your Customer (KYC) verification may be required:
+
+### When KYC is Required
+
+- First-time users of a service
+- Purchases above certain limits
+- Specific geographic regions
+- Regulatory requirements
+
+### KYC Process
+
+Typically involves providing:
+- Government-issued ID
+- Proof of address
+- Selfie verification
+- Additional documents (for higher limits)
+
+<Info>
+KYC is handled entirely by the on-ramp provider, not SubWallet. Your information is shared only with the selected service.
+</Info>
+
+## Transaction Timeline
+
+1. **Initiation**: Immediate
+2. **Payment Processing**: 
+   - Card: Instant to 15 minutes
+   - Bank: 1-5 business days
+3. **Token Delivery**: After payment confirmation
+   - Usually within 10-30 minutes
+   - Can take longer during network congestion
+
+## Tracking Your Purchase
+
+After completing a purchase:
+
+1. You'll receive a confirmation from the provider
+2. Transaction ID for tracking
+3. Email updates on status
+4. Tokens appear in your wallet once confirmed
+
+Check your **Transaction History** in SubWallet to see incoming transfers.
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Purchase failed or declined">
+    Common reasons:
+    - Payment method declined (contact your bank)
+    - Insufficient verification (complete KYC)
+    - Geographic restrictions
+    - Service limits exceeded
+    
+    Try:
+    - A different payment method
+    - Another on-ramp service
+    - Contacting the provider's support
+  </Accordion>
+  
+  <Accordion title="Tokens haven't arrived">
+    If tokens haven't appeared after the expected time:
+    
+    1. Check the transaction status with the provider
+    2. Verify the recipient address was correct
+    3. Check if there's network congestion
+    4. Contact provider support with your transaction ID
+    
+    <Warning>
+    Allow sufficient time for processing. Bank transfers can take several days.
+    </Warning>
+  </Accordion>
+  
+  <Accordion title="Service not available for my token">
+    Not all tokens are supported by all providers:
+    
+    - Try a different on-ramp service
+    - Consider buying a common token (ETH, BTC) and swapping it
+    - Check if the token is available on exchanges
+  </Accordion>
+  
+  <Accordion title="High fees">
+    On-ramp fees are set by providers:
+    
+    - Compare multiple services for better rates
+    - Bank transfers usually have lower fees than cards
+    - Larger purchases often have better fee percentages
+    - Consider the total cost including network fees
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+<Card title="Security Tips" icon="shield-check">
+  - Only use on-ramps integrated in SubWallet
+  - Verify you're on the official provider website
+  - Never share your seed phrase with on-ramp services
+  - Keep records of all transactions
+  - Be cautious of phishing attempts
+</Card>
+
+### Getting the Best Rates
+
+- **Compare Providers**: Check multiple services for the same purchase
+- **Payment Method**: Bank transfers typically cheaper than cards
+- **Purchase Amount**: Larger amounts may have better fee percentages
+- **Network Fees**: Consider blockchain congestion times
+- **Timing**: Some providers have promotional periods
+
+### For First-Time Buyers
+
+1. Start with a small test purchase
+2. Complete KYC early to avoid delays
+3. Save your transaction IDs
+4. Understand the fees before confirming
+5. Allow extra time for first transactions
+
+## Support
+
+For issues with on-ramp purchases:
+
+- **SubWallet Issues**: [GitHub Issues](https://github.com/Koniverse/SubWallet-Extension/issues)
+- **Provider Support**: Contact the specific on-ramp service directly
+  - They handle payment processing and KYC
+  - Have your transaction ID ready
+
+<Note>
+SubWallet provides the interface to access on-ramp services but does not process the purchases. For payment or delivery issues, contact the on-ramp provider directly.
+</Note>
+
+## Related Guides
+
+- [Receiving tokens](/guides/receiving-tokens) - Check for incoming purchases
+- [Token management](/features/token-management) - View your balances
+- [Swapping tokens](/guides/swapping-tokens) - Exchange tokens after purchase
